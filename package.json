@@ -15,6 +15,7 @@
     "chess.js": "^1.4.0",
     "chessground": "^9.2.1",
     "html2pdf.js": "^0.14.0",
+    "jszip": "^3.10.1",
     "pinia": "^3.0.4",
     "vue": "^3.5.39"
   },
@@ -22,6 +23,7 @@
     "@tailwindcss/cli": "^4.3.2",
     "@tailwindcss/vite": "^4.3.2",
     "@types/chess.js": "^0.13.7",
+    "@types/jszip": "^3.4.0",
     "@types/node": "^24.13.2",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vue/tsconfig": "^0.9.1",

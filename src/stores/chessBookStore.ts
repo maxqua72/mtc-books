@@ -1,41 +1,304 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import JSZip from 'jszip'
+
+// 1. DEFINIZIONE DELLE INTERFACCE
+export type SectionType = 'cover' | 'index' | 'chapter'
+export type PageFormat = 'a4' | 'crown-quarto' | 'b-format'
+
+export interface SectionIndexItem {
+    id: string
+    type: SectionType
+    title: string
+}
+
+export interface BookMetadata {
+    version: string
+    title: string
+    author: string
+    createdAt: string
+    updatedAt: string
+    pageFormat: PageFormat
+    isTwoColumns: boolean,
+    showNumbering: boolean
+}
 
 export const useChessBookStore = defineStore('chessBook', () => {
-  // Stato della scacchiera di analisi (destra)
-  const activeFen = ref('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-  
-  // Dimensione globale di default (in pixel)
-  const globalDiagramSize = ref(40)
+    // --- STATO ESISTENTE (Scacchiera e Segnali) ---
+    const activeFen = ref('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+    const globalDiagramSize = ref(40)
+    const insertSignal = ref(0)
+    const exportSignal = ref(0)
+    const isBookLoaded = ref(false)
 
-  // Segnale di inserimento (contatore incrementale per attivare il watch nell'editor)
-  const insertSignal = ref(0)
+    // --- NUOVO STATO (Metadati e Struttura Libro) ---
+    const metadata = ref<BookMetadata>({
+        version: '1.0.0',
+        title: 'Nuovo Libro di Scacchi',
+        author: 'Autore',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        pageFormat: 'a4',
+        isTwoColumns: false,
+        showNumbering: true
+    })
 
-  // Segnale per l'esportazione pdf
-  const exportSignal = ref(0)
+    // L'indice delle sezioni (caricato subito in Fase A)
+    const sectionIndex = ref<SectionIndexItem[]>([])
 
-  // Aggiorna il FEN corrente durante il movimento dei pezzi
-  function updateActiveFen(fen: string) {
-    activeFen.value = fen
-  }
+    // L'ID della sezione attualmente aperta nell'editor
+    const activeSectionId = ref<string | null>(null)
 
-  // Innesca la richiesta di inserimento del diagramma nell'editor
-  function triggerInsertDiagram() {
-    insertSignal.value++
-  }
+    // Il contenuto HTML della sola sezione attiva nell'editor (Fase B)
+    const activeSectionHtml = ref<string>('')
 
-  // Innesca la richiesta di inserimento del diagramma nell'editor
-  function triggerPdfExport() {
-    exportSignal.value++
-  }
+    // Il "disco virtuale": tiene in memoria i file compressi non ancora aperti
+    // Chiave: sectionId, Valore: la stringa JSON grezza o l'oggetto compresso da estrarre su richiesta
+    const zippedSectionsCache = ref<Record<string, string>>({})
 
-  return {
-    activeFen,
-    globalDiagramSize,
-    insertSignal,
-    exportSignal,
-    updateActiveFen,
-    triggerInsertDiagram,
-    triggerPdfExport
-  }
+    // --- GETTERS COMPOSITI ---
+    const activeSectionInfo = computed(() => {
+        return sectionIndex.value.find(s => s.id === activeSectionId.value) || null
+    })
+
+    /**
+    * Genera dinamicamente la struttura HTML dell'indice basandosi sui capitoli presenti
+    */
+    const generatedTocHtml = computed(() => {
+        const chapters = sectionIndex.value.filter(s => s.type === 'chapter')
+
+        if (chapters.length === 0) {
+            return `
+  <div class="toc-container">
+    <h2>Indice Generale</h2>
+    <p style="color: #a3a3a3; font-style: italic;">Nessun capitolo inserito nel libro.</p>
+  </div>
+`
+        }
+
+        const parser = new DOMParser()
+        let htmlResult = `<div class="toc-container"><h2 style="font-family: Georgia, serif; font-size: 2rem; margin-bottom: 1.5rem;">Indice Generale</h2><ul style="list-style: none; padding: 0; margin: 0; font-family: Georgia, serif;">`
+
+        let mainCounter = 0
+
+        for (const ch of chapters) {
+            mainCounter++ // Incrementa a ogni capitolo per rispecchiare l'ordine della barra laterale
+            let subCounter = 0 // Resetta i sotto-capitoli per questo specifico capitolo
+
+            // Recupera l'HTML corrente dello store (se attivo nell'editor) o della cache compressa
+            let chHtml = ''
+            if (ch.id === activeSectionId.value) {
+                chHtml = activeSectionHtml.value
+            } else {
+                const cached = zippedSectionsCache.value[ch.id]
+                chHtml = cached ? JSON.parse(cached).html : ''
+            }
+
+            const doc = parser.parseFromString(chHtml, 'text/html')
+            // Peschiamo solo i nodi esplicitamente marcati dall'attributo inserito dalla toolbar
+            const trackedHeaders = doc.querySelectorAll('[data-toc-level]')
+
+            trackedHeaders.forEach((el) => {
+                const level = el.getAttribute('data-toc-level')
+                const text = el.textContent?.trim() || 'Titolo senza testo'
+                let numbering = ''
+                let paddingLeft = '0px'
+                let fontSize = '1rem'
+                let fontWeight = 'bold'
+
+                if (level === '1') {
+                    numbering = `${mainCounter}. `
+                    paddingLeft = '0px'
+                    fontSize = '1.1rem'
+                } else if (level === '2') {
+                    subCounter++
+                    numbering = `${mainCounter}.${subCounter} `
+                    paddingLeft = '20px'
+                    fontSize = '0.95rem'
+                    fontWeight = 'normal'
+                }
+
+                htmlResult += `
+    <li style="display: flex; justify-content: space-between; margin-bottom: 8px; padding-left: ${paddingLeft}; font-size: ${fontSize}; font-weight: ${fontWeight}; border-bottom: 1px dotted #e5e7eb;">
+      <span style="background: #fff; padding-right: 4px;">${numbering}${text}</span>
+      <span style="background: #fff; padding-left: 4px; color: #737373;">...</span>
+    </li>
+  `
+            })
+        }
+
+        htmlResult += `</ul></div>`
+        return htmlResult
+    })
+
+    // --- FUNZIONI ESISTENTI ---
+    function updateActiveFen(fen: string) {
+        activeFen.value = fen
+    }
+
+    function triggerInsertDiagram() {
+        insertSignal.value++
+    }
+
+    function triggerPdfExport() {
+        exportSignal.value++
+    }
+
+    // --- NUOVE FUNZIONI: NAVIGAZIONE (LAZY LOADING) ---
+
+    /**
+     * Cambia la sezione attiva nell'editor gestendo la memoria (Fase B)
+     * @param nextSectionId ID della sezione da caricare
+     * @param currentEditorContent L'HTML aggiornato dell'editor prima di chiuderlo
+     */
+    async function changeActiveSection(nextSectionId: string, currentEditorContent?: string) {
+        // 1. Se c'era una sezione aperta, congeliamo il suo contenuto attuale nella cache di memoria
+        if (activeSectionId.value && currentEditorContent !== undefined) {
+            zippedSectionsCache.value[activeSectionId.value] = JSON.stringify({
+                id: activeSectionId.value,
+                html: currentEditorContent
+            })
+        }
+
+        // 2. Svuotiamo l'editor per forzare la distruzione dei vecchi nodi del DOM
+        activeSectionId.value = null
+        activeSectionHtml.value = ''
+
+        // 3. Recuperiamo la nuova sezione dalla cache "congelata"
+        const cachedData = zippedSectionsCache.value[nextSectionId]
+        if (cachedData) {
+            const parsed = JSON.parse(cachedData)
+            activeSectionId.value = nextSectionId
+            activeSectionHtml.value = parsed.html
+        } else {
+            // Se non esiste ancora (es. nuova sezione appena creata), inizializziamo a vuoto
+            activeSectionId.value = nextSectionId
+            activeSectionHtml.value = ''
+        }
+    }
+
+    // --- NUOVE FUNZIONI: I/O FILE .MTCBOOK (JSZIP) ---
+
+    /**
+     * FASE A: Carica un file .mtcbook estratto dal computer dell'utente
+     * Legge solo i metadati; i capitoli rimangono congelati nella cache interna.
+     */
+    async function loadMtcBook(fileBuffer: ArrayBuffer | Blob) {
+        const zip = await JSZip.loadAsync(fileBuffer)
+
+        // 1. Estrazione del file di indice e metadati (leggero)
+        const bookJsonRaw = await zip.file('book.json')?.async('string')
+        if (!bookJsonRaw) throw new Error('File book.json non trovato nell\'archivio.')
+
+        const bookData = JSON.parse(bookJsonRaw)
+
+        // 2. Popoliamo lo stato dei metadati e dell'indice (la barra laterale si aggiorna subito)
+        metadata.value = {
+            version: bookData.version,
+            title: bookData.title,
+            author: bookData.author,
+            createdAt: bookData.createdAt,
+            updatedAt: bookData.updatedAt,
+            pageFormat: bookData.pageFormat || 'a4',
+            isTwoColumns: bookData.isTwoColumns || false,
+            showNumbering: bookData.showNumbering !== undefined ? bookData.showNumbering : true
+        }
+        sectionIndex.value = bookData.sectionIndex
+
+        // 3. Inizializziamo la cache congelata leggendo i puntatori ai file delle sezioni, 
+        // ma SENZA parsarli in oggetti HTML/DOM complessi.
+        zippedSectionsCache.value = {}
+        const sectionsFolder = zip.folder('sections')
+
+        if (sectionsFolder) {
+            for (const item of sectionIndex.value) {
+                const sectionFile = sectionsFolder.file(`${item.id}.json`)
+                if (sectionFile) {
+                    // Conserviamo la stringa json grezza non letta
+                    zippedSectionsCache.value[item.id] = await sectionFile.async('string')
+                }
+            }
+        }
+
+        // 4. Apriamo automaticamente la prima sezione disponibile (se presente)
+        if (sectionIndex.value.length > 0) {
+            await changeActiveSection(sectionIndex.value[0].id)
+        }
+        isBookLoaded.value = true
+    }
+
+    /**
+     * FASE C (Parziale): Esporta lo stato attuale in un blob binario ZIP .mtcbook
+     * @param currentEditorContent Il contenuto testuale dell'editor attualmente attivo
+     */
+    async function exportMtcBook(currentEditorContent: string): Promise<Blob> {
+        const zip = new JSZip()
+
+        // 1. Aggiorniamo la cache con lo stato dell'editor corrente prima del salvataggio
+        if (activeSectionId.value) {
+            zippedSectionsCache.value[activeSectionId.value] = JSON.stringify({
+                id: activeSectionId.value,
+                html: currentEditorContent
+            })
+        }
+
+        // 2. Prepariamo il payload del file book.json
+        metadata.value.updatedAt = new Date().toISOString()
+        const bookJsonData = {
+            ...metadata.value,
+            sectionIndex: sectionIndex.value
+        }
+        zip.file('book.json', JSON.stringify(bookJsonData, null, 2))
+
+        // 3. Iniettiamo tutte le sezioni dalla cache nella cartella virtuale
+        const sectionsFolder = zip.folder('sections')
+        if (sectionsFolder) {
+            for (const [id, jsonString] of Object.entries(zippedSectionsCache.value)) {
+                sectionsFolder.file(`${id}.json`, jsonString)
+            }
+        }
+
+        // 4. Generiamo il pacchetto binario compresso pronto per il download
+        return await zip.generateAsync({ type: 'blob' })
+    }
+
+    /**
+     * Crea una nuova sezione (es. un nuovo capitolo)
+     */
+    function createNewSection(title: string, type: SectionType = 'chapter') {
+        const id = `sec-${Math.random().toString(36).substr(2, 9)}`
+        const newItem: SectionIndexItem = { id, type, title }
+
+        sectionIndex.value.push(newItem)
+        zippedSectionsCache.value[id] = JSON.stringify({ id, html: '' })
+
+        return id
+    }
+
+    return {
+        // Stato esistente
+        activeFen,
+        globalDiagramSize,
+        insertSignal,
+        exportSignal,
+        updateActiveFen,
+        triggerInsertDiagram,
+        triggerPdfExport,
+
+        // Nuovo Stato Strutturale
+        isBookLoaded,
+        metadata,
+        sectionIndex,
+        activeSectionId,
+        activeSectionHtml,
+        zippedSectionsCache,
+        activeSectionInfo,
+        generatedTocHtml,
+
+        // Nuove Funzioni operative
+        changeActiveSection,
+        loadMtcBook,
+        exportMtcBook,
+        createNewSection
+    }
 })
