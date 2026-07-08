@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+/* Importiamo i fogli di stile di Chessground dentro il flusso di Tailwind */
+@import "chessground/assets/chessground.base.css";
+@import "chessground/assets/chessground.brown.css";
+
+html, body, #app {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff;
+}
+
+/* Applichiamo il tema dei pezzi standard di Lichess (Cburnett) */
+@import "chessground/assets/chessground.cburnett.css";
+
+/* Forzatura dello stile in Bianco e Nero Editoriale per la scacchiera */
+.cg-wrap {
+  background-color: #ffffff !important;
+}
+.square.dark {
+  background-color: #e5e7eb !important; /* Grigio chiaro gray-200 */
+}
+.square.last-move {
+  background-color: rgba(156, 163, 175, 0.4) !important; /* Grigio gray-400 trasparente */
+}
+
+@font-face {
+  font-family: 'Chess Merida';
+  src: url('./assets/fonts/chess-merida.woff2') format('woff2'),
+       url('./assets/fonts/chess-merida.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+/* Classe di utilità per la scacchiera tipografica */
+.font-chess {
+  font-family: 'Chess Merida', serif !important;
+}
+.avoid-break {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* ==========================================================================
+   CONFIGURAZIONE TIPOGRAFICA PER ESPORTAZIONE PDF (STILE QUALITY CHESS)
+   ========================================================================== */
+@media print {
+  /* 1. Nasconde i bottoni, la scacchiera interattiva e tutta la UI di lavoro */
+  .no-print {
+    display: none !important;
+  }
+
+  /* 2. Configura la pagina A4 con margini editoriali bilanciati (20mm) */
+  @page {
+    size: A4;
+    margin: 20mm;
+  }
+
+  /* 3. Forza lo sfondo bianco, testo nero e ottimizza l'interlinea del libro */
+  html, body, #app {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt;
+    line-height: 1.6;
+    height: auto !important; /* Evita che il body si blocchi all'altezza dello schermo */
+  }
+
+  /* 4. Impedisce ai titoli di rimanere orfani in fondo alla pagina */
+  h1, h2, h3, h4 {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  /* 5. Regola i paragrafi per una distribuzione armonica */
+  p {
+    orphans: 3;
+    widows: 3;
+    margin-bottom: 1em;
+  }
+}
