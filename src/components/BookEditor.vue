@@ -5,11 +5,20 @@
         <EditorToolbar v-if="editor" :editor="editor" />
 
         <!-- Area di Scrittura Effettiva -->
-        <div id="book-editor-content" class="flex-1 p-8 overflow-y-auto">
-            <div class="max-w-2xl w-full mx-auto tiptap-container" :class="{
+        <!-- Area di Scrittura Effettiva -->
+        <div id="book-editor-content" class="flex-1 overflow-y-auto">
+            <div class="tiptap-container" :class="{
                 'show-numbering': store.metadata.showNumbering,
                 'is-structural-page': store.activeSectionInfo?.type === 'cover' || store.activeSectionInfo?.type === 'index'
-            }" :style="{ '--chapter-index': currentChapterNumber }">
+            }" :style="{
+                '--chapter-index': currentChapterNumber,
+                '--page-width': getPageSizeStyles.width,
+                '--page-height': getPageSizeStyles.height,
+                '--page-margin-top': '25mm',
+                '--page-margin-bottom': '25mm',
+                '--page-margin-left': '20mm',
+                '--page-margin-right': '20mm'
+            }">
                 <editor-content :editor="editor" />
             </div>
         </div>
@@ -20,7 +29,7 @@
 <script setup lang="ts">
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
-import { watch, onMounted, onBeforeUnmount, computed, ref } from 'vue'
+import { watch, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useChessBookStore, type SectionType } from '../stores/chessBookStore'
 import { ChessDiagram } from '../extensions/ChessDiagram'
 import { CustomHeading } from '../extensions/CustomHeading' // Aggiusta il percorso se serve
@@ -30,6 +39,18 @@ import EditorToolbar from './EditorToolbar.vue'
 import html2pdf from 'html2pdf.js'
 
 const store = useChessBookStore()
+
+const getPageSizeStyles = computed(() => {
+    const format = store.metadata.pageFormat || 'a4'
+
+    const formats: Record<string, { width: string; height: string }> = {
+        'a4': { width: '210mm', height: '297mm' },
+        'crown-quarto': { width: '189mm', height: '246mm' },
+        'b-format': { width: '129mm', height: '198mm' }
+    }
+
+    return formats[format] || formats['a4']
+})
 
 const editor = useEditor({
     content: `
@@ -150,54 +171,47 @@ const fenToChessFontString = (fen: string): string => {
 }
 
 const generatePdf = () => {
-    const originalElement = document.getElementById('book-editor-content')
+    // 1. CATTURIAMO DIRETTAMENTE IL FOGLIO (evitando i contenitori esterni che creano disallineamenti)
+    const originalElement = document.querySelector('.tiptap-container') as HTMLElement
     if (!originalElement) return
 
-    // 1. CLONAZIONE MANUALE PRE-RENDERING
-    // Creiamo una copia profonda del contenuto fuori dal DOM per manipolarlo liberamente
+    // 2. CLONAZIONE MANUALE PRE-RENDERING
     const containerClone = originalElement.cloneNode(true) as HTMLElement
 
-    // 2. FORZATURA STRUTTURALE DELL'ALTEZZA
-    // Eliminiamo radicalmente lo scrollbar e forziamo l'altezza automatica sul contenitore principale
+    // 3. PULIZIA STRUTTURALE (Rimuoviamo ombre, bordi e resettiamo l'altezza minima)
+    containerClone.style.setProperty('box-shadow', 'none', 'important')
+    containerClone.style.setProperty('border', 'none', 'important')
+    containerClone.style.setProperty('margin', '0', 'important')
     containerClone.style.setProperty('height', 'auto', 'important')
+    containerClone.style.setProperty('min-height', 'auto', 'important') /* <-- AGGIUNGI QUESTO */
     containerClone.style.setProperty('max-height', 'none', 'important')
     containerClone.style.setProperty('overflow', 'visible', 'important')
-    containerClone.style.setProperty('position', 'relative', 'important')
-
-    // Facciamo lo stesso per il contenitore interno di Tiptap (la classe .max-w-2xl o simili)
-    const internalContainer = containerClone.querySelector('.max-w-2xl') as HTMLElement
-    if (internalContainer) {
-        internalContainer.style.setProperty('height', 'auto', 'important')
-        internalContainer.style.setProperty('max-height', 'none', 'important')
-        internalContainer.style.setProperty('overflow', 'visible', 'important')
-    }
-
-    // 3. PULIZIA ELEMENTI INTERFACCIA
     // Rimuoviamo i menu a comparsa dei diagrammi scacchi per non stamparli nel PDF
     containerClone.querySelectorAll('.diagram-actions-menu').forEach(menu => menu.remove())
 
-    // 4. CONFIGURAZIONE OPZIONI HTML2PDF
+    // 4. CONFIGURAZIONE OPZIONI HTML2PDF (Margine a 0 perché usiamo già i mm del foglio)
     const options = {
-        margin: 20,
+        margin: 0, // Azzerato per usare esclusivamente il padding nativo del foglio
         filename: 'libro_scacchi.pdf',
         image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: {
             scale: 2,
             useCORS: true,
             logging: false,
-            // Usiamo scrollY a 0 per evitare disallineamenti se l'utente ha scansionato la pagina verso il basso
             scrollY: 0,
             onclone: (clonedDoc: Document) => {
                 // Iniettiamo i fogli di stile tipografici nel documento temporaneo di stampa
                 const styleTag = clonedDoc.createElement('style')
                 styleTag.innerHTML = `
-          #book-editor-content { 
-            background-color: #ffffff !important; 
-            color: #171717 !important;
-            height: auto !important;
-            max-height: none !important;
-            overflow: visible !important;
-          }
+          /* Rimuoviamo gli elementi visivi del foglio di lavoro */
+          .tiptap-container {
+            box-shadow: none !important;
+            border: none !important;
+            margin: 0 !important;
+            background: #ffffff !important;
+            min-height: auto !important; /* <-- AGGIUNGI QUESTO */
+            height: auto !important;     /* <-- AGGIUNGI QUESTO */
+            }
           
           .tiptap, .prose {
             color: #171717 !important;
@@ -241,7 +255,6 @@ const generatePdf = () => {
     }
 
     // 5. GENERA IL PDF PASZANDO IL CLONE SROTOLATO
-    // Alimentiamo html2pdf direttamente con il nostro elemento clonato e modificato
     html2pdf().set(options).from(containerClone).save()
 }
 
@@ -259,16 +272,61 @@ watch(() => store.exportSignal, () => {
 
 // Calcola la numerazione corretta del capitolo attivo filtrando solo i tipi 'chapter'
 const currentChapterNumber = computed(() => {
+    if (!store.activeSectionId) return 1
+
+    // Trova l'elenco di tutti i capitoli fino a quello corrente
     const chapters = store.sectionIndex.filter(s => s.type === 'chapter')
-    const index = chapters.findIndex(s => s.id === store.activeSectionId)
-    return index !== -1 ? index + 1 : 1
+    const currentIndex = chapters.findIndex(s => s.id === store.activeSectionId)
+
+    // Restituisce l'indice basato su 1 (es. Capitolo 1 = 1, Capitolo 2 = 2)
+    return currentIndex !== -1 ? currentIndex + 1 : 1
 })
 </script>
 
 <style>
-/* Inizializziamo il contatore dei capitoli prendendo il valore dalla variabile Vue */
+/* Layout stile Google Docs / Word */
+/* Layout stile Google Docs / Word */
+#book-editor-content {
+    background-color: #f3f4f6;
+    display: block;
+    /* Trasformiamo in block anziché flex */
+    padding: 2rem;
+    overflow-x: auto;
+    /* Attiva lo scrollbar orizzontale */
+}
+
 .tiptap-container {
     counter-reset: chapter-count var(--chapter-index) section-count 0;
+    background: #ffffff;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+
+    padding: var(--page-margin-top, 25mm) var(--page-margin-right, 20mm) var(--page-margin-bottom, 25mm) var(--page-margin-left, 20mm);
+
+    width: var(--page-width, 210mm) !important;
+    max-width: var(--page-width, 210mm) !important;
+    min-width: var(--page-width, 210mm) !important;
+    /* Blocca la larghezza */
+    min-height: var(--page-height, 297mm);
+
+    /* IL TRUCCO: centra il foglio se c'è spazio; se lo spazio finisce, */
+    /* si ancora a sinistra a inizio pagina e permette lo scroll senza tagliare nulla */
+    margin: 0 auto 2rem auto;
+    box-sizing: border-box;
+}
+
+/* Rimuoviamo il focus outline nativo per non rovinare l'effetto foglio */
+.tiptap:focus {
+    outline: none;
+}
+
+.tiptap {
+    width: 100%;
+    max-width: 100%;
+    word-break: break-word;
+    /* Forza l'andata a capo del testo lungo */
+    overflow-wrap: break-word;
 }
 
 .tiptap h2 {
@@ -329,6 +387,6 @@ const currentChapterNumber = computed(() => {
 .is-structural-page .tiptap h2[data-toc-level="1"]::before,
 .is-structural-page .tiptap h3::before,
 .is-structural-page .tiptap h3[data-toc-level="2"]::before {
-  content: none !important;
+    content: none !important;
 }
 </style>
