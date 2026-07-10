@@ -29,6 +29,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
     const globalDiagramSize = ref(40)
     const insertSignal = ref(0)
     const exportSignal = ref(0)
+    const exportFullBookSignal = ref(0)
     const isBookLoaded = ref(false)
 
     // --- NUOVO STATO (Metadati e Struttura Libro) ---
@@ -142,6 +143,10 @@ export const useChessBookStore = defineStore('chessBook', () => {
 
     function triggerPdfExport() {
         exportSignal.value++
+    }
+
+    function triggerFullBookPdfExport() {
+        exportFullBookSignal.value++
     }
 
     // --- NUOVE FUNZIONI: NAVIGAZIONE (LAZY LOADING) ---
@@ -281,9 +286,11 @@ export const useChessBookStore = defineStore('chessBook', () => {
         globalDiagramSize,
         insertSignal,
         exportSignal,
+        exportFullBookSignal,
         updateActiveFen,
         triggerInsertDiagram,
         triggerPdfExport,
+        triggerFullBookPdfExport,
 
         // Nuovo Stato Strutturale
         isBookLoaded,

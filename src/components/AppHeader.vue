@@ -35,12 +35,59 @@
         Apri...
       </button>
 
-      <button 
-        @click="store.triggerPdfExport()"
-        class="px-4 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded shadow transition mr-2 cursor-pointer"
-      >
-        Esporta PDF
-      </button>
+      <!-- PERSISTENT SPLIT BUTTON -->
+      <div class="relative inline-flex items-center" v-click-outside="closeDropdown">
+        <!-- Pulsante Azione Principale Persistent -->
+        <button 
+          @click="executeExport"
+          class="px-4 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-l shadow transition cursor-pointer border-r border-blue-700 active:bg-blue-800"
+        >
+          {{ exportMode === 'chapter' ? 'Esporta Capitolo' : 'Esporta Libro' }}
+        </button>
+        
+        <!-- Pulsante Trigger Menu -->
+        <button 
+          @click="toggleDropdown"
+          class="px-2 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-r shadow transition mr-2 cursor-pointer self-stretch flex items-center justify-center active:bg-blue-800"
+          aria-haspopup="true"
+          :aria-expanded="isDropdownOpen"
+        >
+          <svg class="w-3 h-3 transition-transform duration-200" :class="{ 'rotate-180': isDropdownOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        <!-- Menu Opzioni Dropdown -->
+        <div v-if="isDropdownOpen" class="absolute right-2 top-full mt-1 w-48 bg-white border border-neutral-200 rounded shadow-lg z-50 py-1 font-sans">
+          <button 
+            @click="selectMode('chapter')"
+            class="w-full text-left px-4 py-2 text-xs text-neutral-700 hover:bg-neutral-50 flex items-center justify-between cursor-pointer"
+          >
+            <div class="flex flex-col">
+              <span class="font-semibold">Esporta Capitolo</span>
+              <span class="text-[10px] text-neutral-400 font-normal">Scarica solo la pagina corrente</span>
+            </div>
+            <svg v-if="exportMode === 'chapter'" class="w-3 h-3 text-blue-600 shrink-0 ml-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+          
+          <div class="border-t border-neutral-100 my-1"></div>
+          
+          <button 
+            @click="selectMode('book')"
+            class="w-full text-left px-4 py-2 text-xs text-neutral-700 hover:bg-neutral-50 flex items-center justify-between cursor-pointer"
+          >
+            <div class="flex flex-col">
+              <span class="font-semibold">Esporta Libro</span>
+              <span class="text-[10px] text-neutral-400 font-normal">Genera l'opera intera</span>
+            </div>
+            <svg v-if="exportMode === 'book'" class="w-3 h-3 text-blue-600 shrink-0 ml-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+        </div>
+      </div>
 
       <button 
         @click="handleSaveFile"
@@ -58,6 +105,37 @@ import { useChessBookStore } from '../stores/chessBookStore'
 
 const store = useChessBookStore()
 const fileInput = ref<HTMLInputElement | null>(null)
+const isDropdownOpen = ref(false)
+
+// La scelta persiste: l'utente clicca la freccia per cambiare, ma l'azione non scatta finché non preme il bottone principale
+const exportMode = ref<'chapter' | 'book'>('chapter')
+
+const toggleDropdown = () => {
+  isDropdownOpen.value = !isDropdownOpen.value
+}
+
+const closeDropdown = () => {
+  isDropdownOpen.value = false
+}
+
+// Cambia la modalità predefinita in modo persistente senza scatenare l'export immediato
+const selectMode = (mode: 'chapter' | 'book') => {
+  exportMode.value = mode
+  isDropdownOpen.value = false
+}
+
+// Esegue l'azione persistente impostata sul blocco di sinistra
+const executeExport = () => {
+  if (exportMode.value === 'chapter') {
+    store.triggerPdfExport()
+  } else {
+    if (typeof (store as any).triggerFullBookPdfExport === 'function') {
+      (store as any).triggerFullBookPdfExport()
+    } else {
+      window.dispatchEvent(new CustomEvent('request-full-book-pdf-export'))
+    }
+  }
+}
 
 const triggerFileSelect = () => {
   fileInput.value?.click()
@@ -76,19 +154,15 @@ const handleOpenFile = async (event: Event) => {
     console.error(error)
     alert("Errore durante il caricamento del file .mtcbook")
   } finally {
-    target.value = '' // Resetta l'input
+    target.value = ''
   }
 }
 
 const handleSaveFile = async () => {
-  // Inviamo un segnale per catturare il contenuto aggiornato dell'editor prima di salvare
   window.dispatchEvent(new CustomEvent('request-editor-sync'))
   
   try {
-    // Passiamo una stringa vuota temporanea: il sync reale passerà dal canale globale o dall'evento
     const blob = await store.exportMtcBook(store.activeSectionHtml)
-    
-    // Download nativo del browser
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -110,6 +184,20 @@ const handleNewBook = () => {
     store.zippedSectionsCache = {}
     const firstId = store.createNewSection("Capitolo 1 — Introduzione", "chapter")
     store.changeActiveSection(firstId)
+  }
+}
+
+const vClickOutside = {
+  mounted(el: any, binding: any) {
+    el.clickOutsideEvent = (event: Event) => {
+      if (!(el === event.target || el.contains(event.target))) {
+        binding.value()
+      }
+    }
+    document.addEventListener('click', el.clickOutsideEvent)
+  },
+  unmounted(el: any) {
+    document.removeEventListener('click', el.clickOutsideEvent)
   }
 }
 </script>

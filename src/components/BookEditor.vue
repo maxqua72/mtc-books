@@ -1,10 +1,19 @@
 <template>
-    <div class="flex-1 bg-white border border-neutral-200 rounded-xl flex flex-col shadow-sm overflow-hidden">
+    <div class="flex-1 bg-white border border-neutral-200 rounded-xl flex flex-col shadow-sm overflow-hidden relative">
+
+        <!-- OVERLAY DI CARICAMENTO PER OPZIONE B -->
+        <div v-if="isGeneratingPdf"
+            class="absolute inset-0 bg-white/95 backdrop-blur-sm z-[99999] flex flex-col items-center justify-center gap-4">
+            <div class="w-12 h-12 border-4 border-neutral-800 border-t-transparent rounded-full animate-spin"></div>
+            <div class="text-center">
+                <p class="font-semibold text-neutral-800 text-lg">Generazione del libro in corso...</p>
+                <p class="text-sm text-neutral-500 mt-1">Stiamo assemblando i capitoli e i diagrammi.</p>
+            </div>
+        </div>
 
         <!-- Inserimento della Toolbar Modulare -->
         <EditorToolbar v-if="editor" :editor="editor" />
 
-        <!-- Area di Scrittura Effettiva -->
         <!-- Area di Scrittura Effettiva -->
         <div id="book-editor-content" class="flex-1 overflow-y-auto">
             <div class="tiptap-container" :class="{
@@ -29,7 +38,8 @@
 <script setup lang="ts">
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
-import { watch, onMounted, onBeforeUnmount, computed } from 'vue'
+import { PDFDocument } from 'pdf-lib'
+import { watch, onMounted, onBeforeUnmount, computed, ref, nextTick } from 'vue'
 import { useChessBookStore, type SectionType } from '../stores/chessBookStore'
 import { ChessDiagram } from '../extensions/ChessDiagram'
 import { CustomHeading } from '../extensions/CustomHeading' // Aggiusta il percorso se serve
@@ -39,6 +49,7 @@ import EditorToolbar from './EditorToolbar.vue'
 import html2pdf from 'html2pdf.js'
 
 const store = useChessBookStore()
+const isGeneratingPdf = ref(false)
 
 const getPageSizeStyles = computed(() => {
     const format = store.metadata.pageFormat || 'a4'
@@ -78,11 +89,6 @@ const editor = useEditor({
 
 
 
-const getTemplateForType = (type: SectionType) => {
-    if (type === 'cover') return `<h1>Titolo del Libro</h1><p>Autore</p>`;
-    if (type === 'index') return `<h2>Indice Generale</h2><div class='toc-placeholder'>Generazione automatica...</div>`;
-    return `<h2>Nuovo Capitolo</h2><p>Inizia a scrivere...</p>`;
-};
 
 // Ascolta se lo store cambia la sezione attiva esternamente (es: all'apertura di un file)
 // Ascolta se lo store cambia la sezione attiva esternamente (es: selezione dalla barra laterale)
@@ -170,7 +176,7 @@ const fenToChessFontString = (fen: string): string => {
     }).join('\n')
 }
 
-const generatePdf = () => {
+const generatePdf1 = () => {
     // 1. CATTURIAMO DIRETTAMENTE IL FOGLIO (evitando i contenitori esterni che creano disallineamenti)
     const originalElement = document.querySelector('.tiptap-container') as HTMLElement
     if (!originalElement) return
@@ -258,6 +264,264 @@ const generatePdf = () => {
     html2pdf().set(options).from(containerClone).save()
 }
 
+const generatePdf = () => {
+    // 1. CATTURIAMO DIRETTAMENTE IL FOGLIO VISIBILE A SCHERMO
+    const originalElement = document.querySelector('.tiptap-container') as HTMLElement
+    if (!originalElement) return
+
+    const pageSize = getPageSizeStyles.value
+
+    // 2. CLONAZIONE DI SICUREZZA PER NON ROVINARE L'INTERFACCIA UTENTE
+    const containerClone = originalElement.cloneNode(true) as HTMLElement
+
+    // 3. PULIZIA STRUTTURALE (Rimuoviamo ombre, bordi, forziamo l'altezza auto)
+    containerClone.style.setProperty('box-shadow', 'none', 'important')
+    containerClone.style.setProperty('border', 'none', 'important')
+    containerClone.style.setProperty('margin', '0', 'important')
+    containerClone.style.setProperty('height', 'auto', 'important')
+    containerClone.style.setProperty('min-height', 'auto', 'important')
+    containerClone.style.setProperty('max-height', 'none', 'important')
+    containerClone.style.setProperty('overflow', 'visible', 'important')
+
+    // Rimuoviamo i menu del diagramma
+    containerClone.querySelectorAll('.diagram-actions-menu').forEach(menu => menu.remove())
+
+    // 4. CONFIGURAZIONE OPZIONI HTML2PDF
+    const isCustomFormat = store.metadata.pageFormat === 'crown-quarto' || store.metadata.pageFormat === 'b-format'
+    const pdfFormat: string | [number, number] = isCustomFormat
+        ? [parseFloat(pageSize.width), parseFloat(pageSize.height)] as [number, number]
+        : 'a4'
+
+    const options = {
+        margin: 0,
+        filename: `${store.activeSectionInfo?.title || 'capitolo'}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            scrollY: 0,
+            onclone: (clonedDoc: Document) => {
+                const styleTag = clonedDoc.createElement('style')
+                styleTag.innerHTML = `
+          /* Convertiamo tutti i potenziali colori OKLCH di Tailwind in HEX puri */
+          .tiptap-container, .tiptap-container * {
+            border-color: #e5e7eb !important;
+          }
+          .tiptap-container {
+            counter-reset: chapter-count var(--chapter-index) section-count 0;
+            box-shadow: none !important;
+            border: none !important;
+            margin: 0 !important;
+            background-color: #ffffff !important;
+            min-height: auto !important;
+            height: auto !important;
+          }
+          .tiptap, .prose, .prose p, .tiptap p {
+            color: #171717 !important;
+          }
+          .prose h1, .tiptap h1, .prose h2, .tiptap h2, .prose h3, .tiptap h3, .prose strong, .tiptap strong {
+            color: #171717 !important;
+          }
+          .chess-diagram-container { display: flex !important; align-items: center !important; justify-content: center !important; }
+          .chess-pure-text {
+            font-family: 'Chess Merida', serif !important;
+            font-size: var(--diagram-size) !important;
+            line-height: 1.1 !important;
+            white-space: pre !important;
+            color: #000000 !important;
+            display: block !important;
+            background: transparent !important;
+            text-align: center !important;
+            margin: 0 auto !important;
+            overflow: visible !important;
+          }
+          h2 { font-size: 24pt !important; font-weight: bold !important; margin-top: 14pt !important; margin-bottom: 12pt !important; font-family: Georgia, serif !important; }
+          h3 { font-size: 16pt !important; font-weight: bold !important; margin-top: 18pt !important; margin-bottom: 8pt !important; font-family: Georgia, serif !important; }
+          p { margin-bottom: 10pt !important; font-size: 11pt !important; line-height: 1.5 !important; }
+          .show-numbering h2::before { content: counter(chapter-count) ". "; }
+          .show-numbering h3::before { content: counter(chapter-count) "." counter(section-count) " "; }
+          .is-structural-page h2::before, .is-structural-page h3::before { content: none !important; }
+        `
+                clonedDoc.head.appendChild(styleTag)
+            }
+        },
+        jsPDF: { unit: 'mm' as const, format: pdfFormat, orientation: 'portrait' as const },
+        pagebreak: { mode: ['css', 'legacy'] as const }
+    }
+
+    html2pdf().set(options).from(containerClone).save()
+}
+
+const generateFullBookPdf = async () => {
+    if (store.sectionIndex.length === 0) {
+        alert("Nessun capitolo presente da esportare.")
+        return
+    }
+
+    // Saliamo l'ID della sezione attualmente visualizzata per ripristinarla alla fine
+    const originalActiveSectionId = store.activeSectionId
+    isGeneratingPdf.value = true
+    
+    console.log("%c[PDF LIVE ENGINE] --- INIZIO ESPORTAZIONE LIBRO COMPLETO ---", "color: #0284c7; font-weight: bold; font-size: 14px;");
+
+    try {
+        const pdfBuffers: ArrayBuffer[] = []
+        let chapterCounter = 0
+        const pageSize = getPageSizeStyles.value
+
+        // Cicliamo tutte le sezioni del libro
+        for (let index = 0; index < store.sectionIndex.length; index++) {
+            const section = store.sectionIndex[index]
+
+            if (section.type === 'chapter') {
+                chapterCounter++
+            }
+
+            console.log(`[PDF LIVE ENGINE] Cambio sezione attiva -> Rinnovamento DOM per: "${section.title}"`);
+            
+            // 1. FORZIAMO LO STORE A CAMBIARE CAPITOLO (Attiva il rendering reale a schermo)
+            store.activeSectionId = section.id
+
+            // 2. ATTESA DOPPIA (Vue Tick + Timeout per Tiptap ed estensioni diagrammi)
+            await nextTick()
+            await new Promise((resolve) => setTimeout(resolve, 400)) // Tempo fondamentale per far svegliare i Web Component dei diagrammi
+
+            // 3. CATTURIAMO IL CONTENITORE VIVO APPENA MONTATO
+            const originalElement = document.querySelector('.tiptap-container') as HTMLElement
+            if (!originalElement) {
+                console.warn(`[PDF LIVE ENGINE] Impossibile trovare .tiptap-container per la sezione: ${section.title}`);
+                continue
+            }
+
+            // Verifichiamo nei log se il diagramma è effettivamente vivo e popolato
+            const liveDiagrams = originalElement.querySelectorAll('.chess-pure-text')
+            console.log(`[PDF LIVE ENGINE] Stato elementi a schermo per "${section.title}": Diagrammi trovati = ${liveDiagrams.length}`);
+            if (liveDiagrams.length > 0) {
+                console.log(` -> Testo reale renderizzato dall'estensione: "${liveDiagrams[0].textContent?.substring(0, 40).replace(/\n/g, ' ')}..."`);
+            }
+
+            // 4. CLONAZIONE DI SICUREZZA (Come nella funzione singola che funziona)
+            const containerClone = originalElement.cloneNode(true) as HTMLElement
+
+            // Pulizia strutturale immediata sul clone
+            containerClone.style.setProperty('box-shadow', 'none', 'important')
+            containerClone.style.setProperty('border', 'none', 'important')
+            containerClone.style.setProperty('margin', '0', 'important')
+            containerClone.style.setProperty('height', 'auto', 'important')
+            containerClone.style.setProperty('min-height', 'auto', 'important')
+            containerClone.style.setProperty('max-height', 'none', 'important')
+            containerClone.style.setProperty('overflow', 'visible', 'important')
+
+            // Rimuoviamo i menu contestuali dei diagrammi
+            containerClone.querySelectorAll('.diagram-actions-menu').forEach(menu => menu.remove())
+
+            // Configurazione formati e opzioni ereditate dalla funzione funzionante
+            const isCustomFormat = store.metadata.pageFormat === 'crown-quarto' || store.metadata.pageFormat === 'b-format'
+            const pdfFormat: string | [number, number] = isCustomFormat
+                ? [parseFloat(pageSize.width), parseFloat(pageSize.height)] as [number, number]
+                : 'a4'
+
+            // Manteniamo i contatori del capitolo corretti anche se cambiamo pagina al volo
+            const currentChapterIndex = chapterCounter
+
+            const options = {
+                margin: 0,
+                image: { type: 'jpeg' as const, quality: 0.98 },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    scrollY: 0,
+                    onclone: (clonedDoc: Document) => {
+                        const styleTag = clonedDoc.createElement('style')
+                        styleTag.innerHTML = `
+                          .tiptap-container, .tiptap-container * {
+                            border-color: #e5e7eb !important;
+                          }
+                          .tiptap-container {
+                            counter-reset: chapter-count ${currentChapterIndex} section-count 0 !important;
+                            box-shadow: none !important;
+                            border: none !important;
+                            margin: 0 !important;
+                            background-color: #ffffff !important;
+                            min-height: auto !important;
+                            height: auto !important;
+                          }
+                          .tiptap, .prose, .prose p, .tiptap p {
+                            color: #171717 !important;
+                          }
+                          .prose h1, .tiptap h1, .prose h2, .tiptap h2, .prose h3, .tiptap h3, .prose strong, .tiptap strong {
+                            color: #171717 !important;
+                          }
+                          
+                          /* REGOLE ORIGINALI DI RENDERING DIAGRAMMI */
+                          .chess-diagram-container { display: flex !important; align-items: center !important; justify-content: center !important; }
+                          .chess-pure-text {
+                            font-family: 'Chess Merida', serif !important;
+                            font-size: var(--diagram-size) !important;
+                            line-height: 1.1 !important;
+                            white-space: pre !important;
+                            color: #000000 !important;
+                            display: block !important;
+                            background: transparent !important;
+                            text-align: center !important;
+                            margin: 0 auto !important;
+                            overflow: visible !important;
+                          }
+                          
+                          h2 { font-size: 24pt !important; font-weight: bold !important; margin-top: 14pt !important; margin-bottom: 12pt !important; font-family: Georgia, serif !important; }
+                          h3 { font-size: 16pt !important; font-weight: bold !important; margin-top: 18pt !important; margin-bottom: 8pt !important; font-family: Georgia, serif !important; }
+                          p { margin-bottom: 10pt !important; font-size: 11pt !important; line-height: 1.5 !important; }
+                          
+                          .show-numbering h2::before { content: "${currentChapterIndex}. " !important; }
+                          .show-numbering h3::before { content: counter(section-count) " " !important; }
+                          .is-structural-page h2::before, .is-structural-page h3::before { content: none !important; }
+                        `
+                        clonedDoc.head.appendChild(styleTag)
+                    }
+                },
+                jsPDF: { unit: 'mm' as const, format: pdfFormat, orientation: 'portrait' as const },
+                // INTEGRIAMO IL CONTROLLO DI INTERRUZIONE PAGINA CHE MANCAVA NELLA FUNZIONE GLOBALE
+                pagebreak: { mode: ['css', 'legacy'] as const }
+            }
+
+            console.log(`[PDF LIVE ENGINE] Generazione buffer PDF singolo per "${section.title}"...`);
+            const pdfBuffer = await html2pdf().set(options).from(containerClone).outputPdf('arraybuffer')
+            pdfBuffers.push(pdfBuffer)
+            
+            console.log(`[PDF LIVE ENGINE] Buffer completato per "${section.title}": ${pdfBuffer.byteLength} byte.`);
+        }
+
+        // 5. COMPILAZIONE GENERALE TRAMITE PDF-LIB
+        console.log("[PDF LIVE ENGINE] Fusione finale dei flussi di pagina...");
+        const mergedPdf = await PDFDocument.create()
+        for (let i = 0; i < pdfBuffers.length; i++) {
+            const srcPdf = await PDFDocument.load(pdfBuffers[i])
+            console.log(`[PDF LIVE ENGINE] Unione -> ${store.sectionIndex[i].title} pagine totali: ${srcPdf.getPageCount()}`);
+            const copiedPages = await mergedPdf.copyPages(srcPdf, srcPdf.getPageIndices())
+            copiedPages.forEach((page) => mergedPdf.addPage(page))
+        }
+
+        const mergedPdfBytes = await mergedPdf.save()
+        const blob = new Blob([mergedPdfBytes] as BlobPart[], { type: 'application/pdf' })
+
+        const link = document.createElement('a')
+        link.href = URL.createObjectURL(blob)
+        link.download = `${store.metadata.title.toLowerCase().replace(/\s+/g, '_')}_completo.pdf`
+        link.click()
+        
+        console.log("%c[PDF LIVE ENGINE] --- PROCESSO CONCLUSO CON SUCCESSO ---", "color: #16a34a; font-weight: bold;");
+
+    } catch (error) {
+        console.error("[PDF LIVE ENGINE] ERRORE CRITICO:", error)
+    } finally {
+        // 6. RIPRISTINO DELLO STATO UTENTE ORIGINALMENTE ATTIVO
+        store.activeSectionId = originalActiveSectionId
+        isGeneratingPdf.value = false
+    }
+}
+
 // Ascolta lo store Pinia: quando scatta il segnale, inserisce il diagramma col FEN attuale
 watch(() => store.insertSignal, () => {
     if (editor.value) {
@@ -268,6 +532,11 @@ watch(() => store.insertSignal, () => {
 watch(() => store.exportSignal, () => {
     console.log('Segnale di esportazione ricevuto nell\'editor! Avvio generatePdf()...')
     generatePdf()
+})
+
+watch(() => store.exportFullBookSignal, () => {
+    if (store.exportFullBookSignal === 0) return
+    generateFullBookPdf()
 })
 
 // Calcola la numerazione corretta del capitolo attivo filtrando solo i tipi 'chapter'
