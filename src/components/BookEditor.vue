@@ -23,10 +23,10 @@
                 '--chapter-index': currentChapterNumber,
                 '--page-width': getPageSizeStyles.width,
                 '--page-height': getPageSizeStyles.height,
-                '--page-margin-top': '25mm',
-                '--page-margin-bottom': '25mm',
-                '--page-margin-left': '20mm',
-                '--page-margin-right': '20mm'
+                '--page-margin-top': (store.metadata.pageMarginTop || 25) + 'mm',
+                '--page-margin-bottom': (store.metadata.pageMarginBottom || 25) + 'mm',
+                '--page-margin-left': (store.metadata.pageMarginLeft || 20) + 'mm',
+                '--page-margin-right': (store.metadata.pageMarginRight || 20) + 'mm'
             }">
                 <editor-content :editor="editor" />
             </div>
@@ -40,7 +40,7 @@ import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import { PDFDocument } from 'pdf-lib'
 import { watch, onMounted, onBeforeUnmount, computed, ref, nextTick } from 'vue'
-import { useChessBookStore, type SectionType } from '../stores/chessBookStore'
+import { useChessBookStore } from '../stores/chessBookStore'
 import { ChessDiagram } from '../extensions/ChessDiagram'
 import { CustomHeading } from '../extensions/CustomHeading' // Aggiusta il percorso se serve
 import EditorToolbar from './EditorToolbar.vue'
@@ -271,8 +271,19 @@ const generatePdf = () => {
 
     const pageSize = getPageSizeStyles.value
 
+    const marginTop = store.metadata.pageMarginTop || 25
+    const marginRight = store.metadata.pageMarginRight || 20
+    const marginBottom = store.metadata.pageMarginBottom || 25
+    const marginLeft = store.metadata.pageMarginLeft || 20
+
     // 2. CLONAZIONE DI SICUREZZA PER NON ROVINARE L'INTERFACCIA UTENTE
     const containerClone = originalElement.cloneNode(true) as HTMLElement
+
+    // BLOCCO DIMENSIONI REALI SUL CLONE IN MILLIMETRI
+    containerClone.style.setProperty('width', pageSize.width, 'important')
+    containerClone.style.setProperty('max-width', pageSize.width, 'important')
+    containerClone.style.setProperty('min-width', pageSize.width, 'important')
+    containerClone.style.setProperty('box-sizing', 'border-box', 'important')
 
     // 3. PULIZIA STRUTTURALE (Rimuoviamo ombre, bordi, forziamo l'altezza auto)
     containerClone.style.setProperty('box-shadow', 'none', 'important')
@@ -282,6 +293,8 @@ const generatePdf = () => {
     containerClone.style.setProperty('min-height', 'auto', 'important')
     containerClone.style.setProperty('max-height', 'none', 'important')
     containerClone.style.setProperty('overflow', 'visible', 'important')
+    containerClone.setAttribute('spellcheck', 'false')
+
 
     // Rimuoviamo i menu del diagramma
     containerClone.querySelectorAll('.diagram-actions-menu').forEach(menu => menu.remove())
@@ -306,48 +319,59 @@ const generatePdf = () => {
                 styleTag.innerHTML = `
           /* Convertiamo tutti i potenziali colori OKLCH di Tailwind in HEX puri */
           .tiptap-container, .tiptap-container * {
-            border-color: #e5e7eb !important;
-          }
-          .tiptap-container {
-            counter-reset: chapter-count var(--chapter-index) section-count 0;
-            box-shadow: none !important;
-            border: none !important;
-            margin: 0 !important;
-            background-color: #ffffff !important;
-            min-height: auto !important;
-            height: auto !important;
-          }
-          .tiptap, .prose, .prose p, .tiptap p {
-            color: #171717 !important;
-          }
-          .prose h1, .tiptap h1, .prose h2, .tiptap h2, .prose h3, .tiptap h3, .prose strong, .tiptap strong {
-            color: #171717 !important;
-          }
-          .chess-diagram-container { display: flex !important; align-items: center !important; justify-content: center !important; }
-          .chess-pure-text {
-            font-family: 'Chess Merida', serif !important;
-            font-size: var(--diagram-size) !important;
-            line-height: 1.1 !important;
-            white-space: pre !important;
-            color: #000000 !important;
-            display: block !important;
-            background: transparent !important;
-            text-align: center !important;
-            margin: 0 auto !important;
-            overflow: visible !important;
-          }
-          h2 { font-size: 24pt !important; font-weight: bold !important; margin-top: 14pt !important; margin-bottom: 12pt !important; font-family: Georgia, serif !important; }
-          h3 { font-size: 16pt !important; font-weight: bold !important; margin-top: 18pt !important; margin-bottom: 8pt !important; font-family: Georgia, serif !important; }
-          p { margin-bottom: 10pt !important; font-size: 11pt !important; line-height: 1.5 !important; }
-          .show-numbering h2::before { content: counter(chapter-count) ". "; }
-          .show-numbering h3::before { content: counter(chapter-count) "." counter(section-count) " "; }
-          .is-structural-page h2::before, .is-structural-page h3::before { content: none !important; }
-        `
+                    border-color: #e5e7eb !important;
+                  }
+                  .tiptap-container {
+                    counter-reset: chapter-count var(--chapter-index) section-count 0;
+                    box-shadow: none !important;
+                    border: none !important;
+                    margin: 0 !important;
+                    background-color: #ffffff !important;
+                    padding: ${marginTop}mm ${marginRight}mm ${marginBottom}mm ${marginLeft}mm !important;
+                    width: ${pageSize.width} !important;
+                    max-width: ${pageSize.width} !important;
+                    min-width: ${pageSize.width} !important;
+                    min-height: auto !important;
+                    height: auto !important;
+                    box-sizing: border-box !important;
+                  }
+                  .tiptap, .prose, .prose p, .tiptap p {
+                    color: #171717 !important;
+                  }
+                  .prose h1, .tiptap h1, .prose h2, .tiptap h2, .prose h3, .tiptap h3, .prose strong, .tiptap strong {
+                    color: #171717 !important;
+                  }
+                  .chess-diagram-container { 
+                    display: flex !important; 
+                    align-items: center !important; 
+                    justify-content: center !important;
+                    page-break-inside: avoid !important;
+                    break-inside: avoid !important;
+                  }
+                  .chess-pure-text {
+                    font-family: 'Chess Merida', serif !important;
+                    font-size: var(--diagram-size) !important;
+                    line-height: 1.1 !important;
+                    white-space: pre !important;
+                    color: #000000 !important;
+                    display: block !important;
+                    background: transparent !important;
+                    text-align: center !important;
+                    margin: 0 auto !important;
+                    overflow: visible !important;
+                  }
+                  h2 { font-size: 24pt !important; font-weight: bold !important; margin-top: 14pt !important; margin-bottom: 12pt !important; font-family: Georgia, serif !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+                  h3 { font-size: 16pt !important; font-weight: bold !important; margin-top: 18pt !important; margin-bottom: 8pt !important; font-family: Georgia, serif !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+                  p { margin-bottom: 10pt !important; font-size: 11pt !important; line-height: 1.5 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+                  .show-numbering h2::before { content: counter(chapter-count) ". "; }
+                  .show-numbering h3::before { content: counter(chapter-count) "." counter(section-count) " "; }
+                  .is-structural-page h2::before, .is-structural-page h3::before { content: none !important; }
+                `
                 clonedDoc.head.appendChild(styleTag)
             }
         },
         jsPDF: { unit: 'mm' as const, format: pdfFormat, orientation: 'portrait' as const },
-        pagebreak: { mode: ['css', 'legacy'] as const }
+        pagebreak: { mode: ['css', 'legacy'] as const, avoid: ['p', 'h1', 'h2', 'h3', '.chess-diagram-container'] }
     }
 
     html2pdf().set(options).from(containerClone).save()
@@ -404,6 +428,12 @@ const generateFullBookPdf = async () => {
             // 4. CLONAZIONE DI SICUREZZA (Come nella funzione singola che funziona)
             const containerClone = originalElement.cloneNode(true) as HTMLElement
 
+            // BLOCCO DIMENSIONI REALI SUL CLONE IN MILLIMETRI (Anche all'interno della Full)
+            containerClone.style.setProperty('width', pageSize.width, 'important')
+            containerClone.style.setProperty('max-width', pageSize.width, 'important')
+            containerClone.style.setProperty('min-width', pageSize.width, 'important')
+            containerClone.style.setProperty('box-sizing', 'border-box', 'important')
+
             // Pulizia strutturale immediata sul clone
             containerClone.style.setProperty('box-shadow', 'none', 'important')
             containerClone.style.setProperty('border', 'none', 'important')
@@ -412,6 +442,7 @@ const generateFullBookPdf = async () => {
             containerClone.style.setProperty('min-height', 'auto', 'important')
             containerClone.style.setProperty('max-height', 'none', 'important')
             containerClone.style.setProperty('overflow', 'visible', 'important')
+            containerClone.setAttribute('spellcheck', 'false')
 
             // Rimuoviamo i menu contestuali dei diagrammi
             containerClone.querySelectorAll('.diagram-actions-menu').forEach(menu => menu.remove())
@@ -424,6 +455,11 @@ const generateFullBookPdf = async () => {
 
             // Manteniamo i contatori del capitolo corretti anche se cambiamo pagina al volo
             const currentChapterIndex = chapterCounter
+
+            const marginTop = store.metadata.pageMarginTop || 25
+            const marginRight = store.metadata.pageMarginRight || 20
+            const marginBottom = store.metadata.pageMarginBottom || 25
+            const marginLeft = store.metadata.pageMarginLeft || 20
 
             const options = {
                 margin: 0,
@@ -445,8 +481,13 @@ const generateFullBookPdf = async () => {
                             border: none !important;
                             margin: 0 !important;
                             background-color: #ffffff !important;
+                            padding: ${marginTop}mm ${marginRight}mm ${marginBottom}mm ${marginLeft}mm !important;
+                            width: ${pageSize.width} !important;
+                            max-width: ${pageSize.width} !important;
+                            min-width: ${pageSize.width} !important;
                             min-height: auto !important;
                             height: auto !important;
+                            box-sizing: border-box !important;
                           }
                           .tiptap, .prose, .prose p, .tiptap p {
                             color: #171717 !important;
@@ -454,9 +495,13 @@ const generateFullBookPdf = async () => {
                           .prose h1, .tiptap h1, .prose h2, .tiptap h2, .prose h3, .tiptap h3, .prose strong, .tiptap strong {
                             color: #171717 !important;
                           }
-                          
-                          /* REGOLE ORIGINALI DI RENDERING DIAGRAMMI */
-                          .chess-diagram-container { display: flex !important; align-items: center !important; justify-content: center !important; }
+                          .chess-diagram-container { 
+                            display: flex !important; 
+                            align-items: center !important; 
+                            justify-content: center !important; 
+                            page-break-inside: avoid !important;
+                            break-inside: avoid !important;
+                          }
                           .chess-pure-text {
                             font-family: 'Chess Merida', serif !important;
                             font-size: var(--diagram-size) !important;
@@ -469,11 +514,9 @@ const generateFullBookPdf = async () => {
                             margin: 0 auto !important;
                             overflow: visible !important;
                           }
-                          
-                          h2 { font-size: 24pt !important; font-weight: bold !important; margin-top: 14pt !important; margin-bottom: 12pt !important; font-family: Georgia, serif !important; }
-                          h3 { font-size: 16pt !important; font-weight: bold !important; margin-top: 18pt !important; margin-bottom: 8pt !important; font-family: Georgia, serif !important; }
-                          p { margin-bottom: 10pt !important; font-size: 11pt !important; line-height: 1.5 !important; }
-                          
+                          h2 { font-size: 24pt !important; font-weight: bold !important; margin-top: 14pt !important; margin-bottom: 12pt !important; font-family: Georgia, serif !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+                          h3 { font-size: 16pt !important; font-weight: bold !important; margin-top: 18pt !important; margin-bottom: 8pt !important; font-family: Georgia, serif !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+                          p { margin-bottom: 10pt !important; font-size: 11pt !important; line-height: 1.5 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
                           .show-numbering h2::before { content: "${currentChapterIndex}. " !important; }
                           .show-numbering h3::before { content: counter(section-count) " " !important; }
                           .is-structural-page h2::before, .is-structural-page h3::before { content: none !important; }
@@ -483,7 +526,7 @@ const generateFullBookPdf = async () => {
                 },
                 jsPDF: { unit: 'mm' as const, format: pdfFormat, orientation: 'portrait' as const },
                 // INTEGRIAMO IL CONTROLLO DI INTERRUZIONE PAGINA CHE MANCAVA NELLA FUNZIONE GLOBALE
-                pagebreak: { mode: ['css', 'legacy'] as const }
+                pagebreak: { mode: ['css', 'legacy'] as const, avoid: ['p', 'h1', 'h2', 'h3', '.chess-diagram-container'] }
             }
 
             console.log(`[PDF LIVE ENGINE] Generazione buffer PDF singolo per "${section.title}"...`);
@@ -554,7 +597,6 @@ const currentChapterNumber = computed(() => {
 
 <style>
 /* Layout stile Google Docs / Word */
-/* Layout stile Google Docs / Word */
 #book-editor-content {
     background-color: #f3f4f6;
     display: block;
@@ -571,7 +613,7 @@ const currentChapterNumber = computed(() => {
     border: 1px solid #e5e7eb;
     transition: all 0.3s ease;
 
-    padding: var(--page-margin-top, 25mm) var(--page-margin-right, 20mm) var(--page-margin-bottom, 25mm) var(--page-margin-left, 20mm);
+    padding: var(--page-margin-top) var(--page-margin-right) var(--page-margin-bottom) var(--page-margin-left);
 
     width: var(--page-width, 210mm) !important;
     max-width: var(--page-width, 210mm) !important;
@@ -583,6 +625,27 @@ const currentChapterNumber = computed(() => {
     /* si ancora a sinistra a inizio pagina e permette lo scroll senza tagliare nulla */
     margin: 0 auto 2rem auto;
     box-sizing: border-box;
+
+    /* APPLICHIAMO DUE GRADIENTI COMBINATI CHE COPRONO LE RIGHE DI OGNI PAGINA */
+    background-image: 
+        linear-gradient(to bottom, 
+            transparent calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm) - 1px), 
+            #ef4444 calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm) - 1px), 
+            #ef4444 calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm) + 1px), 
+            transparent calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm) + 1px)
+        ),
+        linear-gradient(to bottom, 
+            transparent 0px, 
+            transparent calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm)), 
+            #f9fafb calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm)), 
+            #f9fafb calc(var(--page-height, 297mm) - 1px),
+            #cbd5e1 calc(var(--page-height, 297mm) - 1px), 
+            #cbd5e1 var(--page-height, 297mm)
+        );
+
+    background-size: 100% var(--page-height, 297mm);
+    background-repeat: repeat-y;
+    background-position: 0 0;
 }
 
 /* Rimuoviamo il focus outline nativo per non rovinare l'effetto foglio */

@@ -20,7 +20,11 @@ export interface BookMetadata {
     updatedAt: string
     pageFormat: PageFormat
     isTwoColumns: boolean,
-    showNumbering: boolean
+    showNumbering: boolean,
+    pageMarginTop: number
+    pageMarginRight: number
+    pageMarginBottom: number
+    pageMarginLeft: number
 }
 
 export const useChessBookStore = defineStore('chessBook', () => {
@@ -41,7 +45,12 @@ export const useChessBookStore = defineStore('chessBook', () => {
         updatedAt: new Date().toISOString(),
         pageFormat: 'a4',
         isTwoColumns: false,
-        showNumbering: true
+        showNumbering: true,
+        // Nuovi campi per i margini di stampa
+        pageMarginTop: 25,
+        pageMarginRight: 20,
+        pageMarginBottom: 25,
+        pageMarginLeft: 20
     })
 
     // L'indice delle sezioni (caricato subito in Fase A)
@@ -206,7 +215,13 @@ export const useChessBookStore = defineStore('chessBook', () => {
             updatedAt: bookData.updatedAt,
             pageFormat: bookData.pageFormat || 'a4',
             isTwoColumns: bookData.isTwoColumns || false,
-            showNumbering: bookData.showNumbering !== undefined ? bookData.showNumbering : true
+            showNumbering: bookData.showNumbering !== undefined ? bookData.showNumbering : true,
+
+            // Nuovi campi: se non esistono nel vecchio file JSON, applichiamo i default numerici
+            pageMarginTop: bookData.pageMarginTop !== undefined ? Number(bookData.pageMarginTop) : 25,
+            pageMarginRight: bookData.pageMarginRight !== undefined ? Number(bookData.pageMarginRight) : 20,
+            pageMarginBottom: bookData.pageMarginBottom !== undefined ? Number(bookData.pageMarginBottom) : 25,
+            pageMarginLeft: bookData.pageMarginLeft !== undefined ? Number(bookData.pageMarginLeft) : 20
         }
         sectionIndex.value = bookData.sectionIndex
 
