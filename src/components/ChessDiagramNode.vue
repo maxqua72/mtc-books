@@ -143,6 +143,8 @@ const boardString = computed(() => {
 <style scoped>
 .chess-diagram-container {
   margin: 2rem 0;
+  margin-top: 5mm !important;
+  margin-bottom: 5mm !important;
   display: flex;
   flex-direction: column;
   align-items: center;
