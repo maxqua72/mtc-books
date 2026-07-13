@@ -21,7 +21,9 @@
 
       <!-- Colonna Destra: Console di Supporto e Scacchiera -->
       <aside class="w-[460px] bg-white border-l border-neutral-200 p-6 flex flex-col items-center justify-start overflow-y-auto shrink-0 no-print">
-        <ChessBoard />
+        <!-- <ChessBoard />  -->
+        <!-- Sostituito ChessBoard con ChessboardController passandogli l'istanza dell'editor -->
+        <ChessboardController />
       </aside>
 
     </div>
@@ -33,7 +35,8 @@ import AppHeader from './components/AppHeader.vue'
 import WelcomeDashboard from './components/WelcomeDashboard.vue'
 import BookOrganizer from './components/BookOrganizer.vue'
 import BookEditor from './components/BookEditor.vue'
-import ChessBoard from './components/ChessBoard.vue'
+//import ChessBoard from './components/ChessBoard.vue'
+import ChessboardController from './components/ChessboardController.vue'
 import { useChessBookStore } from './stores/chessBookStore'
 
 const store = useChessBookStore()

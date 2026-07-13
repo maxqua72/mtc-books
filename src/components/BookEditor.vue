@@ -41,15 +41,21 @@ import StarterKit from '@tiptap/starter-kit'
 import { PDFDocument } from 'pdf-lib'
 import { watch, onMounted, onBeforeUnmount, computed, ref, nextTick } from 'vue'
 import { useChessBookStore } from '../stores/chessBookStore'
+import { useChessTreeStore } from '../stores/chessTreeStore' 
 import { ChessDiagram } from '../extensions/ChessDiagram'
 import { CustomHeading } from '../extensions/CustomHeading' // Aggiusta il percorso se serve
+import { ChessMove } from '../extensions/ChessMove';
+import { ChessVariant } from '../extensions/ChessVariant';
 import EditorToolbar from './EditorToolbar.vue'
 
 // @ts-ignore
 import html2pdf from 'html2pdf.js'
 
 const store = useChessBookStore()
+const treeStore = useChessTreeStore()
 const isGeneratingPdf = ref(false)
+
+const isInsertingFromEngine = ref(false)
 
 const getPageSizeStyles = computed(() => {
     const format = store.metadata.pageFormat || 'a4'
@@ -75,6 +81,8 @@ const editor = useEditor({
         }),
         CustomHeading, // <-- Estensione personalizzata per h2 e h3
         ChessDiagram, // <-- Registriamo l'estensione del nostro diagramma scacchistico
+        ChessMove,     // 
+        ChessVariant,  // 
     ],
     editorProps: {
         attributes: {
@@ -83,6 +91,7 @@ const editor = useEditor({
     },
     // Aggiorna lo store locale durante la digitazione per l'auto-save temporaneo
     onUpdate({ editor }) {
+        if (isInsertingFromEngine.value) return
         store.activeSectionHtml = editor.getHTML()
     }
 })
@@ -487,6 +496,65 @@ watch(() => store.insertSignal, () => {
     if (editor.value) {
         editor.value.commands.insertChessDiagram({ fen: store.activeFen })
     }
+})
+
+// Ascolta l'albero delle mosse: quando viene registrata una nuova mossa sulla scacchiera, la inserisce nell'editor
+watch(() => treeStore.lastRecordedMoveSignal, (moveSignal) => {
+    if (!moveSignal || !editor.value) return
+
+    // Se il Bianco ('w') muove, è la linea principale ('chessMove').
+    // Se muove il Nero ('b') o si apre una deviazione, usiamo 'chessVariant'.
+    const type = moveSignal.isVariant ? 'chessVariant' : 'chessMove'
+    try {
+        isInsertingFromEngine.value = true
+
+        // Controlliamo se la mossa è già presente nel punto in cui si trova il cursore per non duplicarla
+        const { selection } = editor.value.state
+        const currentNode = editor.value.state.doc.nodeAt(selection.from)
+        if (currentNode && currentNode.attrs?.id === moveSignal.id) {
+            return
+        }
+
+        editor.value.chain().focus().insertContent({
+            type: type,
+            attrs: {
+                id: moveSignal.id,
+                san: moveSignal.san,
+                color: moveSignal.color,
+                moveNumber: moveSignal.moveNumber
+            }
+        }).run()
+    } finally {
+        // Rilasciamo il blocco e azzeriamo il segnale
+        treeStore.lastRecordedMoveSignal = null
+        setTimeout(() => {
+            isInsertingFromEngine.value = false
+        }, 50)
+    }
+})
+
+// Ascolta l'albero delle mosse: quando un nodo viene eliminato dallo store,
+// l'editor lo cerca nel documento e lo rimuove in autonomia
+watch(() => treeStore.lastDeletedMoveId, (idToDelete) => {
+  if (!idToDelete || !editor.value) return
+
+  editor.value.commands.command(({ tr }) => {
+    let nodePos: number | null = null
+    
+    // Cerca il nodo nel documento (controllando sia chessMove che chessVariant)
+    tr.doc.descendants((node, pos) => {
+      if ((node.type.name === 'chessMove' || node.type.name === 'chessVariant') && node.attrs.id === idToDelete) {
+        nodePos = pos
+        return false // Interrompe la ricerca
+      }
+    })
+    
+    if (nodePos !== null) {
+      tr.delete(nodePos, nodePos + 1)
+      return true
+    }
+    return false
+  })
 })
 
 watch(() => store.exportSignal, () => {
