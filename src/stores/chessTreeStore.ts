@@ -8,6 +8,7 @@ export interface ChessMoveNode {
   moveNumber: number;
   color: 'w' | 'b';
   parentId: string | null;
+  comment: string | null;
   children: ChessMoveNode[];
 }
 
@@ -143,6 +144,7 @@ export const useChessTreeStore = defineStore('chessTree', {
         moveNumber,
         color,
         parentId: this.activeNodeId,
+        comment: null,
         children: []
       };
 
@@ -224,6 +226,17 @@ export const useChessTreeStore = defineStore('chessTree', {
       this.activeFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
       this.isRecordingMoves = false;
       this.lastRecordedMoveSignal = null;
-    }
+    },
+
+    /**
+     * Aggiorna il commento di una mossa specifica
+     */
+    updateNodeComment(nodeId: string, comment: string | null) {
+      if (!this.currentTree) return;
+      const node = this.findNodeById(this.currentTree.rootNodes, nodeId);
+      if (node) {
+        node.comment = comment === '' ? null : comment;
+      }
+    },
   }
 });

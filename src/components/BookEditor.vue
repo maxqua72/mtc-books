@@ -12,10 +12,21 @@
         </div>
 
         <!-- Inserimento della Toolbar Modulare -->
-        <EditorToolbar v-if="editor" :editor="editor" />
+        <EditorToolbar v-if="editor" :editor="editor" @insert-tree-block="insertNewChessTreeBlock"/>
 
         <!-- Area di Scrittura Effettiva -->
         <div id="book-editor-content" class="flex-1 overflow-y-auto">
+            
+            <!-- Pulsante rapido integrato sopra la pagina per i test -->
+            <div class="max-w-[210mm] mx-auto mb-2 flex justify-end">
+                <button 
+                    @click="insertNewChessTreeBlock"
+                    class="bg-neutral-800 text-white text-xs font-semibold px-3 py-1.5 rounded-md shadow-sm hover:bg-neutral-700 transition"
+                >
+                    + Inserisci Blocco Partita / Varianti
+                </button>
+            </div>
+            
             <div class="tiptap-container" :class="{
                 'show-numbering': store.metadata.showNumbering,
                 'is-structural-page': store.activeSectionInfo?.type === 'cover' || store.activeSectionInfo?.type === 'index'
@@ -44,8 +55,7 @@ import { useChessBookStore } from '../stores/chessBookStore'
 import { useChessTreeStore } from '../stores/chessTreeStore' 
 import { ChessDiagram } from '../extensions/ChessDiagram'
 import { CustomHeading } from '../extensions/CustomHeading' // Aggiusta il percorso se serve
-import { ChessMove } from '../extensions/ChessMove';
-import { ChessVariant } from '../extensions/ChessVariant';
+import { ChessTreeBlock } from '../extensions/ChessTreeBlock' // <-- Nuova Estensione Blocco Ibridoimport EditorToolbar from './EditorToolbar.vue'
 import EditorToolbar from './EditorToolbar.vue'
 
 // @ts-ignore
@@ -81,8 +91,7 @@ const editor = useEditor({
         }),
         CustomHeading, // <-- Estensione personalizzata per h2 e h3
         ChessDiagram, // <-- Registriamo l'estensione del nostro diagramma scacchistico
-        ChessMove,     // 
-        ChessVariant,  // 
+        ChessTreeBlock,
     ],
     editorProps: {
         attributes: {
@@ -96,7 +105,32 @@ const editor = useEditor({
     }
 })
 
+// Comando per creare una nuova istanza di albero mossa e incollarne il relativo tag nel testo
+const insertNewChessTreeBlock = () => {
+    if (!editor.value) return
 
+    // 1. Genera una nuova partita/albero nello store globale di Pinia
+    const uniqueTreeId = `tree_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    treeStore.trees.push({
+        id: uniqueTreeId,
+        title: `Analisi Partita #${treeStore.trees.length + 1}`,
+        startingFen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', // <-- Posizione iniziale standard
+        rootNodes: [] as any[] // <-- Cast a any[] o al tuo tipo ChessMoveNode[] per evitare 'never[]'
+    })
+
+    // 2. Rende questo albero l'albero attivo su cui la scacchiera scriverà d'ora in poi
+    treeStore.activeTreeId = uniqueTreeId
+    treeStore.activeNodeId = null
+
+    // 3. Inserisce l'oggetto strutturato dentro l'editor Tiptap alla posizione corrente del cursore
+    editor.value.chain().focus().insertContent({
+        type: 'chessTreeBlock',
+        attrs: { treeId: uniqueTreeId }
+    }).run()
+    
+    // Aggiorna lo store
+    store.activeSectionHtml = editor.value.getHTML()
+}
 
 
 // Ascolta se lo store cambia la sezione attiva esternamente (es: all'apertura di un file)
@@ -158,7 +192,9 @@ onBeforeUnmount(() => {
     window.removeEventListener('request-editor-sync', syncEditorContent)
 })
 
+
 // CSS Unificato e Condiviso iniettato dinamicamente per l'esportazione delle pagine
+/*
 const getSharedCssRules = (marginTop: number, marginRight: number, marginBottom: number, marginLeft: number, pageSize: { width: string; height: string }, currentChapterIndex: number) => `
   * {
     box-sizing: border-box !important;
@@ -202,9 +238,7 @@ const getSharedCssRules = (marginTop: number, marginRight: number, marginBottom:
     break-inside: avoid !important; 
   }
 
-  /* NUOVA REGOLA: Forza il primissimo titolo del PDF a slittare verso l'alto */
-  /* per assorbire lo spazio invisibile generato dal box-model del font */
-  .tiptap > div > h2:first-child,
+   .tiptap > div > h2:first-child,
   .book-text-engine h2:first-child,
   .tiptap h2:first-child {
     margin-top: -5mm !important; 
@@ -244,7 +278,109 @@ const getSharedCssRules = (marginTop: number, marginRight: number, marginBottom:
   .show-numbering h3::before { content: counter(section-count) " " !important; }
   .is-structural-page h2::before, .is-structural-page h3::before { content: none !important; }
 `
+*/
+const getSharedCssRules = (marginTop: number, marginRight: number, marginBottom: number, marginLeft: number, pageSize: { width: string; height: string }, currentChapterIndex: number) => `
+  * {
+    box-sizing: border-box !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .tiptap-container {
+    counter-reset: chapter-count ${currentChapterIndex} section-count 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    background-color: #ffffff !important;
+    padding: ${marginTop}mm ${marginRight}mm ${marginBottom}mm ${marginLeft}mm !important;
+    width: ${pageSize.width} !important;
+    max-width: ${pageSize.width} !important;
+    min-width: ${pageSize.width} !important;
+    min-height: auto !important;
+    height: auto !important;
+  }
+  .book-text-engine, .tiptap, .book-text-engine p, .tiptap p {
+    font-family: Georgia, Cambria, serif !important;
+    color: #171717 !important;
+    font-size: 11pt !important;
+    line-height: 1.5 !important;
+  }
+  .book-text-engine p, .tiptap p {
+    display: block !important;
+    margin-top: 0 !important;
+    margin-bottom: 4.5mm !important;
+    padding: 0 !important;
+  }
+  .book-text-engine h2, .tiptap h2 { 
+    font-size: 24pt !important; 
+    line-height: 1.2 !important;
+    font-weight: bold !important; 
+    margin-top: 0 !important;
+    margin-bottom: 6mm !important;
+    padding: 0 !important;
+    font-family: Georgia, serif !important; 
+    page-break-inside: avoid !important; 
+    break-inside: avoid !important; 
+  }
+  .tiptap > div > h2:first-child,
+  .book-text-engine h2:first-child,
+  .tiptap h2:first-child {
+    margin-top: -5mm !important; 
+  }
+  .book-text-engine h3, .tiptap h3 { 
+    font-size: 15pt !important; 
+    line-height: 19pt !important;
+    font-weight: bold !important; 
+    margin-top: 18pt !important; 
+    margin-bottom: 9pt !important; 
+    font-family: Georgia, serif !important; 
+    page-break-inside: avoid !important; 
+    break-inside: avoid !important; 
+  }
+  .chess-diagram-container { 
+    display: flex !important; 
+    align-items: center !important; 
+    justify-content: center !important;
+    margin-top: 5mm !important;
+    margin-bottom: 5mm !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  .chess-pure-text {
+    font-family: 'Chess Merida', serif !important;
+    font-size: var(--diagram-size) !important;
+    line-height: 1.1 !important;
+    white-space: pre !important;
+    color: #000000 !important;
+    display: block !important;
+    background: transparent !important;
+    text-align: center !important;
+    margin: 0 auto !important;
+    overflow: visible !important;
+  }
+  
+  /* STILI DI STAMPA PER IL CHESS TREE BLOCK */
+  .chess-tree-block-container {
+    border: 1px solid #d1d5db !important;
+    border-radius: 6px !important;
+    margin: 4mm 0 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  .block-header .delete-btn {
+    display: none !important; /* Nasconde il tasto elimina sui fogli PDF generati */
+  }
+  .comment-input {
+    border: none !important;
+    pointer-events: none !important; /* Congela gli input di commento */
+  }
+  .move-comment-box.is-empty {
+    display: none !important; /* Nasconde i campi vuoti "Aggiungi commento..." */
+  }
 
+  .show-numbering h2::before { content: "${currentChapterIndex}. " !important; }
+  .show-numbering h3::before { content: counter(section-count) " " !important; }
+  .is-structural-page h2::before, .is-structural-page h3::before { content: none !important; }
+`
 
 // Funzione ausiliaria per convertire il FEN nella stringa di testo originale per il font Chess Merida
 const fenToChessFontString = (fen: string): string => {
