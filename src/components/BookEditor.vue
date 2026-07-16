@@ -55,7 +55,7 @@ import { useChessBookStore } from '../stores/chessBookStore'
 import { useChessTreeStore } from '../stores/chessTreeStore' 
 import { ChessDiagram } from '../extensions/ChessDiagram'
 import { CustomHeading } from '../extensions/CustomHeading' // Aggiusta il percorso se serve
-import { ChessTreeBlock } from '../extensions/ChessTreeBlock' // <-- Nuova Estensione Blocco Ibridoimport EditorToolbar from './EditorToolbar.vue'
+import { ChessTreeBlock } from '../extensions/ChessTreeBlock' // <-- Nuova Estensione Blocco Ibrido
 import EditorToolbar from './EditorToolbar.vue'
 
 // @ts-ignore
@@ -109,26 +109,37 @@ const editor = useEditor({
 const insertNewChessTreeBlock = () => {
     if (!editor.value) return
 
-    // 1. Genera una nuova partita/albero nello store globale di Pinia
+    // 1. Genera l'ID unico per l'albero scacchi
     const uniqueTreeId = `tree_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    
+    // 2. Crea l'albero nello store di Pinia
     treeStore.trees.push({
         id: uniqueTreeId,
         title: `Analisi Partita #${treeStore.trees.length + 1}`,
-        startingFen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', // <-- Posizione iniziale standard
-        rootNodes: [] as any[] // <-- Cast a any[] o al tuo tipo ChessMoveNode[] per evitare 'never[]'
+        startingFen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+        rootNodes: [] as any[],
+        activeNodeId: null
     })
 
-    // 2. Rende questo albero l'albero attivo su cui la scacchiera scriverà d'ora in poi
+    // Imposta questo nuovo blocco come attivo nello store
     treeStore.activeTreeId = uniqueTreeId
     treeStore.activeNodeId = null
 
-    // 3. Inserisce l'oggetto strutturato dentro l'editor Tiptap alla posizione corrente del cursore
-    editor.value.chain().focus().insertContent({
-        type: 'chessTreeBlock',
-        attrs: { treeId: uniqueTreeId }
-    }).run()
+    // 3. Sposta il cursore alla fine del documento e inserisci il blocco scacchi
+    editor.value.chain()
+        // Sposta il cursore alla fine di tutto per evitare QUALSIASI sovrascrittura
+        .focus('end') 
+        .insertContent([
+            {
+                type: 'chessTreeBlock',
+                attrs: { treeId: uniqueTreeId }
+            },
+            {
+                type: 'paragraph' // Crea una riga vuota sotto per permettere all'utente di continuare a scrivere
+            }
+        ])
+        .run()
     
-    // Aggiorna lo store
     store.activeSectionHtml = editor.value.getHTML()
 }
 
@@ -192,93 +203,6 @@ onBeforeUnmount(() => {
     window.removeEventListener('request-editor-sync', syncEditorContent)
 })
 
-
-// CSS Unificato e Condiviso iniettato dinamicamente per l'esportazione delle pagine
-/*
-const getSharedCssRules = (marginTop: number, marginRight: number, marginBottom: number, marginLeft: number, pageSize: { width: string; height: string }, currentChapterIndex: number) => `
-  * {
-    box-sizing: border-box !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-  .tiptap-container {
-    counter-reset: chapter-count ${currentChapterIndex} section-count 0 !important;
-    box-shadow: none !important;
-    border: none !important;
-    margin: 0 !important;
-    background-color: #ffffff !important;
-    padding: ${marginTop}mm ${marginRight}mm ${marginBottom}mm ${marginLeft}mm !important;
-    width: ${pageSize.width} !important;
-    max-width: ${pageSize.width} !important;
-    min-width: ${pageSize.width} !important;
-    min-height: auto !important;
-    height: auto !important;
-  }
-  .book-text-engine, .tiptap, .book-text-engine p, .tiptap p {
-    font-family: Georgia, Cambria, serif !important;
-    color: #171717 !important;
-    font-size: 11pt !important;
-    line-height: 1.5 !important;
-  }
-  .book-text-engine p, .tiptap p {
-    display: block !important;
-    margin-top: 0 !important;
-    margin-bottom: 4.5mm !important;
-    padding: 0 !important;
-  }
-  .book-text-engine h2, .tiptap h2 { 
-    font-size: 24pt !important; 
-    line-height: 1.2 !important;
-    font-weight: bold !important; 
-    margin-top: 0 !important;
-    margin-bottom: 6mm !important;
-    padding: 0 !important;
-    font-family: Georgia, serif !important; 
-    page-break-inside: avoid !important; 
-    break-inside: avoid !important; 
-  }
-
-   .tiptap > div > h2:first-child,
-  .book-text-engine h2:first-child,
-  .tiptap h2:first-child {
-    margin-top: -5mm !important; 
-  }
-  .book-text-engine h3, .tiptap h3 { 
-    font-size: 15pt !important; 
-    line-height: 19pt !important;
-    font-weight: bold !important; 
-    margin-top: 18pt !important; 
-    margin-bottom: 9pt !important; 
-    font-family: Georgia, serif !important; 
-    page-break-inside: avoid !important; 
-    break-inside: avoid !important; 
-  }
-  .chess-diagram-container { 
-    display: flex !important; 
-    align-items: center !important; 
-    justify-content: center !important;
-    margin-top: 5mm !important;
-    margin-bottom: 5mm !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-  .chess-pure-text {
-    font-family: 'Chess Merida', serif !important;
-    font-size: var(--diagram-size) !important;
-    line-height: 1.1 !important;
-    white-space: pre !important;
-    color: #000000 !important;
-    display: block !important;
-    background: transparent !important;
-    text-align: center !important;
-    margin: 0 auto !important;
-    overflow: visible !important;
-  }
-  .show-numbering h2::before { content: "${currentChapterIndex}. " !important; }
-  .show-numbering h3::before { content: counter(section-count) " " !important; }
-  .is-structural-page h2::before, .is-structural-page h3::before { content: none !important; }
-`
-*/
 const getSharedCssRules = (marginTop: number, marginRight: number, marginBottom: number, marginLeft: number, pageSize: { width: string; height: string }, currentChapterIndex: number) => `
   * {
     box-sizing: border-box !important;
@@ -634,63 +558,22 @@ watch(() => store.insertSignal, () => {
     }
 })
 
-// Ascolta l'albero delle mosse: quando viene registrata una nuova mossa sulla scacchiera, la inserisce nell'editor
+// Rileva quando viene registrata una nuova mossa sulla scacchiera.
+// Poiché le mosse ora vivono solo nel ChessTreeBlock tramite Pinia,
+// non dobbiamo più inserire nodi fisici (chessMove/chessVariant) nel documento di Tiptap.
 watch(() => treeStore.lastRecordedMoveSignal, (moveSignal) => {
-    if (!moveSignal || !editor.value) return
+    if (!moveSignal) return
 
-    // Se il Bianco ('w') muove, è la linea principale ('chessMove').
-    // Se muove il Nero ('b') o si apre una deviazione, usiamo 'chessVariant'.
-    const type = moveSignal.isVariant ? 'chessVariant' : 'chessMove'
-    try {
-        isInsertingFromEngine.value = true
-
-        // Controlliamo se la mossa è già presente nel punto in cui si trova il cursore per non duplicarla
-        const { selection } = editor.value.state
-        const currentNode = editor.value.state.doc.nodeAt(selection.from)
-        if (currentNode && currentNode.attrs?.id === moveSignal.id) {
-            return
-        }
-
-        editor.value.chain().focus().insertContent({
-            type: type,
-            attrs: {
-                id: moveSignal.id,
-                san: moveSignal.san,
-                color: moveSignal.color,
-                moveNumber: moveSignal.moveNumber
-            }
-        }).run()
-    } finally {
-        // Rilasciamo il blocco e azzeriamo il segnale
-        treeStore.lastRecordedMoveSignal = null
-        setTimeout(() => {
-            isInsertingFromEngine.value = false
-        }, 50)
-    }
+    // Ci limitiamo a consumare e azzerare il segnale dello store.
+    // L'albero delle mosse nel ChessTreeBlock si aggiornerà da solo reattivamente
+    // grazie al rendering di ChessMoveRenderer.vue.
+    treeStore.lastRecordedMoveSignal = null
 })
 
-// Ascolta l'albero delle mosse: quando un nodo viene eliminato dallo store,
-// l'editor lo cerca nel documento e lo rimuove in autonomia
+// Consuma semplicemente il segnale di eliminazione mossa senza toccare il testo di Tiptap
 watch(() => treeStore.lastDeletedMoveId, (idToDelete) => {
-  if (!idToDelete || !editor.value) return
-
-  editor.value.commands.command(({ tr }) => {
-    let nodePos: number | null = null
-    
-    // Cerca il nodo nel documento (controllando sia chessMove che chessVariant)
-    tr.doc.descendants((node, pos) => {
-      if ((node.type.name === 'chessMove' || node.type.name === 'chessVariant') && node.attrs.id === idToDelete) {
-        nodePos = pos
-        return false // Interrompe la ricerca
-      }
-    })
-    
-    if (nodePos !== null) {
-      tr.delete(nodePos, nodePos + 1)
-      return true
-    }
-    return false
-  })
+  if (!idToDelete) return
+  treeStore.lastDeletedMoveId = null
 })
 
 watch(() => store.exportSignal, () => {

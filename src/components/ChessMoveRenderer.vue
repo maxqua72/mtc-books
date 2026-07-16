@@ -4,16 +4,15 @@
       <!-- Contenitore della mossa singola -->
       <span 
         class="chess-move-item"
-        :class="{ 'is-active': treeStore.activeNodeId === node.id }"
-        @click="treeStore.setActiveNode(node.id)"
+        :class="{ 'is-active': isNodeActive(node.id) }"
+        @click="selectMove(node.id)"
       >
-        <!-- Prefisso numerico calcolato dinamicamente -->
         <span class="move-prefix">{{ getMovePrefix(node, index) }}</span>
         <span class="move-san">{{ node.san }}</span>
       </span>
 
-      <!-- Render del commento se presente (Stile PGN con parentesi graffe o blocco dedicato) -->
-      <div v-if="node.comment" class="move-comment-box">
+      <!-- Render del commento se presente -->
+      <div v-if="node.comment" class="move-comment-box" @click="activateThisTree">
         <span class="comment-bracket">{</span>
         <input 
           type="text" 
@@ -24,8 +23,8 @@
         <span class="comment-bracket">}</span>
       </div>
       
-      <!-- Input vuoto persistente per permettere di aggiungere un commento al volo alla mossa attiva -->
-      <div v-else-if="treeStore.activeNodeId === node.id" class="move-comment-box is-empty">
+      <!-- Input vuoto persistente -->
+      <div v-else-if="isNodeActive(node.id)" class="move-comment-box is-empty" @click="activateThisTree">
         <input 
           type="text" 
           placeholder="Aggiungi commento..." 
@@ -34,23 +33,28 @@
         />
       </div>
 
-      <!-- Gestione Ricorsiva delle Varianti (children di indice > 0) -->
+      <!-- Gestione Ricorsiva delle Varianti -->
       <template v-if="node.children && node.children.length > 1">
         <span class="variant-wrapper">
           <template v-for="(subTree, subIdx) in node.children.slice(1)" :key="subTree.id">
             <span class="bracket">(</span>
-            <!-- Chiamata ricorsiva passandogli il sotto-ramo come radice -->
-            <ChessMoveRenderer :nodes="[subTree]" :is-variant-root="true" />
+            <!-- Passiamo il treeId anche alle chiamate ricorsive -->
+            <ChessMoveRenderer 
+              :nodes="[subTree]" 
+              :is-variant-root="true" 
+              :tree-id="treeId" 
+            />
             <span class="bracket">)</span>
           </template>
         </span>
       </template>
 
-      <!-- Prosecuzione sulla linea principale (primo figlio del nodo attuale) -->
+      <!-- Prosecuzione sulla linea principale -->
       <ChessMoveRenderer 
         v-if="node.children && node.children.length > 0" 
         :nodes="[node.children[0]]" 
         :is-variant-root="false"
+        :tree-id="treeId"
       />
     </template>
   </div>
@@ -59,15 +63,45 @@
 <script setup lang="ts">
 import { useChessTreeStore } from '../stores/chessTreeStore'
 import type { ChessMoveNode } from '../stores/chessTreeStore'
+import { computed } from 'vue'
 
 const props = defineProps<{
   nodes: ChessMoveNode[]
   isVariantRoot?: boolean
+  treeId: string
 }>()
 
 const treeStore = useChessTreeStore()
 
+// Recupera l'albero specifico a cui appartiene questo renderer, senza affidarsi al "currentTree" globale
+const myTree = computed(() => {
+  return treeStore.trees.find(t => t.id === props.treeId)
+})
+
+// Un nodo è attivo solo se questo specifico albero è quello attivo in Pinia E l'ID corrisponde
+const isNodeActive = (nodeId: string) => {
+  return treeStore.activeTreeId === props.treeId && treeStore.activeNodeId === nodeId
+}
+
+// Forza l'attivazione dell'albero di appartenenza prima di selezionare la mossa
+const selectMove = (nodeId: string) => {
+  if (treeStore.activeTreeId !== props.treeId) {
+    treeStore.activeTreeId = props.treeId
+  }
+  treeStore.setActiveNode(nodeId)
+}
+
+const activateThisTree = () => {
+  if (treeStore.activeTreeId !== props.treeId) {
+    treeStore.activeTreeId = props.treeId
+    const targetNodeId = myTree.value?.activeNodeId || null
+    treeStore.setActiveNode(targetNodeId)
+  }
+}
+
 const updateComment = (nodeId: string, event: Event) => {
+  // Assicurati che l'albero sia attivo quando si scrive un commento
+  activateThisTree()
   const target = event.target as HTMLInputElement
   treeStore.updateNodeComment(nodeId, target.value)
 }

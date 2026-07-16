@@ -17,6 +17,7 @@ export interface ChessTree {
   title: string;
   startingFen: string;
   rootNodes: ChessMoveNode[];
+  activeNodeId: string | null;
 }
 
 // Interfaccia per il segnale reattivo destinato a Tiptap
@@ -72,12 +73,13 @@ export const useChessTreeStore = defineStore('chessTree', {
     createNewTree(title = 'Nuova Analisi', customFen?: string) {
       const defaultFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
       const startingFen = customFen || defaultFen;
-      
+
       const newTree: ChessTree = {
         id: `tree-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         title,
         startingFen,
-        rootNodes: []
+        rootNodes: [],
+        activeNodeId: null
       };
 
       this.trees.push(newTree);
@@ -91,18 +93,22 @@ export const useChessTreeStore = defineStore('chessTree', {
      * Naviga verso un nodo specifico impostando FEN e ID attivi
      */
     setActiveNode(nodeId: string | null) {
-      if (!this.currentTree) return;
+      this.activeNodeId = nodeId
 
-      if (nodeId === null) {
-        this.activeNodeId = null;
-        this.activeFen = this.currentTree.startingFen;
-        return;
+      // Salva lo stato anche dentro l'albero corrente
+      const current = this.trees.find(t => t.id === this.activeTreeId)
+      if (current) {
+        current.activeNodeId = nodeId
       }
 
-      const node = this.findNodeById(this.currentTree.rootNodes, nodeId);
-      if (node) {
-        this.activeNodeId = node.id;
-        this.activeFen = node.fen;
+      // Aggiorna il FEN sulla scacchiera
+      if (nodeId === null) {
+        this.activeFen = current?.startingFen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+      } else {
+        const node = this.findNodeById(current?.rootNodes || [], nodeId)
+        if (node) {
+          this.activeFen = node.fen
+        }
       }
     },
 
@@ -150,7 +156,7 @@ export const useChessTreeStore = defineStore('chessTree', {
 
       // 3. Inserisci il nodo nell'albero
       siblingNodes.push(newNode);
-      
+
       // 4. Aggiorna lo stato di navigazione
       this.activeNodeId = newNode.id;
       this.activeFen = newNode.fen;
@@ -190,7 +196,7 @@ export const useChessTreeStore = defineStore('chessTree', {
           }
           return true;
         }
-        
+
         for (const node of nodes) {
           if (node.children.length > 0) {
             if (removeNodeRecursive(node.children)) return true;
@@ -208,7 +214,7 @@ export const useChessTreeStore = defineStore('chessTree', {
     isNodeDescendantOf(childId: string | null, parentId: string): boolean {
       if (!childId || !this.currentTree) return false;
       let current = this.findNodeById(this.currentTree.rootNodes, childId);
-      
+
       while (current && current.parentId !== null) {
         if (current.parentId === parentId) return true;
         current = this.findNodeById(this.currentTree.rootNodes, current.parentId);

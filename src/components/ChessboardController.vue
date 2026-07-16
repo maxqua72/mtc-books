@@ -85,6 +85,15 @@ const handlePhysicsMove = (orig: Key, dest: Key) => {
     const newFen = chess.fen()
     lastMoveNotation.value = moveData.san
 
+    // 🔴 CORREZIONE: Se la registrazione live è disattivata, 
+    // aggiorna la scacchiera locale ma NON salvare la mossa nell'albero di Pinia
+    if (!treeStore.isRecordingMoves) {
+      // Sincronizza il FEN attivo temporaneo dello store per mostrare la mossa sulla scacchiera,
+      // ma senza aggiungere un nodo reale all'albero delle mosse.
+      treeStore.activeFen = newFen
+      return
+    }
+
     // 2. Registra la mossa nell'albero dello store dedicato
     // L'azione addMove genererà internamente il lastRecordedMoveSignal corretto
     treeStore.addMove(moveData.san, newFen)

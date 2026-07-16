@@ -7,6 +7,8 @@ export const ChessTreeBlock = Node.create({
   name: 'chessTreeBlock',
   group: 'block',
   atom: true, // Impedisce a Tiptap di far entrare il cursore all'interno del blocco come testo normale
+  draggable: true, // Permette di spostare il blocco, ma non interferisce con i click interni
+  
 
   addAttributes() {
     return {

@@ -1,5 +1,5 @@
 <template>
-  <node-view-wrapper class="chess-tree-block-container">
+  <node-view-wrapper class="chess-tree-block-container" contenteditable="false">
     <div class="block-header">
       <span class="game-title">📊 {{ currentTree?.title || 'Analisi Scacchi' }}</span>
       <button @click="deleteBlock" class="delete-btn">Elimina Partita</button>
@@ -12,7 +12,10 @@
       </div>
       
       <!-- Altrimenti avvia il ciclo ricorsivo di notazione -->
-      <ChessMoveRenderer v-else :nodes="currentTree.rootNodes" />
+      <ChessMoveRenderer 
+        v-else 
+        :nodes="currentTree.rootNodes" 
+        :tree-id="props.node.attrs.treeId"/>
     </div>
   </node-view-wrapper>
 </template>
@@ -36,9 +39,13 @@ const currentTree = computed(() => {
 })
 
 const activateTree = () => {
-  if (props.node.attrs.treeId) {
+  if (props.node.attrs.treeId && treeStore.activeTreeId !== props.node.attrs.treeId) {
+    // 1. Imposta questo albero come attivo globalmente
     treeStore.activeTreeId = props.node.attrs.treeId
-    treeStore.setActiveNode(treeStore.activeNodeId)
+    
+    // 2. Ripristina l'ultimo nodo attivo registrato specificamente per questo albero
+    const lastActiveNodeId = currentTree.value?.activeNodeId || null
+    treeStore.setActiveNode(lastActiveNodeId)
   }
 }
 
