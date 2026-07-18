@@ -1,64 +1,67 @@
 <template>
-  <div class="chess-tree-render-container" :class="isVariantRoot ? 'is-variant-inline' : 'is-main-line'">
-    <template v-for="(node, index) in nodes" :key="node.id">
-      <!-- Contenitore della mossa singola -->
-      <span class="chess-move-item" :class="{
-        'is-active': isNodeActive(node.id),
-        'is-main-move': !isVariantRoot
-      }" @click="selectMove(node.id)">
-        <span class="move-prefix">{{ getMovePrefix(node, index) }}</span>
-        <span class="move-san">{{ node.san }}</span>
-      </span>
-
-      <!-- Render del commento se presente -->
-      <div v-if="node.comment" class="move-comment-box" :class="isVariantRoot ? 'comment-inline' : 'comment-block'"
-        @click="activateThisTree">
-        <span class="comment-bracket">{</span>
-        <!-- 
-          🔥 SOLUZIONE: Usiamo v-once. 
-          In questo modo Vue inserisce il testo iniziale nel DOM una volta sola.
-          I tasti successivi vengono gestiti interamente dal browser senza interferenze o inversioni.
-        -->
+  <div class="chess-tree-render-container">
+    <template v-if="nodes && nodes.length > 0">
+      <slot :node="nodes[0]">
+        <!-- 1. Mossa corrente (Marcata come contenteditable="false" per blindarla da Tiptap) -->
         <span 
-          contenteditable="true" 
-          class="comment-editable-text"
-          v-once
-          @input="onCommentInput(node.id, $event)"
-          @keydown.enter.prevent
-          @keydown.stop
-        >{{ node.comment }}</span>
-        <span class="comment-bracket">}</span>
-      </div>
-
-      <!-- Input vuoto persistente per la mossa attiva -->
-      <div v-else-if="isNodeActive(node.id)" class="move-comment-box is-empty"
-        :class="isVariantRoot ? 'comment-inline' : 'comment-block'" @click="activateThisTree">
-        <span class="comment-bracket">{</span>
-        <span 
-          contenteditable="true" 
-          class="comment-editable-text"
-          data-placeholder="Aggiungi commento..."
-          @input="onCommentInput(node.id, $event)"
-          @keydown.enter.prevent
-          @keydown.stop
-        ></span>
-        <span class="comment-bracket">}</span>
-      </div>
-
-      <!-- Gestione Ricorsiva delle Varianti -->
-      <template v-if="node.children && node.children.length > 1">
-        <span class="variant-wrapper" :class="{ 'break-main-line': !isVariantRoot }">
-          <template v-for="(subTree, subIdx) in node.children.slice(1)" :key="subTree.id">
-            <span class="bracket">(</span>
-            <ChessMoveRenderer :nodes="[subTree]" :is-variant-root="true" :tree-id="treeId" />
-            <span class="bracket">)</span>
-          </template>
+          class="chess-move-item" 
+          :class="{
+            'is-active': isNodeActive(nodes[0].id),
+            'is-main-move': !isVariantContext
+          }" 
+          contenteditable="false"
+          @click.stop="selectMove(nodes[0].id)"
+          tabindex="0"
+          @keydown.stop="handleMoveKeydown(nodes[0].id, $event)"
+        >
+          <span class="move-prefix">{{ getMovePrefix(nodes[0]) }}</span>
+          <!-- <span class="move-san">{{ nodes[0].san }}</span> -->
+          <span class="move-san" v-html="convertToChessFont(nodes[0].san)"></span>
         </span>
-      </template>
 
-      <!-- Prosecuzione sulla linea principale -->
-      <ChessMoveRenderer v-if="node.children && node.children.length > 0" :nodes="[node.children[0]]"
-        :is-variant-root="isVariantRoot" :tree-id="treeId" />
+        <!-- 2. Commento della mossa corrente -->
+        <div v-if="nodes[0].comment || isNodeActive(nodes[0].id)" class="move-comment-box"
+          :class="isVariantContext ? 'comment-inline' : 'comment-block'" @click.stop="activateThisTree(nodes[0].id)">
+          <span 
+            :ref="(el) => { if (el) commentRefs[nodes[0].id] = el as HTMLElement }"
+            contenteditable="true" 
+            class="comment-editable-text" 
+            v-once 
+            v-html="nodes[0].comment || ''"
+            data-placeholder="Inserisci commento..." 
+            @blur="onCommentBlur(nodes[0].id, $event)" 
+            @keydown.enter="handleEnter"
+            @keydown.stop
+          ></span>
+        </div>
+
+        <!-- 3. VARIANTI ALTERNATIVE -->
+        <template v-if="nodes.length > 1">
+          <div :class="!isVariantContext ? 'variant-block-break' : 'variant-inline-wrapper'">
+            <template v-for="subTree in nodes.slice(1)" :key="subTree.id">
+              <span class="bracket"> (</span>
+              <ChessMoveRenderer 
+                :nodes="[subTree]" 
+                :is-variant-context="true" 
+                :is-variant-root="true"
+                :after-block="false"
+                :tree-id="treeId" 
+              />
+              <span class="bracket">)</span>
+            </template>
+          </div>
+        </template>
+
+        <!-- 4. RISPOSTA CONSECUTIVA -->
+        <ChessMoveRenderer 
+          v-if="nodes[0].children && nodes[0].children.length > 0" 
+          :nodes="nodes[0].children"
+          :is-variant-context="isVariantContext" 
+          :is-variant-root="false"
+          :after-block="!!(nodes[0].comment || nodes.length > 1)"
+          :tree-id="treeId" 
+        />
+      </slot>
     </template>
   </div>
 </template>
@@ -66,15 +69,26 @@
 <script setup lang="ts">
 import { useChessTreeStore } from '../stores/chessTreeStore'
 import type { ChessMoveNode } from '../stores/chessTreeStore'
-import { computed } from 'vue'
+import { computed, reactive, ref } from 'vue'
 
-const props = defineProps<{
+interface Props {
   nodes: ChessMoveNode[]
+  isVariantContext?: boolean
   isVariantRoot?: boolean
+  afterBlock?: boolean
   treeId: string
-}>()
+  figurineType?: string // Deve essere presente qui come opzionale con il "?"
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  isVariantContext: false,
+  isVariantRoot: false,
+  afterBlock: false,
+  figurineType: 'goodcompanions' // Il valore di default ora combacia perfettamente
+})
 
 const treeStore = useChessTreeStore()
+const commentRefs = reactive<Record<string, HTMLElement>>({})
 
 const myTree = computed(() => {
   return treeStore.trees.find(t => t.id === props.treeId)
@@ -85,119 +99,284 @@ const isNodeActive = (nodeId: string) => {
 }
 
 const selectMove = (nodeId: string) => {
+  // Deseleziona visivamente la NodeView di Tiptap rimuovendo le selezioni globali dell'editor
+  // che causerebbero la sovrascrittura del blocco intero
+  const selection = window.getSelection()
+  if (selection) {
+    selection.removeAllRanges()
+  }
+
   if (treeStore.activeTreeId !== props.treeId) {
     treeStore.activeTreeId = props.treeId
   }
   treeStore.setActiveNode(nodeId)
 }
 
-const activateThisTree = () => {
+const activateThisTree = (nodeId: string) => {
   if (treeStore.activeTreeId !== props.treeId) {
     treeStore.activeTreeId = props.treeId
-    const targetNodeId = myTree.value?.activeNodeId || null
-    treeStore.setActiveNode(targetNodeId)
+  }
+  if (treeStore.activeNodeId !== nodeId) {
+    treeStore.setActiveNode(nodeId)
   }
 }
 
-// SOLUZIONE DEL CURSORE BLOCCATO:
-// Aggiorna lo store di Pinia in silenzio senza forzare Vue a riscrivere il DOM sotto il cursore
-const onCommentInput = (nodeId: string, event: Event) => {
-  activateThisTree()
+// Gestione blindata della tastiera
+const handleMoveKeydown = (nodeId: string, event: KeyboardEvent) => {
+  if (event.ctrlKey || event.altKey || event.metaKey || event.key === 'Tab' || event.key.startsWith('Arrow')) {
+    return
+  }
+
+  // Blocca la propagazione e l'azione di Prosemirror
+  event.preventDefault()
+  event.stopPropagation()
+
+  const commentEl = commentRefs[nodeId]
+  if (commentEl) {
+    commentEl.focus()
+
+    if (event.key.length === 1) {
+      if (commentEl.innerText.trim() === '') {
+        commentEl.innerHTML = ''
+      }
+
+      const textNode = document.createTextNode(event.key)
+      commentEl.appendChild(textNode)
+
+      const range = document.createRange()
+      const sel = window.getSelection()
+      if (sel) {
+        range.setStartAfter(textNode)
+        range.collapse(true)
+        sel.removeAllRanges()
+        sel.addRange(range)
+      }
+    }
+  }
+}
+
+const onCommentBlur = (nodeId: string, event: FocusEvent) => {
   const target = event.target as HTMLElement
-  
-  // Usiamo textContent o innerText per estrarre la stringa digitata in tempo reale
-  const currentText = target.textContent || ''
+  const currentHtml = target.innerHTML
 
   const targetNode = treeStore.findNodeById(myTree.value?.rootNodes || [], nodeId)
   if (targetNode) {
-    targetNode.comment = currentText.trim() === '' ? null : currentText
+    if (currentHtml === '' || currentHtml === '<br>' || target.innerText.trim() === '') {
+      targetNode.comment = null
+    } else {
+      targetNode.comment = currentHtml
+    }
   }
 }
 
-const getMovePrefix = (node: ChessMoveNode, index: number): string => {
+const handleEnter = (event: KeyboardEvent) => {
+  event.preventDefault()
+  const selection = window.getSelection()
+  if (!selection || !selection.rangeCount) return
+
+  const range = selection.getRangeAt(0)
+  const textNode = document.createTextNode("\n")
+  range.deleteContents()
+  range.insertNode(textNode)
+  range.setStartAfter(textNode)
+  range.setEndAfter(textNode)
+  selection.removeAllRanges()
+  selection.addRange(range)
+}
+
+const getMovePrefix = (node: ChessMoveNode): string => {
   if (node.color === 'w') {
     return `${node.moveNumber}. `
   }
-  if (props.isVariantRoot && index === 0) {
-    return `${node.moveNumber}... `
-  }
+
   const parentNode = treeStore.findNodeById(myTree.value?.rootNodes || [], node.parentId || '')
-  if (parentNode && parentNode.comment !== null) {
+  if (!parentNode) {
     return `${node.moveNumber}... `
   }
+
+  if (props.isVariantRoot) {
+    return `${node.moveNumber}... `
+  }
+
+  if (props.afterBlock && (!props.isVariantContext || node.children?.length === 0)) {
+    return `${node.moveNumber}... `
+  }
+
   return ''
+}
+
+
+
+
+const convertToMerida = (san: string): string => {
+  if (!san) return ''
+  
+  // Mappa dei pezzi sul font Merida (adatta i caratteri se la tua versione differisce)
+  const meridaMap: Record<string, string> = {
+    'N': 't', // Cavallo
+    'B': 'l', // Alfiere
+    'R': 'r', // Torre
+    'Q': 'd', // Donna
+    'K': 'k'  // Re
+  }
+
+  const firstChar = san.charAt(0)
+  if (meridaMap[firstChar]) {
+    // Sostituiamo la lettera del pezzo e lasciamo il resto della mossa invariato
+    return `<span class="figurine-font">${meridaMap[firstChar]}</span>${san.slice(1)}`
+  }
+  
+  return san
+}
+
+const convertToChessCases = (san: string): string => {
+ if (!san) return ''
+  
+  // Mappa le maiuscole del SAN nelle minuscole pulite del font
+  const ccMap: Record<string, string> = {
+    'K': 'k', // Re trasparente
+    'Q': 'q', // Donna trasparente
+    'R': 'r', // Torre trasparente
+    'B': 'b', // Alfiere trasparente
+    'N': 'n'  // Cavallo trasparente
+  }
+
+  const firstChar = san.charAt(0)
+  if (ccMap[firstChar]) {
+    return `<span class="chess-cases-figurine">${ccMap[firstChar]}</span>${san.slice(1)}`
+  }
+  
+  return san
+}
+
+const convertToGoodCompanions = (san: string): string => {
+  if (!san) return ''
+  
+  // Mappa le maiuscole del SAN nelle minuscole pulite del font
+  const tgcMap: Record<string, string> = {
+    'K': '0', // Re trasparente
+    'Q': 'G', // Donna trasparente
+    'R': 'W', // Torre trasparente
+    'B': 'm', // Alfiere trasparente
+    'N': '©'  // Cavallo trasparente
+  }
+
+  const firstChar = san.charAt(0)
+  if (tgcMap[firstChar]) {
+    return `<span class="tgc-figurine">${tgcMap[firstChar]}</span>${san.slice(1)}`
+  }
+  
+  return san
+}
+
+const convertToChessFont = (san: string): string => {
+  if(props.figurineType === 'cases') {
+    return convertToChessCases(san)
+  } else if (props.figurineType === 'goodcompanions') {
+    return convertToGoodCompanions(san)
+  } else {
+    return san
+  }
 }
 </script>
 
 <style scoped>
-/* Lascia immutati i tuoi stili correnti del renderer... */
-.is-main-line, .is-variant-inline {
-  display: inline;
+.chess-tree-render-container {
+  display: contents;
 }
+
 .chess-move-item {
-  padding: 2px 4px;
-  margin-right: 4px;
+  padding: 0 2px;
   cursor: pointer;
-  border-radius: 4px;
-  background: #f3f4f6;
-  display: inline-block;
+  display: inline;
+  outline: none;
+  /* Mantiene il testo non selezionabile dall'editor di testo standard */
+  user-select: none;
 }
+
 .chess-move-item.is-main-move {
   font-weight: bold;
   color: #111827;
-  background: #e5e7eb;
 }
+
 .chess-move-item.is-active {
   background: #3b82f6;
   color: #fff !important;
+  border-radius: 2px;
 }
+
 .move-comment-box {
-  color: #111827; 
-  margin: 0 4px;
-  display: inline;
-}
-.comment-block {
-  display: block;
-  margin: 6px 0 6px 20px; 
-}
-.comment-inline {
+  color: #374151;
   display: inline;
 }
 
-/* STILE LIBRO PERFETTO: Rimuove qualsiasi traccia visiva di caselle */
+.comment-block,
+.variant-block-break {
+  display: block;
+  margin: 0.2rem 0 0.2rem 0rem;
+  font-family: Georgia, Cambria, serif;
+  line-height: 1.4;
+}
+
+.comment-block {
+  /* font-style: italic; */
+  text-indent: 0;
+}
+
+.comment-inline,
+.variant-inline-wrapper {
+  display: inline;
+  /* font-style: italic; */
+  padding: 0 4px;
+}
+
 .comment-editable-text {
   display: inline;
-  font-family: inherit;
-  font-size: inherit;
-  font-style: normal; 
   outline: none;
-  min-width: 4px;
-  border: none;
-  padding: 0;
-  background: transparent;
+  min-width: 15px;
+  border-bottom: 1px dashed #cbd5e1;
+  white-space: pre-wrap;
+}
+
+.comment-editable-text:focus {
+  border-bottom-color: #3b82f6;
+  background: #f8fafc;
 }
 
 .comment-editable-text:empty::before {
   content: attr(data-placeholder);
-  color: #9ca3af;
+  color: #94a3b8;
   font-style: italic;
 }
-.comment-bracket {
-  font-weight: bold;
-  color: #9ca3af;
-}
-.variant-wrapper {
-  color: #6b7280;
-  font-weight: normal;
-  display: inline;
-}
-.variant-wrapper.break-main-line {
-  display: block;
-  margin: 6px 0 6px 20px;
-  font-size: 0.95rem; 
-}
+
 .bracket {
-  font-weight: bold;
-  padding: 0 2px;
+  font-weight: normal;
+  color: #111827;
 }
+
+:deep(.figurine-font) {
+  font-family: 'Chess Cases', sans-serif; /* Usa il nome esatto con cui è registrato il tuo font */
+  font-size: 1.2em; /* Regola la dimensione per allinearla bene al testo delle coordinate */
+  line-height: 1;
+  margin-right: 1px;
+}
+
+:deep(.chess-cases-figurine) {
+  font-family: 'Chess Cases', sans-serif;
+  font-size: 1.15em;
+  line-height: 1;
+  margin-right: 0px;
+  vertical-align: -3px;
+}
+
+/* Stile per The Good Companions (richiede più compensazione geometrica) */
+:deep(.tgc-figurine) {
+  font-family: 'Chess The Good Companions', sans-serif;
+  font-size: 1.05em; /* Leggermente più piccolo per uniformarlo alle lettere */
+  line-height: 1;
+  margin-right: 1px;
+  vertical-align: 1px; /* Lo spinge più in basso perché i glifi da diagramma tendono a "volare" */
+}
+
+
 </style>

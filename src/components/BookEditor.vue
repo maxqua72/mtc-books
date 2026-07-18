@@ -711,4 +711,17 @@ const currentChapterNumber = computed(() => {
     word-break: break-word;
     overflow-wrap: break-word;
 }
+
+/* Applica il rientro della prima riga ai paragrafi standard dell'editor */
+.tiptap p, 
+.ProseMirror p {
+  text-indent: 0em; /* Regola il valore (es. 1.5em o 20px) in base alle tue preferenze */
+}
+
+/* IMPORTANTE: Rimuovi il rientro dai paragrafi che si trovano dentro nodi personalizzati 
+   o strutture speciali (es. il tuo blocco scacchi) per evitare conflitti visivi */
+.tiptap [data-type="chess-tree-block"] p,
+.ProseMirror [data-type="chess-tree-block"] p {
+  text-indent: 0;
+}
 </style>

@@ -1,11 +1,14 @@
 <template>
-  <node-view-wrapper class="chess-tree-block-container" contenteditable="false">
+  <node-view-wrapper class="chess-tree-block-container" @click="activateTree">
+    <!-- Header comandi stile Gmail: compare in posizione assoluta solo all'hover del blocco -->
     <div class="block-header">
       <span class="game-title">📊 {{ currentTree?.title || 'Analisi Scacchi' }}</span>
-      <button @click="deleteBlock" class="delete-btn">Elimina Partita</button>
+      <button @click.stop="deleteBlock" class="delete-btn" title="Elimina intero blocco partita">
+        ✕ Rimuovi Partita
+      </button>
     </div>
     
-    <div class="block-content" @click="activateTree">
+    <div class="block-content">
       <!-- Se l'albero è vuoto, mostra un placeholder -->
       <div v-if="!currentTree || currentTree.rootNodes.length === 0" class="empty-tree-placeholder">
         Muovi i pezzi sulla scacchiera per iniziare a registrare la partita in questo blocco...
@@ -15,7 +18,8 @@
       <ChessMoveRenderer 
         v-else 
         :nodes="currentTree.rootNodes" 
-        :tree-id="props.node.attrs.treeId"/>
+        :tree-id="props.node.attrs.treeId"
+      />
     </div>
   </node-view-wrapper>
 </template>
@@ -26,7 +30,6 @@ import { computed } from 'vue'
 import { useChessTreeStore } from '../stores/chessTreeStore'
 import ChessMoveRenderer from './ChessMoveRenderer.vue'
 
-// Definiamo le opzioni del componente (incluso il nome) in modo nativo per Vue 3
 defineOptions({
   name: 'ChessTreeBlockView'
 })
@@ -40,10 +43,7 @@ const currentTree = computed(() => {
 
 const activateTree = () => {
   if (props.node.attrs.treeId && treeStore.activeTreeId !== props.node.attrs.treeId) {
-    // 1. Imposta questo albero come attivo globalmente
     treeStore.activeTreeId = props.node.attrs.treeId
-    
-    // 2. Ripristina l'ultimo nodo attivo registrato specificamente per questo albero
     const lastActiveNodeId = currentTree.value?.activeNodeId || null
     treeStore.setActiveNode(lastActiveNodeId)
   }
@@ -51,55 +51,110 @@ const activateTree = () => {
 
 const deleteBlock = () => {
   if (props.node.attrs.treeId) {
-    // 1. Rimuove l'albero dai dati di Pinia
-    const index = treeStore.trees.findIndex(t => t.id === props.node.attrs.treeId)
-    if (index !== -1) treeStore.trees.splice(index, 1)
-    
-    // 2. Rimuove il blocco intero dal documento di Tiptap
-    props.deleteNode()
+    if (confirm("Vuoi rimuovere interamente questa partita e tutta la sua notazione dal documento?")) {
+      const index = treeStore.trees.findIndex(t => t.id === props.node.attrs.treeId)
+      if (index !== -1) treeStore.trees.splice(index, 1)
+      props.deleteNode()
+    }
   }
 }
 </script>
 
 <style scoped>
 .chess-tree-block-container {
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
   margin: 1.5rem 0;
-  background: #ffffff;
-  overflow: hidden;
-  display: block; /* Assicura un corretto rendering del wrapper in Tiptap */
+  display: block;
+  position: relative;
+  
+  /* L'effetto allargamento: aggiungiamo spazio interno ma lo compensiamo 
+     portando il riquadro all'esterno con i margini negativi */
+  padding: 6px;
+  margin-left: -7px;  /* Sposta il riquadro a sinistra (-6px padding - 1px bordo) */
+  margin-right: -7px; /* Sposta il riquadro a destra */
+  
+  border: 1px solid transparent;
+  border-radius: 6px;
+  transition: background-color 0.2s, border-color 0.2s;
 }
+
+/* Quando il mouse passa sopra il blocco intero della partita */
+.chess-tree-block-container:hover {
+  background-color: rgba(248, 250, 252, 0.7);
+  border-color: #cbd5e1;
+}
+
+/* Header comandi nascosto di base */
 .block-header {
-  background: #f9fafb;
-  padding: 8px 12px;
-  border-bottom: 1px solid #e5e7eb;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.game-title {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: #374151;
-}
-.delete-btn {
-  background: #ef4444;
-  color: #fff;
-  border: none;
-  padding: 4px 8px;
+  display: none;
+  position: absolute;
+  top: -14px;
+  right: 10px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
   border-radius: 4px;
-  font-size: 0.8rem;
-  cursor: pointer;
+  padding: 2px 8px;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  z-index: 20;
 }
-.block-content {
-  padding: 12px;
-  line-height: 1.8;
+
+/* Mostra l'header comandi solo all'hover */
+.chess-tree-block-container:hover .block-header {
+  display: flex;
+}
+
+.game-title {
+  font-size: 0.75rem;
   font-family: ui-sans-serif, system-ui, sans-serif;
+  color: #64748b;
+  font-weight: 500;
 }
+
+.delete-btn {
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  transition: background-color 0.15s;
+}
+
+.delete-btn:hover {
+  background-color: #fee2e2;
+}
+
+.block-content {
+  padding: 0;
+  line-height: 1.6;
+  font-family: Georgia, Cambria, serif;
+}
+
 .empty-tree-placeholder {
   color: #9ca3af;
   font-style: italic;
   font-size: 0.95rem;
+  padding: 8px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 4px;
+}
+
+/* REGOLA PER LA STAMPA / ESPORTAZIONE PDF:
+   Annulla completamente i margini negativi, i padding e nasconde l'interfaccia dell'hover */
+@media print {
+  .chess-tree-block-container {
+    padding: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    border: none !important;
+    background-color: transparent !important;
+  }
+  .block-header {
+    display: none !important;
+  }
 }
 </style>

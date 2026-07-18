@@ -8,7 +8,11 @@ export const ChessTreeBlock = Node.create({
   group: 'block',
   atom: true, // Impedisce a Tiptap di far entrare il cursore all'interno del blocco come testo normale
   draggable: true, // Permette di spostare il blocco, ma non interferisce con i click interni
-  
+  inline: false,
+  // 2. IMPEDISCE A TIPTAP DI SELEZIONARE E SOVRASCRIVERE L'INTERO BLOCCO CON LA TASTIERA
+  selectable: false,
+  // 3. Isola gli eventi di cancellazione (Backspace/Canc) all'interno del blocco
+  isolating: true,
 
   addAttributes() {
     return {

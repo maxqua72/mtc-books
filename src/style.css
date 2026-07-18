@@ -35,10 +35,34 @@ html, body, #app {
   font-display: block;
 }
 
+/* NUOVO: Registrazione del font per le figurine nel testo */
+@font-face {
+  font-family: 'Chess Cases';
+  src: url('./assets/fonts/case.woff2') format('woff2'),
+       url('./assets/fonts/case.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Chess The Good Companions';
+  src: url('./assets/fonts/goodcompanions.woff2') format('woff2'),
+       url('./assets/fonts/goodcompanions.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Classe di utilità per la scacchiera tipografica */
 .font-chess {
   font-family: 'Chess Merida', serif !important;
 }
+
+.font-cases {
+  font-family: 'Chess Cases', sans-serif !important;
+}
+
 .avoid-break {
   break-inside: avoid;
   page-break-inside: avoid;
