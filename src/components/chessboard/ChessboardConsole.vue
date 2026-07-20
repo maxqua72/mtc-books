@@ -32,29 +32,65 @@
       </span>
     </div>
 
-    <!-- Input FEN Interattivo con Copia e Modifica -->
-    <div class="space-y-1">
-      <div class="flex justify-between items-center">
-        <span class="text-xs font-medium text-neutral-500">Notazione FEN:</span>
+    <!-- Sistema di Navigazione Tab -->
+    <div class="space-y-3">
+      <div class="flex border-b border-neutral-200 text-xs font-semibold">
         <button 
-          @click="copyFenToClipboard" 
-          class="text-[11px] font-semibold text-neutral-600 hover:text-neutral-900 transition flex items-center gap-1"
+          @click="activeTab = 'fen'"
+          :class="activeTab === 'fen' ? 'border-b-2 border-black text-black' : 'text-neutral-400 hover:text-neutral-600'"
+          class="pb-1.5 px-2 transition"
         >
-          {{ copied ? 'Copiato!' : 'Copia FEN' }}
+          FEN
+        </button>
+        <button 
+          @click="activeTab = 'pgn'"
+          :class="activeTab === 'pgn' ? 'border-b-2 border-black text-black' : 'text-neutral-400 hover:text-neutral-600'"
+          class="pb-1.5 px-2 transition"
+        >
+          Importa PGN
         </button>
       </div>
-      
-      <input 
-        type="text"
-        :value="currentFen"
-        @change="handleFenChange"
-        class="w-full font-mono text-[11px] bg-neutral-900 text-neutral-300 p-2 rounded break-all focus:outline-none focus:ring-1 focus:ring-neutral-500 select-all leading-relaxed border border-neutral-800"
-        placeholder="Incolla un nuovo FEN qui..."
-      />
+
+      <!-- CONTENUTO TAB FEN (Ripristinato e Intatto) -->
+      <div v-if="activeTab === 'fen'" class="space-y-1">
+        <div class="flex justify-between items-center">
+          <span class="text-[11px] font-medium text-neutral-400">Notazione FEN corrente:</span>
+          <button 
+            @click="copyFenToClipboard" 
+            class="text-[11px] font-semibold text-neutral-600 hover:text-neutral-900 transition flex items-center gap-1"
+          >
+            {{ copied ? 'Copiato!' : 'Copia FEN' }}
+          </button>
+        </div>
+        <input 
+          type="text"
+          :value="currentFen"
+          @change="handleFenChange"
+          class="w-full font-mono text-[11px] bg-neutral-900 text-neutral-300 p-2 rounded break-all focus:outline-none focus:ring-1 focus:ring-neutral-500 select-all leading-relaxed border border-neutral-800"
+        />
+      </div>
+
+      <!-- CONTENUTO TAB PGN (Nuova area di testo) -->
+      <div v-if="activeTab === 'pgn'" class="space-y-2">
+        <span class="text-[11px] font-medium text-neutral-400 block">Incolla qui il testo PGN del file o della partita:</span>
+        <textarea 
+          v-model="pgnInput"
+          rows="3"
+          placeholder="1. e4 e5 2. Nf3 Nc6..."
+          class="w-full font-mono text-[11px] bg-neutral-50 border border-neutral-200 p-2 rounded focus:outline-none focus:ring-1 focus:ring-neutral-500 resize-none leading-relaxed text-neutral-800"
+        ></textarea>
+        <button 
+          @click="handlePgnSubmit"
+          :disabled="!pgnInput.trim()"
+          class="w-full py-1.5 bg-neutral-900 hover:bg-neutral-800 text-white disabled:bg-neutral-200 disabled:text-neutral-400 font-medium rounded text-xs transition uppercase font-bold"
+        >
+          Elabora e Costruisci Albero
+        </button>
+      </div>
     </div>
 
     <!-- Pulsanti Azione Libreria/Testo -->
-    <div class="flex gap-2">
+    <div class="flex gap-2 pt-2">
       <button 
         @click="emit('insertDiagram')"
         class="flex-1 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-medium rounded text-xs tracking-wide transition uppercase font-bold shadow-sm border border-neutral-200"
@@ -88,18 +124,19 @@ const emit = defineEmits<{
   (e: 'insertDiagram'): void
   (e: 'deleteBranch'): void
   (e: 'updateFen', newFen: string): void
+  (e: 'importPgn', pgnData: string): void
 }>()
 
 const treeStore = useChessTreeStore()
+const activeTab = ref<'fen' | 'pgn'>('fen')
+const pgnInput = ref('')
 const copied = ref(false)
 
 const copyFenToClipboard = async () => {
   try {
     await navigator.clipboard.writeText(props.currentFen)
     copied.value = true
-    setTimeout(() => {
-      copied.value = false
-    }, 2000)
+    setTimeout(() => { copied.value = false }, 2000)
   } catch (err) {
     console.error('Impossibile copiare il FEN:', err)
   }
@@ -109,6 +146,13 @@ const handleFenChange = (event: Event) => {
   const target = event.target as HTMLInputElement
   if (target && target.value.trim() !== '') {
     emit('updateFen', target.value.trim())
+  }
+}
+
+const handlePgnSubmit = () => {
+  if (pgnInput.value.trim()) {
+    emit('importPgn', pgnInput.value.trim())
+    pgnInput.value = '' // Svuota la textarea ad importazione avviata
   }
 }
 </script>

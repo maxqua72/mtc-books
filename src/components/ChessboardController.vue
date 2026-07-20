@@ -5,11 +5,15 @@
       @move="handlePhysicsMove" />
 
     <!-- Componente Console -->
-    <ChessboardConsole :current-fen="treeStore.activeFen" :last-move="lastMoveNotation" 
+    <ChessboardConsole 
+      :current-fen="treeStore.activeFen" 
+      :last-move="lastMoveNotation" 
       @reset="resetBoard"
       @insert-diagram="insertDiagramIntoText" 
       @delete-branch="deleteActiveBranch" 
-      @update-fen="handleManualFenUpdate"/>
+      @update-fen="handleManualFenUpdate"
+      @import-pgn="handlePgnImport"
+    />
   </div>
 </template>
 
@@ -168,6 +172,28 @@ const handleManualFenUpdate = (newFen: string) => {
     nextTick(() => {
       treeStore.activeFen = current
     })
+  }
+}
+
+// Nuova gestione pulita dedicata all'importazione del PGN
+const handlePgnImport = (pgnString: string) => {
+  try {
+    const testChess = new Chess()
+    testChess.loadPgn(pgnString)
+    
+    if (testChess.history().length === 0) {
+      throw new Error("PGN vuoto o privo di mosse leggibili")
+    }
+
+    const success = treeStore.importPgn(pgnString)
+    if (success) {
+      lastMoveNotation.value = 'PGN Importato'
+    } else {
+      throw new Error("Errore durante l'inserimento sequenziale nell'albero")
+    }
+  } catch (error) {
+    console.error("[BoardController] Impossibile elaborare il PGN:", error)
+    alert("Il testo inserito non contiene una catena di mosse PGN valida.")
   }
 }
 </script>
