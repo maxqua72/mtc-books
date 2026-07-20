@@ -42,6 +42,13 @@
             class="p-1.5 rounded text-xs transition" title="Elenco Puntato">
             • Elenco
         </button>
+
+        <!-- Nuovo pulsante per il blocco partita/varianti -->
+        <button @click="$emit('insertTreeBlock')"
+            class="p-1.5 rounded text-xs font-medium text-neutral-600 hover:bg-neutral-200 transition flex items-center gap-1"
+            title="Inserisci blocco partita o varianti">
+            <span>+</span> Partita / Varianti
+        </button>
     </div>
 </template>
 
@@ -50,5 +57,10 @@ import type { Editor } from '@tiptap/vue-3'
 
 defineProps<{
     editor: Editor
+}>()
+
+// Dichiariamo l'evento per comunicare al componente padre (BookEditor) il click del bottone
+defineEmits<{
+    (e: 'insertTreeBlock'): void
 }>()
 </script>

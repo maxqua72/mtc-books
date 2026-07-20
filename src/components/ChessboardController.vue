@@ -5,13 +5,16 @@
       @move="handlePhysicsMove" />
 
     <!-- Componente Console -->
-    <ChessboardConsole :current-fen="treeStore.activeFen" :last-move="lastMoveNotation" @reset="resetBoard"
-      @insert-diagram="insertDiagramIntoText" @delete-branch="deleteActiveBranch" />
+    <ChessboardConsole :current-fen="treeStore.activeFen" :last-move="lastMoveNotation" 
+      @reset="resetBoard"
+      @insert-diagram="insertDiagramIntoText" 
+      @delete-branch="deleteActiveBranch" 
+      @update-fen="handleManualFenUpdate"/>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { Chess } from 'chess.js'
 import type { Key } from 'chessground/types'
 
@@ -143,5 +146,28 @@ const deleteActiveBranch = () => {
 
   // Avvia la cancellazione nell'albero. Lo store emetterà il segnale per il testo.
   treeStore.deleteBranch(treeStore.activeNodeId)
+}
+
+const handleManualFenUpdate = (newFen: string) => {
+  try {
+    // Validiamo il FEN caricandolo temporaneamente nell'istanza chess.js
+    chess.load(newFen)
+    
+    // Se il FEN è valido, aggiorniamo il FEN attivo nello store di Pinia
+    treeStore.activeFen = chess.fen()
+    
+    // Aggiorniamo la notazione dell'ultima mossa dato che la catena precedente si interrompe/cambia
+    lastMoveNotation.value = 'FEN Incollato'
+  } catch (error) {
+    console.error("[BoardController] Il FEN inserito non è valido:", error)
+    alert("Il FEN inserito non è valido. Verifica la stringa e riprova.")
+    
+    // Forza il ripristino del FEN attuale nello store per ripulire l'input grafico errato
+    const current = treeStore.activeFen
+    treeStore.activeFen = ''
+    nextTick(() => {
+      treeStore.activeFen = current
+    })
+  }
 }
 </script>

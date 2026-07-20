@@ -12,20 +12,14 @@
         </div>
 
         <!-- Inserimento della Toolbar Modulare -->
-        <EditorToolbar v-if="editor" :editor="editor" @insert-tree-block="insertNewChessTreeBlock"/>
+        <EditorToolbar v-if="editor" 
+            :editor="editor" 
+            @insert-tree-block="insertNewChessTreeBlock"/>
 
         <!-- Area di Scrittura Effettiva -->
         <div id="book-editor-content" class="flex-1 overflow-y-auto">
             
-            <!-- Pulsante rapido integrato sopra la pagina per i test -->
-            <div class="max-w-[210mm] mx-auto mb-2 flex justify-end">
-                <button 
-                    @click="insertNewChessTreeBlock"
-                    class="bg-neutral-800 text-white text-xs font-semibold px-3 py-1.5 rounded-md shadow-sm hover:bg-neutral-700 transition"
-                >
-                    + Inserisci Blocco Partita / Varianti
-                </button>
-            </div>
+            
             
             <div class="tiptap-container" :class="{
                 'show-numbering': store.metadata.showNumbering,
@@ -171,7 +165,21 @@ watch(() => store.activeSectionId, (newSectionId) => {
 
     // 4. Per i CAPITOLI normali, sblocchiamo l'editor e carichiamo il loro HTML
     editor.value.setOptions({ editable: true })
-    editor.value.commands.setContent(store.activeSectionHtml)
+    //editor.value.commands.setContent(store.activeSectionHtml)
+    // CONTROLLO: Se il capitolo è vuoto o non ha ancora un contenuto reale,
+    // inseriamo un h2 vuoto così il CSS mostra subito il numero del capitolo,
+    // seguito da un paragrafo vuoto per quando l'utente premerà invio.
+    if (!store.activeSectionHtml || store.activeSectionHtml.trim() === '') {
+        editor.value.commands.setContent('<h2></h2><p></p>')
+        
+        // Opzionale: Sposta automaticamente il cursore all'interno dell'h2 appena creato
+        nextTick(() => {
+            editor.value?.commands.focus('start')
+        })
+    } else {
+        // Se ha già del testo salvato, lo carichiamo normalmente
+        editor.value.commands.setContent(store.activeSectionHtml)
+    }
 })
 
 // Se l'utente sta visualizzando l'indice e l'indice cambia (es. aggiunge capitoli), aggiorna lo schermo

@@ -244,5 +244,36 @@ export const useChessTreeStore = defineStore('chessTree', {
         node.comment = comment === '' ? null : comment;
       }
     },
+
+    /**
+     * Importa un intero testo PGN costruendo l'albero delle mosse corrispondente
+     */
+    importPgn(pgnString: string) {
+      if (!this.currentTree) return false;
+
+      const chess = new Chess();
+      try {
+        // Carica il PGN nell'istanza temporanea di chess.js
+        chess.loadPgn(pgnString);
+        
+        // Estrae la cronologia completa in modalità verbosa (include FEN e notazione SAN)
+        const history = chess.history({ verbose: true });
+        
+        // Resetta la navigazione all'inizio dell'albero corrente per iniziare l'importazione
+        this.setActiveNode(null);
+
+        // Cicla sequenzialmente tutte le mosse estratte dal PGN
+        for (const move of history) {
+          // Usiamo la logica nativa di addMove. 
+          // Se la mossa esiste già sposta solo il cursore, altrimenti crea il nodo.
+          this.addMove(move.san, move.after);
+        }
+
+        return true;
+      } catch (error) {
+        console.error("[ChessTreeStore] Errore durante il parsing del PGN:", error);
+        return false;
+      }
+    }
   }
 });

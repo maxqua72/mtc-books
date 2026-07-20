@@ -32,11 +32,25 @@
       </span>
     </div>
 
+    <!-- Input FEN Interattivo con Copia e Modifica -->
     <div class="space-y-1">
-      <span class="text-xs font-medium text-neutral-500 block">Notazione FEN corrente:</span>
-      <code class="block font-mono text-[11px] bg-neutral-900 text-neutral-300 p-2 rounded break-all select-all leading-relaxed">
-        {{ currentFen }}
-      </code>
+      <div class="flex justify-between items-center">
+        <span class="text-xs font-medium text-neutral-500">Notazione FEN:</span>
+        <button 
+          @click="copyFenToClipboard" 
+          class="text-[11px] font-semibold text-neutral-600 hover:text-neutral-900 transition flex items-center gap-1"
+        >
+          {{ copied ? 'Copiato!' : 'Copia FEN' }}
+        </button>
+      </div>
+      
+      <input 
+        type="text"
+        :value="currentFen"
+        @change="handleFenChange"
+        class="w-full font-mono text-[11px] bg-neutral-900 text-neutral-300 p-2 rounded break-all focus:outline-none focus:ring-1 focus:ring-neutral-500 select-all leading-relaxed border border-neutral-800"
+        placeholder="Incolla un nuovo FEN qui..."
+      />
     </div>
 
     <!-- Pulsanti Azione Libreria/Testo -->
@@ -61,9 +75,10 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useChessTreeStore } from '../../stores/chessTreeStore'
 
-defineProps<{
+const props = defineProps<{
   currentFen: string
   lastMove: string
 }>()
@@ -72,7 +87,28 @@ const emit = defineEmits<{
   (e: 'reset'): void
   (e: 'insertDiagram'): void
   (e: 'deleteBranch'): void
+  (e: 'updateFen', newFen: string): void
 }>()
 
 const treeStore = useChessTreeStore()
+const copied = ref(false)
+
+const copyFenToClipboard = async () => {
+  try {
+    await navigator.clipboard.writeText(props.currentFen)
+    copied.value = true
+    setTimeout(() => {
+      copied.value = false
+    }, 2000)
+  } catch (err) {
+    console.error('Impossibile copiare il FEN:', err)
+  }
+}
+
+const handleFenChange = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target && target.value.trim() !== '') {
+    emit('updateFen', target.value.trim())
+  }
+}
 </script>
