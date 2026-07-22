@@ -37,7 +37,7 @@ export const useChessTreeStore = defineStore('chessTree', {
     activeTreeId: null as string | null,
     activeNodeId: null as string | null,
     activeFen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-    isRecordingMoves: false,
+    isRecordingMoves: true,
     // Nuovo segnale reattivo per notificare l'editor senza passargli l'istanza
     lastRecordedMoveSignal: null as MoveSignalPayload | null,
     lastDeletedMoveId: null as string | null,

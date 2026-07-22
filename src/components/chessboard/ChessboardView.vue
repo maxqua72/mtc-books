@@ -1,8 +1,11 @@
 <template>
-  <div 
-    ref="boardElement" 
-    class="w-[400px] h-[400px] shadow-xl border-2 border-black cburnett bg-white"
-  ></div>
+  <!-- Il wrapper esterno gestisce le dimensioni rigide, il bordo e il clip per tagliare i sub-pixel -->
+  <div class="chessboard-container shadow-xl border-2 border-black rounded-sm overflow-hidden w-[400px] h-[400px]">
+    <div 
+      ref="boardElement" 
+      class="w-full h-full cburnett bg-white"
+    ></div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -27,7 +30,6 @@ let cgApi: Api | null = null
 const updateBoard = () => {
   if (!cgApi) return
   
-  // SE IL FEN CORRENTE DI CHESSGROUND È GIÀ UGUALE A QUELLO RICHIESTO, NON FARE NULLA
   if (cgApi.getFen() === props.fen) return 
 
   cgApi.set({
@@ -40,7 +42,6 @@ const updateBoard = () => {
   })
 }
 
-// Monitora i cambiamenti calcolati dal motore scacchistico del padre
 watch(() => props.fen, updateBoard)
 watch(() => props.dests, updateBoard)
 
@@ -64,3 +65,15 @@ onBeforeUnmount(() => {
   if (cgApi) cgApi.destroy()
 })
 </script>
+
+<style scoped>
+/*
+  Correzione chirurgica per il gap sub-pixel:
+  Applichiamo box-sizing coerente solo al wrapper e forziamo cg-wrap 
+  a riempire perfettamente il box senza sovrascrivere la griglia cg-board.
+*/
+.chessboard-container :deep(.cg-wrap) {
+  width: 400px !important;
+  height: 400px !important;
+}
+</style>
