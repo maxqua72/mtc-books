@@ -144,6 +144,8 @@ const insertDiagramIntoText = () => {
   bookStore.triggerInsertDiagram()
 }
 
+
+
 // Rimuove la variante selezionata sia dall'albero che dal documento di testo
 const deleteActiveBranch = () => {
   if (!treeStore.activeNodeId) return

@@ -49,11 +49,21 @@
             title="Inserisci blocco partita o varianti">
             <span>+</span> Partita / Varianti
         </button>
+
+        <!-- NUOVO PULSANTE: Dividi Blocco Mosse -->
+        <button @click="$emit('splitTreeBlock')"
+            :disabled="!canSplitBlock"
+            class="p-1.5 rounded text-xs font-medium text-neutral-600 hover:bg-neutral-200 transition flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            :title="canSplitBlock ? 'Dividi il blocco mosse nel punto selezionato' : 'Seleziona una mossa della linea principale per dividere il blocco'">
+            <span>✂️</span> Dividi Blocco
+        </button>
     </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { Editor } from '@tiptap/vue-3'
+import { useChessTreeStore } from '../stores/chessTreeStore'
 
 defineProps<{
     editor: Editor
@@ -62,5 +72,18 @@ defineProps<{
 // Dichiariamo l'evento per comunicare al componente padre (BookEditor) il click del bottone
 defineEmits<{
     (e: 'insertTreeBlock'): void
+    (e: 'splitTreeBlock'): void
 }>()
+
+const treeStore = useChessTreeStore()
+
+// Abilitato solo se c'è una mossa attiva appartenente alla mainline
+const canSplitBlock = computed(() => {
+    const currentTreeId = treeStore.activeTreeId
+    const activeNodeId = treeStore.activeNodeId
+    if (!currentTreeId || !activeNodeId) return false
+
+    const sourceTree = treeStore.trees.find(t => t.id === currentTreeId)
+    return sourceTree ? treeStore.isNodeInMainline(sourceTree.rootNodes, activeNodeId) : false
+})
 </script>

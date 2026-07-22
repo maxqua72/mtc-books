@@ -14,7 +14,8 @@
         <!-- Inserimento della Toolbar Modulare -->
         <EditorToolbar v-if="editor" 
             :editor="editor" 
-            @insert-tree-block="insertNewChessTreeBlock"/>
+            @insert-tree-block="insertNewChessTreeBlock"
+            @split-tree-block="handleSplitTreeBlock"/>
 
         <!-- Area di Scrittura Effettiva -->
         <div id="book-editor-content" class="flex-1 overflow-y-auto">
@@ -560,10 +561,65 @@ const generateFullBookPdf = async () => {
 }
 
 // Ascolta lo store Pinia: quando scatta il segnale, inserisce il diagramma col FEN attuale
+/*
 watch(() => store.insertSignal, () => {
     if (editor.value) {
         editor.value.commands.insertChessDiagram({ fen: store.activeFen })
     }
+})*/
+
+// NUOVA GESTIONE SPLIT: Chiamata al click su "Dividi Blocco" nella Toolbar
+const handleSplitTreeBlock = () => {
+    if (!editor.value) return
+
+    const currentTreeId = treeStore.activeTreeId
+    const activeNodeId = treeStore.activeNodeId
+
+    if (!currentTreeId || !activeNodeId) return
+
+    // 1. Spezziamo l'albero nello store
+    const newTreeId = treeStore.splitTree(currentTreeId, activeNodeId)
+    if (!newTreeId) return
+
+    // 2. Troviamo la posizione esatta del blocco corrente in Tiptap
+    let targetPos = -1
+    editor.value.state.doc.descendants((node, pos) => {
+        if (node.type.name === 'chessTreeBlock' && node.attrs.treeId === currentTreeId) {
+            targetPos = pos + node.nodeSize
+        }
+    })
+
+    // 3. Inseriamo SOLTANTO il secondo blocco mosse (senza il diagramma)
+    if (targetPos !== -1) {
+        editor.value
+            .chain()
+            .setTextSelection(targetPos)
+            .insertContent([
+                {
+                    type: 'chessTreeBlock',
+                    attrs: { treeId: newTreeId }
+                },
+                { type: 'paragraph' } // Riga di testo vuota per continuare a scrivere
+            ])
+            .run()
+
+        store.activeSectionHtml = editor.value.getHTML()
+    }
+}
+
+// 1. INSERIMENTO DIAGRAMMA SEMPLICE (Premendo "Inserisci Diagramma" dalla Console Scacchiera)
+watch(() => store.insertSignal, () => {
+    if (!editor.value) return
+
+    // Inserisce sempre e solo il diagramma visivo nel punto esatto del cursore Tiptap
+    editor.value
+        .chain()
+        .focus()
+        .insertChessDiagram({ fen: store.activeFen })
+        .insertContent({ type: 'paragraph' })
+        .run()
+
+    store.activeSectionHtml = editor.value.getHTML()
 })
 
 // Rileva quando viene registrata una nuova mossa sulla scacchiera.

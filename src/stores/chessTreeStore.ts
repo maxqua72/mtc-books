@@ -18,6 +18,8 @@ export interface ChessTree {
   startingFen: string;
   rootNodes: ChessMoveNode[];
   activeNodeId: string | null;
+  parentTreeId?: string | null;   // ID dell'albero padre da cui è nato lo split
+  splitAtNodeId?: string | null;  // ID del nodo al quale è stato eseguito il taglio
 }
 
 // Interfaccia per il segnale reattivo destinato a Tiptap
@@ -255,10 +257,10 @@ export const useChessTreeStore = defineStore('chessTree', {
       try {
         // Carica il PGN nell'istanza temporanea di chess.js
         chess.loadPgn(pgnString);
-        
+
         // Estrae la cronologia completa in modalità verbosa (include FEN e notazione SAN)
         const history = chess.history({ verbose: true });
-        
+
         // Resetta la navigazione all'inizio dell'albero corrente per iniziare l'importazione
         this.setActiveNode(null);
 
@@ -274,6 +276,115 @@ export const useChessTreeStore = defineStore('chessTree', {
         console.error("[ChessTreeStore] Errore durante il parsing del PGN:", error);
         return false;
       }
+    },
+    /**
+   * Spezza un albero di mosse in due albero distinti a partire da un determinato nodo.
+   * I nodi successivi a nodeId diventano la radice del nuovo albero.
+   */
+    /*
+      splitTree(treeId: string, nodeId: string): string | null {
+        const sourceTree = this.trees.find(t => t.id === treeId);
+        if (!sourceTree) return null;
+  
+        // Se lo split avviene alla radice (nessun nodo selezionato), non c'è nulla da separare
+        const splitNode = this.findNodeById(sourceTree.rootNodes, nodeId);
+        if (!splitNode || splitNode.children.length === 0) return null;
+  
+        // Estraiamo i nodi figli che diventeranno i nodi radice del nuovo albero
+        const detachedChildren = [...splitNode.children];
+  
+        // Tronchiamo i figli dal nodo di origine
+        splitNode.children = [];
+  
+        // Creiamo il nuovo albero per il secondo blocco
+        const newTreeId = `tree-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  
+        // Aggiorniamo i parentId dei nodi che diventano root per il nuovo albero
+        detachedChildren.forEach(child => {
+          child.parentId = null;
+        });
+  
+        const newTree: ChessTree = {
+          id: newTreeId,
+          title: `${sourceTree.title} (Parte 2)`,
+          startingFen: splitNode.fen,
+          rootNodes: detachedChildren,
+          activeNodeId: null,
+          parentTreeId: sourceTree.id,
+          splitAtNodeId: nodeId
+        };
+  
+        this.trees.push(newTree);
+        return newTreeId;
+      }
+        */
+    /**
+   * Verifica se un nodo appartiene alla linea principale (mainline).
+   */
+    isNodeInMainline(rootNodes: ChessMoveNode[], targetNodeId: string): boolean {
+      if (!rootNodes || rootNodes.length === 0) return false
+
+      let current: ChessMoveNode | undefined = rootNodes[0]
+
+      while (current) {
+        if (current.id === targetNodeId) {
+          return true
+        }
+        // Nel modello dati scacchistico, children[0] è sempre la mainline
+        current = current.children && current.children.length > 0 ? current.children[0] : undefined
+      }
+
+      return false
+    },
+
+    /**
+     * Spezza l'albero delle mosse nel punto indicato (solo su mainline).
+     * Separa le mosse successive in una nuova istanza di ChessTree.
+     */
+    splitTree(treeId: string, nodeId: string): string | null {
+      const sourceTree = this.trees.find(t => t.id === treeId)
+      if (!sourceTree) return null
+
+      // 1. VERIFICA DI SICUREZZA: Lo split è consentito solo sulla mainline
+      const isMainline = this.isNodeInMainline(sourceTree.rootNodes, nodeId)
+      if (!isMainline) {
+        console.warn("Lo split dell'albero è consentito solo sulle mosse della variante principale.")
+        return null
+      }
+
+      const splitNode = this.findNodeById(sourceTree.rootNodes, nodeId)
+      // Se il nodo non esiste o non ha mosse successive, non c'è nulla da spezzare
+      if (!splitNode || splitNode.children.length === 0) return null
+
+      // 2. Estraiamo i nodi figli (la continuazione della mainline + varianti collegate)
+      const detachedChildren = [...splitNode.children]
+
+      // Tronchiamo la rami successivi dal nodo sorgente
+      splitNode.children = []
+
+      // 3. Creiamo il nuovo albero per il secondo blocco
+      const newTreeId = `tree_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
+      // I nodi staccati diventano nodi radice (root) del nuovo albero
+      detachedChildren.forEach(child => {
+        child.parentId = null
+      })
+
+      const newTree: ChessTree = {
+        id: newTreeId,
+        title: `${sourceTree.title} (Cont.)`,
+        // Il nuovo albero parte dal FEN esatto della mossa di taglio
+        startingFen: splitNode.fen,
+        rootNodes: detachedChildren,
+        activeNodeId: null,
+        parentTreeId: sourceTree.id,
+        splitAtNodeId: nodeId
+      }
+
+      this.trees.push(newTree)
+      return newTreeId
     }
+
+
   }
 });
