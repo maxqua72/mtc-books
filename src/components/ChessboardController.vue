@@ -1,7 +1,8 @@
 <template>
-  <div class="w-full flex flex-col items-center gap-6">
+  <div class="w-[400px] flex flex-col items-center gap-6">
     <!-- Componente Scacchiera Grafica -->
-    <ChessboardView :fen="treeStore.activeFen" :turn-color="currentTurnColor" :dests="playableDests"
+    <ChessboardView ref="chessboardRef"
+      :fen="treeStore.activeFen" :turn-color="currentTurnColor" :dests="playableDests"
       @move="handlePhysicsMove" />
 
     <!-- Componente Console -->
@@ -36,6 +37,8 @@ const treeStore = useChessTreeStore()
 
 const lastMoveNotation = ref<string>('Nessuna')
 
+const chessboardRef = ref()
+
 // Inizializza un albero di default se vuoto all'avvio
 onMounted(() => {
   if (treeStore.trees.length === 0) {
@@ -43,6 +46,10 @@ onMounted(() => {
   } else {
     chess.load(treeStore.activeFen)
   }
+
+  setTimeout(() => {
+    chessboardRef.value?.redraw()
+  }, 100)
 })
 
 // Calcola il colore del turno basandosi direttamente sullo stato di chess.js sincronizzato

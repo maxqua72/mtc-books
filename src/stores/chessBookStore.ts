@@ -30,7 +30,7 @@ export interface BookMetadata {
 export const useChessBookStore = defineStore('chessBook', () => {
     // --- STATO ESISTENTE (Scacchiera e Segnali) ---
     const activeFen = ref('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-    const globalDiagramSize = ref(40)
+    const globalDiagramSize = ref(28)
     const insertSignal = ref(0)
     const exportSignal = ref(0)
     const exportFullBookSignal = ref(0)

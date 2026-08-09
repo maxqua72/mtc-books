@@ -1,15 +1,15 @@
 <template>
-  <!-- Il wrapper esterno gestisce le dimensioni rigide, il bordo e il clip per tagliare i sub-pixel -->
-  <div class="chessboard-container shadow-xl border-2 border-black rounded-sm overflow-hidden w-[400px] h-[400px]">
+  <div class="chessboard-outer flex items-center justify-center bg-neutral-900 shadow-xl rounded-sm">
+    <!-- Div bersaglio di Chessground centrato al pixel -->
     <div 
       ref="boardElement" 
-      class="w-full h-full cburnett bg-white"
+      class="board-target cburnett"
     ></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { Chessground } from 'chessground'
 import type { Api } from 'chessground/api'
 import type { Key } from 'chessground/types'
@@ -26,10 +26,10 @@ const emit = defineEmits<{
 
 const boardElement = ref<HTMLElement | null>(null)
 let cgApi: Api | null = null
+let resizeObserver: ResizeObserver | null = null
 
 const updateBoard = () => {
   if (!cgApi) return
-  
   if (cgApi.getFen() === props.fen) return 
 
   cgApi.set({
@@ -46,34 +46,96 @@ watch(() => props.fen, updateBoard)
 watch(() => props.dests, updateBoard)
 
 onMounted(() => {
-  if (boardElement.value) {
-    cgApi = Chessground(boardElement.value, {
-      fen: props.fen,
-      movable: { 
-        color: props.turnColor, 
-        free: false,
-        dests: props.dests
-      },
-      events: { 
-        move: (orig, dest) => emit('move', orig, dest) 
-      }
+  if (!boardElement.value) return
+
+  // 1. Inizializzazione standard di Chessground
+  cgApi = Chessground(boardElement.value, {
+    fen: props.fen,
+    coordinates: true,
+    movable: { 
+      color: props.turnColor, 
+      free: false,
+      dests: props.dests
+    },
+    events: { 
+      move: (orig, dest) => emit('move', orig, dest) 
+    }
+  })
+
+  // Esposizione temporanea per la console
+    ;(window as any).cgApi = cgApi
+
+  // 2. FORZATURA REDRAW:
+  // Ascoltiamo i cambiamenti dimensionali effettivi del DOM.
+  // Appena il div diventerà stabile a 400px, invochiamo redrawAll()
+  resizeObserver = new ResizeObserver(() => {
+    console.log("[ChessboardView] ResizeObserver: Forzando redrawAll()")
+    if (cgApi) {
+      console.log("[ChessboardView] ResizeObserver: cgApi esistente, invocando redrawAll()")
+      // Force-redraw della matrice e riposizionamento pezzi
+      console.log(cgApi)
+      cgApi.redrawAll()
+    }
+  })
+
+  resizeObserver.observe(boardElement.value)
+
+  // 3. Secondo livello di sicurezza: forziamo un redraw al termine del tick di Vue
+  nextTick(() => {
+    console.log("[ChessboardView] nextTick: Forzando redrawAll()")
+    requestAnimationFrame(() => {
+      console.log("[ChessboardView] requestAnimationFrame: Forzando redrawAll()")
+      if (cgApi) cgApi.redrawAll()
     })
-  }
+  })
+/*
+  setTimeout(() => {
+    if (cgApi) cgApi.redrawAll()
+  }, 100)*/
 })
 
 onBeforeUnmount(() => {
+  if (resizeObserver) resizeObserver.disconnect()
   if (cgApi) cgApi.destroy()
+})
+
+// Alla fine del setup di ChessboardView.vue
+const forceRedraw = () => {
+  if (cgApi) {
+    cgApi.redrawAll()
+  }
+}
+
+defineExpose({
+  redraw: forceRedraw
 })
 </script>
 
 <style scoped>
-/*
-  Correzione chirurgica per il gap sub-pixel:
-  Applichiamo box-sizing coerente solo al wrapper e forziamo cg-wrap 
-  a riempire perfettamente il box senza sovrascrivere la griglia cg-board.
-*/
-.chessboard-container :deep(.cg-wrap) {
-  width: 400px !important;
-  height: 400px !important;
+/* 1. Il riquadro esterno ha la dimensione desiderata */
+.chessboard-outer {
+  width: 402px;
+  height: 402px;
+  /*box-sizing: border-box;*/
 }
+
+/* 2. La scacchiera si adatta all'interno e si posiziona al centro */
+.board-target {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 3. Centratura forzata del contenitore generato da Chessground */
+:deep(.cg-wrap) {
+  margin: auto !important;
+  box-sizing: content-box;
+  display: block;
+}
+:deep(cg-container) {
+    outline: 2px solid black;
+}
+
 </style>

@@ -43,6 +43,8 @@
             • Elenco
         </button>
 
+        <div class="h-4 w-[1px] bg-neutral-300 mx-1"></div>
+
         <!-- Nuovo pulsante per il blocco partita/varianti -->
         <button @click="$emit('insertTreeBlock')"
             class="p-1.5 rounded text-xs font-medium text-neutral-600 hover:bg-neutral-200 transition flex items-center gap-1"

@@ -26,6 +26,7 @@ html, body, #app {
   background-color: rgba(156, 163, 175, 0.4) !important; /* Grigio gray-400 trasparente */
 }
 
+
 @font-face {
   font-family: 'EB Garamond';
   src: url('./assets/fonts/EBGaramond-VariableFont_wght.ttf') format('truetype-variations');

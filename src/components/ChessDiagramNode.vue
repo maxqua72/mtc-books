@@ -10,8 +10,8 @@
         <div class="diagram-actions-menu">
           <!-- Bottone Dimensione Piccola -->
           <button 
-            @click="updateLocalSize(32)" 
-            :class="{ active: props.node.attrs.size === 32 }"
+            @click="updateLocalSize(24)" 
+            :class="{ active: props.node.attrs.size === 24 }"
             title="Dimensione piccola"
             class="action-btn"
           >
@@ -20,8 +20,8 @@
 
           <!-- Bottone Dimensione Media -->
           <button 
-            @click="updateLocalSize(40)" 
-            :class="{ active: props.node.attrs.size === 40 || (!props.node.attrs.size && store.globalDiagramSize === 40) }"
+            @click="updateLocalSize(28)" 
+            :class="{ active: props.node.attrs.size === 28 || (!props.node.attrs.size && store.globalDiagramSize === 28) }"
             title="Dimensione media"
             class="action-btn"
           >
@@ -30,8 +30,8 @@
 
           <!-- Bottone Dimensione Grande -->
           <button 
-            @click="updateLocalSize(48)" 
-            :class="{ active: props.node.attrs.size === 48 }"
+            @click="updateLocalSize(32)" 
+            :class="{ active: props.node.attrs.size === 32 }"
             title="Dimensione grande"
             class="action-btn"
           >
