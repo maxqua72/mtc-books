@@ -14,27 +14,46 @@
         <!-- Inserimento della Toolbar Modulare -->
         <EditorToolbar v-if="editor" 
             :editor="editor" 
-            @insert-tree-block="insertNewChessTreeBlock"
-            @split-tree-block="handleSplitTreeBlock"/>
+            :zoom="currentZoomOption" 
+            @update:zoom="handleZoomChange"
+            @insert-tree-block="insertNewChessTreeBlock" 
+            @split-tree-block="handleSplitTreeBlock" />
 
-        <!-- Area di Scrittura Effettiva -->
-        <div id="book-editor-content" class="flex-1 overflow-y-auto">
-            
-            
-            
-            <div class="tiptap-container" :class="{
-                'show-numbering': store.metadata.showNumbering,
-                'is-structural-page': store.activeSectionInfo?.type === 'cover' || store.activeSectionInfo?.type === 'index'
-            }" :style="{
-                '--chapter-index': currentChapterNumber,
-                '--page-width': getPageSizeStyles.width,
-                '--page-height': getPageSizeStyles.height,
-                '--page-margin-top': (store.metadata.pageMarginTop || 25) + 'mm',
-                '--page-margin-bottom': (store.metadata.pageMarginBottom || 25) + 'mm',
-                '--page-margin-left': (store.metadata.pageMarginLeft || 20) + 'mm',
-                '--page-margin-right': (store.metadata.pageMarginRight || 20) + 'mm'
-            }">
-                <editor-content :editor="editor" />
+        <!-- Area di Scrittura Effettiva (Scroll Container) -->
+        <div 
+        id="book-editor-content" 
+        ref="scrollContainer" 
+        class="flex-1 overflow-y-auto p-8"
+        :style="{ overflowX: currentZoomOption === 'fit-width' ? 'hidden' : 'auto' }"
+        >
+            <!-- Contenitore flessibile privo di justify-center per evitare il bug del taglio a sinistra -->
+            <div class="editor-scroll-wrapper">
+                
+                <!-- Wrapper di Trasformazione Zoom -->
+                <div 
+                    class="zoom-transform-wrapper transition-transform duration-150 ease-out origin-top"
+                    :style="{
+                        transform: `scale(${computedZoomScale})`,
+                        width: `${getPagePixelWidth()}px`,
+                        marginBottom: zoomMarginBottom
+                    }"
+                >
+                    <div class="tiptap-container" :class="{
+                        'show-numbering': store.metadata.showNumbering,
+                        'is-structural-page': store.activeSectionInfo?.type === 'cover' || store.activeSectionInfo?.type === 'index'
+                    }" :style="{
+                        '--chapter-index': currentChapterNumber,
+                        '--page-width': getPageSizeStyles.width,
+                        '--page-height': getPageSizeStyles.height,
+                        '--page-margin-top': (store.metadata.pageMarginTop || 25) + 'mm',
+                        '--page-margin-bottom': (store.metadata.pageMarginBottom || 25) + 'mm',
+                        '--page-margin-left': (store.metadata.pageMarginLeft || 20) + 'mm',
+                        '--page-margin-right': (store.metadata.pageMarginRight || 20) + 'mm'
+                    }">
+                        <editor-content :editor="editor" />
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -47,7 +66,7 @@ import StarterKit from '@tiptap/starter-kit'
 import { PDFDocument } from 'pdf-lib'
 import { watch, onMounted, onBeforeUnmount, computed, ref, nextTick } from 'vue'
 import { useChessBookStore } from '../stores/chessBookStore'
-import { useChessTreeStore } from '../stores/chessTreeStore' 
+import { useChessTreeStore } from '../stores/chessTreeStore'
 import { ChessDiagram } from '../extensions/ChessDiagram'
 import { CustomHeading } from '../extensions/CustomHeading' // Aggiusta il percorso se serve
 import { ChessTreeBlock } from '../extensions/ChessTreeBlock' // <-- Nuova Estensione Blocco Ibrido
@@ -61,6 +80,70 @@ const treeStore = useChessTreeStore()
 const isGeneratingPdf = ref(false)
 
 const isInsertingFromEngine = ref(false)
+
+// --- GESTIONE ZOOM ---
+const currentZoomOption = ref<string>('100')
+const computedZoomScale = ref<number>(1)
+const scrollContainer = ref<HTMLElement | null>(null)
+let resizeObserver: ResizeObserver | null = null
+
+// Ritorna la larghezza teorica in pixel per il calcolo di "Adatta Larghezza"
+const getPagePixelWidth = () => {
+    const format = store.metadata.pageFormat || 'a4'
+    if (format === 'crown-quarto') return 714 // ~189mm a 96 DPI
+    if (format === 'b-format') return 488     // ~129mm a 96 DPI
+    return 793                                // ~210mm A4 a 96 DPI
+}
+
+// Ritorna l'altezza della pagina in pixel (a 96 DPI)
+const getPagePixelHeight = () => {
+    const format = store.metadata.pageFormat || 'a4'
+    if (format === 'crown-quarto') return 930  // ~246mm
+    if (format === 'b-format') return 748      // ~198mm
+    return 1123                                // ~297mm A4
+}
+
+// Calcola lo zoom dinamico
+const calculateZoom = () => {
+    if (currentZoomOption.value === 'fit-width') {
+        if (!scrollContainer.value) return
+        
+        // clientWidth misura lo spazio visibile escludendo la barra di scorrimento verticale
+        const padding = 32 // Margine di sicurezza
+        const availableWidth = scrollContainer.value.clientWidth - padding
+        const pageWidth = getPagePixelWidth()
+        
+        // Calcola il fattore di scala esatto
+        const scale = availableWidth / pageWidth
+        
+        // Limitiamo lo zoom minimo/massimo e applichiamo una tolleranza
+        computedZoomScale.value = Math.max(0.3, Math.min(2.5, scale))
+    } else {
+        computedZoomScale.value = parseFloat(currentZoomOption.value) / 100
+    }
+}
+
+const handleZoomChange = (newZoom: string) => {
+    currentZoomOption.value = newZoom
+    //calculateZoom()
+    nextTick(() => {
+        calculateZoom()
+    })
+}
+
+// Compensa lo spazio vuoto in basso generato dal ridimensionamento CSS transform
+// Compensa l'altezza occupata dal foglio quando scalato
+const zoomMarginBottom = computed(() => {
+    const pageHeight = getPagePixelHeight()
+    const scaledHeight = pageHeight * computedZoomScale.value
+    // Se lo zoom è inferiore a 1, riduciamo il margine inferiore per evitare spazio vuoto gigantesco
+    const difference = scaledHeight - pageHeight
+    return `${difference}px`
+})
+
+watch(() => store.metadata.pageFormat, () => {
+    calculateZoom()
+})
 
 const getPageSizeStyles = computed(() => {
     const format = store.metadata.pageFormat || 'a4'
@@ -106,7 +189,7 @@ const insertNewChessTreeBlock = () => {
 
     // 1. Genera l'ID unico per l'albero scacchi
     const uniqueTreeId = `tree_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    
+
     // 2. Crea l'albero nello store di Pinia
     treeStore.trees.push({
         id: uniqueTreeId,
@@ -123,7 +206,7 @@ const insertNewChessTreeBlock = () => {
     // 3. Sposta il cursore alla fine del documento e inserisci il blocco scacchi
     editor.value.chain()
         // Sposta il cursore alla fine di tutto per evitare QUALSIASI sovrascrittura
-        .focus('end') 
+        .focus('end')
         .insertContent([
             {
                 type: 'chessTreeBlock',
@@ -134,7 +217,7 @@ const insertNewChessTreeBlock = () => {
             }
         ])
         .run()
-    
+
     store.activeSectionHtml = editor.value.getHTML()
 }
 
@@ -172,7 +255,7 @@ watch(() => store.activeSectionId, (newSectionId) => {
     // seguito da un paragrafo vuoto per quando l'utente premerà invio.
     if (!store.activeSectionHtml || store.activeSectionHtml.trim() === '') {
         editor.value.commands.setContent('<h2></h2><p></p>')
-        
+
         // Opzionale: Sposta automaticamente il cursore all'interno dell'h2 appena creato
         nextTick(() => {
             editor.value?.commands.focus('start')
@@ -206,10 +289,22 @@ onMounted(() => {
         const defaultId = store.createNewSection("Capitolo 1 — Introduzione", "chapter")
         store.changeActiveSection(defaultId, editor.value?.getHTML())
     }
+
+    // Osservatore dimensioni per "Adatta larghezza"
+    if (scrollContainer.value) {
+        resizeObserver = new ResizeObserver(() => {
+            if (currentZoomOption.value === 'fit-width') {
+                calculateZoom()
+            }
+        })
+        resizeObserver.observe(scrollContainer.value)
+    }
+    calculateZoom()
 })
 
 onBeforeUnmount(() => {
     window.removeEventListener('request-editor-sync', syncEditorContent)
+    if (resizeObserver) resizeObserver.disconnect()
 })
 
 const getSharedCssRules = (marginTop: number, marginRight: number, marginBottom: number, marginLeft: number, pageSize: { width: string; height: string }, currentChapterIndex: number) => `
@@ -230,6 +325,7 @@ const getSharedCssRules = (marginTop: number, marginRight: number, marginBottom:
     min-width: ${pageSize.width} !important;
     min-height: auto !important;
     height: auto !important;
+    transform: none !important; /* Garantisce la scala nativa WYSIWYG per il PDF */
   }
   .book-text-engine, .tiptap, .book-text-engine p, .tiptap p {
     font-family: Georgia, Cambria, serif !important;
@@ -359,6 +455,9 @@ const generatePdf = () => {
     // 2. CLONAZIONE DI SICUREZZA PER NON ROVINARE L'INTERFACCIA UTENTE
     const containerClone = originalElement.cloneNode(true) as HTMLElement
 
+    // RESETTA TRASFORMAZIONI ZOOM E IMPOSTA DIMENSIONI NATIVE
+    containerClone.style.transform = 'none'
+
     // BLOCCO DIMENSIONI REALI SUL CLONE IN MILLIMETRI
     containerClone.style.setProperty('width', pageSize.width, 'important')
     containerClone.style.setProperty('max-width', pageSize.width, 'important')
@@ -424,7 +523,7 @@ const generateFullBookPdf = async () => {
     // Saliamo l'ID della sezione attualmente visualizzata per ripristinarla alla fine
     const originalActiveSectionId = store.activeSectionId
     isGeneratingPdf.value = true
-    
+
     console.log("%c[PDF LIVE ENGINE] --- INIZIO ESPORTAZIONE LIBRO COMPLETO ---", "color: #0284c7; font-weight: bold; font-size: 14px;");
 
     try {
@@ -441,7 +540,7 @@ const generateFullBookPdf = async () => {
             }
 
             console.log(`[PDF LIVE ENGINE] Cambio sezione attiva -> Rinnovamento DOM per: "${section.title}"`);
-            
+
             // 1. FORZIAMO LO STORE A CAMBIARE CAPITOLO (Attiva il rendering reale a schermo)
             store.activeSectionId = section.id
 
@@ -465,6 +564,9 @@ const generateFullBookPdf = async () => {
 
             // 4. CLONAZIONE DI SICUREZZA (Come nella funzione singola che funziona)
             const containerClone = originalElement.cloneNode(true) as HTMLElement
+
+            // RESETTA TRASFORMAZIONI ZOOM E IMPOSTA DIMENSIONI NATIVE
+            containerClone.style.transform = 'none'
 
             // BLOCCO DIMENSIONI REALI SUL CLONE IN MILLIMETRI (Anche all'interno della Full)
             containerClone.style.setProperty('width', pageSize.width, 'important')
@@ -527,7 +629,7 @@ const generateFullBookPdf = async () => {
             console.log(`[PDF LIVE ENGINE] Generazione buffer PDF singolo per "${section.title}"...`);
             const pdfBuffer = await html2pdf().set(options).from(containerClone).outputPdf('arraybuffer')
             pdfBuffers.push(pdfBuffer)
-            
+
             console.log(`[PDF LIVE ENGINE] Buffer completato per "${section.title}": ${pdfBuffer.byteLength} byte.`);
         }
 
@@ -548,7 +650,7 @@ const generateFullBookPdf = async () => {
         link.href = URL.createObjectURL(blob)
         link.download = `${store.metadata.title.toLowerCase().replace(/\s+/g, '_')}_completo.pdf`
         link.click()
-        
+
         console.log("%c[PDF LIVE ENGINE] --- PROCESSO CONCLUSO CON SUCCESSO ---", "color: #16a34a; font-weight: bold;");
 
     } catch (error) {
@@ -636,8 +738,8 @@ watch(() => treeStore.lastRecordedMoveSignal, (moveSignal) => {
 
 // Consuma semplicemente il segnale di eliminazione mossa senza toccare il testo di Tiptap
 watch(() => treeStore.lastDeletedMoveId, (idToDelete) => {
-  if (!idToDelete) return
-  treeStore.lastDeletedMoveId = null
+    if (!idToDelete) return
+    treeStore.lastDeletedMoveId = null
 })
 
 watch(() => store.exportSignal, () => {
@@ -668,10 +770,23 @@ const currentChapterNumber = computed(() => {
 #book-editor-content {
     background-color: #f3f4f6;
     display: block;
-    /* Trasformiamo in block anziché flex */
-    padding: 2rem;
-    overflow-x: auto;
-    /* Attiva lo scrollbar orizzontale */
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Wrapper per la centratura sicura in caso di overflow */
+.editor-scroll-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centra l'elemento solo lungo l'asse verticale/orizzontale senza tagliare a sinistra */
+    min-width: min-content; /* Permette all'elemento di espandere il contenitore nativo di scorrimento */
+    width: 100%;
+}
+
+.zoom-transform-wrapper {
+    margin: 0 auto; /* Centra automaticamente quando c'è spazio sufficiente */
+    box-sizing: border-box;
+    will-change: transform;
 }
 
 /* Stili Tipografici Assoluti in punti (pt) condivisi nativamente con l'editor */
@@ -714,12 +829,15 @@ const currentChapterNumber = computed(() => {
 .show-numbering .tiptap h2::before {
     content: counter(chapter-count) ". ";
 }
+
 .show-numbering .tiptap h3[data-toc-level="2"] {
     counter-increment: section-count;
 }
+
 .show-numbering .tiptap h3::before {
     content: counter(chapter-count) "." counter(section-count) " ";
 }
+
 .is-structural-page .tiptap h2::before,
 .is-structural-page .tiptap h3::before {
     content: none !important;
@@ -744,21 +862,19 @@ const currentChapterNumber = computed(() => {
     box-sizing: border-box;
 
     /* Posizionamento millimetrico esatto dell'area grigia di overflow */
-    background-image: 
-        linear-gradient(to bottom, 
-            transparent calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm) - 1px), 
-            #ef4444 calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm) - 1px), 
-            #ef4444 calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm) + 1px), 
-            transparent calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm) + 1px)
-        ),
-        linear-gradient(to bottom, 
+    background-image:
+        linear-gradient(to bottom,
+            transparent calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm) - 1px),
+            #ef4444 calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm) - 1px),
+            #ef4444 calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm) + 1px),
+            transparent calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm) + 1px)),
+        linear-gradient(to bottom,
             transparent 0px,
-            transparent calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm)), 
-            #f9fafb calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm)), 
+            transparent calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm)),
+            #f9fafb calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm)),
             #f9fafb calc(var(--page-height, 297mm) - 1px),
-            #cbd5e1 calc(var(--page-height, 297mm) - 1px), 
-            #cbd5e1 var(--page-height, 297mm)
-        );
+            #cbd5e1 calc(var(--page-height, 297mm) - 1px),
+            #cbd5e1 var(--page-height, 297mm));
 
     background-size: 100% var(--page-height, 297mm);
     background-repeat: repeat-y;
@@ -777,15 +893,16 @@ const currentChapterNumber = computed(() => {
 }
 
 /* Applica il rientro della prima riga ai paragrafi standard dell'editor */
-.tiptap p, 
+.tiptap p,
 .ProseMirror p {
-  text-indent: 0em; /* Regola il valore (es. 1.5em o 20px) in base alle tue preferenze */
+    text-indent: 0em;
+    /* Regola il valore (es. 1.5em o 20px) in base alle tue preferenze */
 }
 
 /* IMPORTANTE: Rimuovi il rientro dai paragrafi che si trovano dentro nodi personalizzati 
    o strutture speciali (es. il tuo blocco scacchi) per evitare conflitti visivi */
 .tiptap [data-type="chess-tree-block"] p,
 .ProseMirror [data-type="chess-tree-block"] p {
-  text-indent: 0;
+    text-indent: 0;
 }
 </style>

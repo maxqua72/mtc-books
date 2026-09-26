@@ -59,6 +59,23 @@
             :title="canSplitBlock ? 'Dividi il blocco mosse nel punto selezionato' : 'Seleziona una mossa della linea principale per dividere il blocco'">
             <span>✂️</span> Dividi Blocco
         </button>
+
+        <!-- Aggiungi nella sezione destra dei controlli della toolbar -->
+        <div class="flex items-center gap-1 border-l border-neutral-200 pl-2">
+        <span class="text-xs text-neutral-500 font-medium select-none">Zoom:</span>
+        <select 
+            :value="zoom" 
+            @change="e => $emit('update:zoom', (e.target as HTMLSelectElement).value)"
+            class="text-xs bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-medium py-1 px-2 rounded border border-neutral-300 focus:outline-none cursor-pointer"
+        >
+            <option value="fit-width">Adatta larghezza</option>
+            <option value="50">50%</option>
+            <option value="75">75%</option>
+            <option value="100">100% (A4)</option>
+            <option value="125">125%</option>
+            <option value="150">150%</option>
+        </select>
+        </div>
     </div>
 </template>
 
@@ -68,13 +85,15 @@ import type { Editor } from '@tiptap/vue-3'
 import { useChessTreeStore } from '../stores/chessTreeStore'
 
 defineProps<{
-    editor: Editor
+    editor: Editor,
+    zoom?: string
 }>()
 
 // Dichiariamo l'evento per comunicare al componente padre (BookEditor) il click del bottone
 defineEmits<{
     (e: 'insertTreeBlock'): void
     (e: 'splitTreeBlock'): void
+    (e: 'update:zoom', zoom: string ): void
 }>()
 
 const treeStore = useChessTreeStore()
