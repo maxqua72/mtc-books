@@ -25,6 +25,7 @@
         ref="scrollContainer" 
         class="flex-1 overflow-y-auto p-8"
         :style="{ overflowX: currentZoomOption === 'fit-width' ? 'hidden' : 'auto' }"
+        @click="handleCanvasClick"
         >
             <!-- Contenitore flessibile privo di justify-center per evitare il bug del taglio a sinistra -->
             <div class="editor-scroll-wrapper">
@@ -38,10 +39,13 @@
                         marginBottom: zoomMarginBottom
                     }"
                 >
-                    <div class="tiptap-container" :class="{
-                        'show-numbering': store.metadata.showNumbering,
-                        'is-structural-page': store.activeSectionInfo?.type === 'cover' || store.activeSectionInfo?.type === 'index'
-                    }" :style="{
+                    <div @click.self="handlePageClick"
+                        class="tiptap-container" 
+                        :class="{
+                            'show-numbering': store.metadata.showNumbering,
+                            'is-structural-page': store.activeSectionInfo?.type === 'cover' || store.activeSectionInfo?.type === 'index'
+                        }" 
+                        :style="{
                         '--chapter-index': currentChapterNumber,
                         '--page-width': getPageSizeStyles.width,
                         '--page-height': getPageSizeStyles.height,
@@ -49,7 +53,7 @@
                         '--page-margin-bottom': (store.metadata.pageMarginBottom || 25) + 'mm',
                         '--page-margin-left': (store.metadata.pageMarginLeft || 20) + 'mm',
                         '--page-margin-right': (store.metadata.pageMarginRight || 20) + 'mm'
-                    }">
+                        }">
                         <editor-content :editor="editor" />
                     </div>
                 </div>
@@ -71,6 +75,8 @@ import { ChessDiagram } from '../extensions/ChessDiagram'
 import { CustomHeading } from '../extensions/CustomHeading' // Aggiusta il percorso se serve
 import { ChessTreeBlock } from '../extensions/ChessTreeBlock' // <-- Nuova Estensione Blocco Ibrido
 import EditorToolbar from './EditorToolbar.vue'
+import Focus from '@tiptap/extension-focus'
+
 
 // @ts-ignore
 import html2pdf from 'html2pdf.js'
@@ -145,6 +151,25 @@ watch(() => store.metadata.pageFormat, () => {
     calculateZoom()
 })
 
+// Gestisce il clic nello spazio vuoto della pagina A4 (sotto l'ultimo paragrafo)
+const handlePageClick = (event: MouseEvent) => {
+    if (!editor.value) return
+    
+    // Porta il focus in fondo al documento se il clic è avvenuto direttamente nel container della pagina
+    editor.value.chain().focus('end').run()
+}
+
+// Gestisce il clic nello spazio grigio esterno al foglio
+const handleCanvasClick = (event: MouseEvent) => {
+    const target = event.target as HTMLElement
+    // Se l'utente clicca sul background grigio fuori dal foglio
+    if (target.id === 'book-editor-content' || target.classList.contains('editor-scroll-wrapper')) {
+        if (!editor.value) return
+        editor.value.chain().focus('end').run()
+    }
+}
+
+
 const getPageSizeStyles = computed(() => {
     const format = store.metadata.pageFormat || 'a4'
 
@@ -157,15 +182,21 @@ const getPageSizeStyles = computed(() => {
     return formats[format] || formats['a4']
 })
 
+const DEFAULT_CONTENT = `
+  <h2>Capitolo 1 — Introduzione</h2>
+  <p>Questo è il testo del tuo nuovo libro sugli scacchi. Puoi selezionare il testo per formattarlo in <strong>grassetto</strong> o <em>corsivo</em> utilizzando la toolbar superiore.</p>
+  <p>Muovi i pezzi sulla destra per impostare una variante, posiziona il cursore del testo qui sotto e premi il bottone nero sulla console.</p>
+`
+
 const editor = useEditor({
-    content: `
-    <h2>Capitolo 1 — Introduzione</h2>
-    <p>Questo è il testo del tuo nuovo libro sugli scacchi. Puoi selezionare il testo per formattarlo in <strong>grassetto</strong> o <em>corsivo</em> utilizzando la toolbar superiore.</p>
-    <p>Muovi i pezzi sulla destra per impostare una variante, posiziona il cursore del testo qui sotto e premi il bottone nero sulla console.</p>
-  `,
+    content: store.activeSectionHtml || DEFAULT_CONTENT,
     extensions: [
         StarterKit.configure({
             heading: false // Disabilitiamo sempre l'heading standard per evitare conflitti
+        }),
+        Focus.configure({
+            className: 'is-node-focused', // Classe CSS applicata al blocco/nodo attivo
+            mode: 'deepest',              // Applica il focus sul nodo più profondo
         }),
         CustomHeading, // <-- Estensione personalizzata per h2 e h3
         ChessDiagram, // <-- Registriamo l'estensione del nostro diagramma scacchistico
@@ -220,6 +251,23 @@ const insertNewChessTreeBlock = () => {
 
     store.activeSectionHtml = editor.value.getHTML()
 }
+
+// 2. FONDAMENTALE: Reagisci al ripristino da IndexedDB e al cambio sezione
+watch(
+    () => store.activeSectionHtml,
+    (newHtml) => {
+        if (!editor.value) return
+
+        // Ottieni l'HTML attuale di Tiptap
+        const currentHtml = editor.value.getHTML()
+
+        // Se l'HTML dello store è diverso da quello nell'editor, aggiornalo
+        // Il parametro `false` impedisce a setContent di far scattare di nuovo l'evento onUpdate
+        if (newHtml && currentHtml !== newHtml) {
+            editor.value.commands.setContent(newHtml, { emitUpdate: false })
+        }
+    }
+)
 
 
 // Ascolta se lo store cambia la sezione attiva esternamente (es: all'apertura di un file)
@@ -389,7 +437,7 @@ const getSharedCssRules = (marginTop: number, marginRight: number, marginBottom:
   
   /* STILI DI STAMPA PER IL CHESS TREE BLOCK */
   .chess-tree-block-container {
-    border: 1px solid #d1d5db !important;
+    border: none !important;
     border-radius: 6px !important;
     margin: 4mm 0 !important;
     page-break-inside: avoid !important;
@@ -520,6 +568,191 @@ const generateFullBookPdf = async () => {
         return
     }
 
+    // Salviamo l'ID della sezione attualmente visualizzata per ripristinarla alla fine
+    const originalActiveSectionId = store.activeSectionId
+    const originalContent = editor.value ? editor.value.getHTML() : ''
+    isGeneratingPdf.value = true
+
+    console.log("%c[PDF LIVE ENGINE] --- INIZIO ESPORTAZIONE LIBRO COMPLETO ---", "color: #0284c7; font-weight: bold; font-size: 14px;");
+
+    try {
+        // 0. SALVATAGGIO PREVENTIVO: Congeliamo subito la sezione attualmente aperta nella cache
+        if (originalActiveSectionId) {
+            store.zippedSectionsCache[originalActiveSectionId] = JSON.stringify({
+                id: originalActiveSectionId,
+                html: originalContent
+            })
+        }
+
+        const pdfBuffers: ArrayBuffer[] = []
+        let chapterCounter = 0
+        const pageSize = getPageSizeStyles.value
+
+        // Cicliamo tutte le sezioni del libro
+        for (let index = 0; index < store.sectionIndex.length; index++) {
+            const section = store.sectionIndex[index]
+
+            if (section.type === 'chapter') {
+                chapterCounter++
+            }
+
+            console.log(`[PDF LIVE ENGINE] Cambio sezione attiva -> Rinnovamento DOM per: "${section.title}"`);
+
+            // 1. ESTRAZIONE HTML E CAMBIO DI SEZIONE NELLO STORE
+            let sectionHtml = ''
+
+            if (section.type === 'index') {
+                sectionHtml = store.generatedTocHtml
+            } else {
+                const cachedData = store.zippedSectionsCache[section.id]
+                if (cachedData) {
+                    try {
+                        const parsed = JSON.parse(cachedData)
+                        sectionHtml = parsed.html || ''
+                    } catch (e) {
+                        console.error(`[PDF LIVE ENGINE] Errore nel parsing della cache per la sezione ${section.id}:`, e)
+                    }
+                }
+            }
+
+            // Cambiamo la sezione attiva nello store
+            store.activeSectionId = section.id
+            store.activeSectionHtml = sectionHtml
+
+            // Aggiorniamo Tiptap in modo SINCRONO prima del rendering del DOM
+            if (editor.value) {
+                editor.value.commands.setContent(sectionHtml, { emitUpdate: false })
+            }
+
+            // 2. ATTESA DOPPIA (Vue Tick + Timeout per Tiptap ed estensioni diagrammi)
+            await nextTick()
+            await new Promise((resolve) => requestAnimationFrame(resolve))
+            await new Promise((resolve) => setTimeout(resolve, 400)) // Tempo fondamentale per far svegliare i Web Component dei diagrammi
+
+            // 3. CATTURIAMO IL CONTENITORE VIVO APPENA MONTATO
+            const originalElement = document.querySelector('.tiptap-container') as HTMLElement
+            if (!originalElement) {
+                console.warn(`[PDF LIVE ENGINE] Impossibile trovare .tiptap-container per la sezione: ${section.title}`);
+                continue
+            }
+
+            // Verifichiamo nei log se il diagramma è effettivamente vivo e popolato
+            const liveDiagrams = originalElement.querySelectorAll('.chess-pure-text')
+            console.log(`[PDF LIVE ENGINE] Stato elementi a schermo per "${section.title}": Diagrammi trovati = ${liveDiagrams.length}`);
+            if (liveDiagrams.length > 0) {
+                console.log(` -> Testo reale renderizzato dall'estensione: "${liveDiagrams[0].textContent?.substring(0, 40).replace(/\n/g, ' ')}..."`);
+            }
+
+            // 4. CLONAZIONE DI SICUREZZA
+            const containerClone = originalElement.cloneNode(true) as HTMLElement
+
+            // RESETTA TRASFORMAZIONI ZOOM E IMPOSTA DIMENSIONI NATIVE
+            containerClone.style.transform = 'none'
+
+            // BLOCCO DIMENSIONI REALI SUL CLONE IN MILLIMETRI
+            containerClone.style.setProperty('width', pageSize.width, 'important')
+            containerClone.style.setProperty('max-width', pageSize.width, 'important')
+            containerClone.style.setProperty('min-width', pageSize.width, 'important')
+            containerClone.style.setProperty('box-sizing', 'border-box', 'important')
+
+            // Pulizia strutturale immediata sul clone
+            containerClone.style.setProperty('box-shadow', 'none', 'important')
+            containerClone.style.setProperty('border', 'none', 'important')
+            containerClone.style.setProperty('margin', '0', 'important')
+            containerClone.style.setProperty('height', 'auto', 'important')
+            containerClone.style.setProperty('min-height', 'auto', 'important')
+            containerClone.style.setProperty('max-height', 'none', 'important')
+            containerClone.style.setProperty('overflow', 'visible', 'important')
+            containerClone.setAttribute('spellcheck', 'false')
+
+            // Rimuoviamo i menu contestuali dei diagrammi
+            containerClone.querySelectorAll('.diagram-actions-menu').forEach(menu => menu.remove())
+
+            // Configurazione formati e opzioni
+            const isCustomFormat = store.metadata.pageFormat === 'crown-quarto' || store.metadata.pageFormat === 'b-format'
+            const pdfFormat: string | [number, number] = isCustomFormat
+                ? [parseFloat(pageSize.width), parseFloat(pageSize.height)] as [number, number]
+                : 'a4'
+
+            const currentChapterIndex = chapterCounter
+
+            const marginTop = store.metadata.pageMarginTop || 25
+            const marginRight = store.metadata.pageMarginRight || 20
+            const marginBottom = store.metadata.pageMarginBottom || 25
+            const marginLeft = store.metadata.pageMarginLeft || 20
+
+            const options = {
+                margin: 0,
+                image: { type: 'jpeg' as const, quality: 0.98 },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    scrollY: 0,
+                    letterRendering: true, // Forza il motore a calcolare lo spazio esatto di ogni lettera
+                    onclone: (clonedDoc: Document) => {
+                        // Rimuove i margini fantasma del body nel PDF
+                        if (clonedDoc.body) {
+                            clonedDoc.body.style.margin = '0 !important';
+                            clonedDoc.body.style.padding = '0 !important';
+                        }
+                        const styleTag = clonedDoc.createElement('style')
+                        styleTag.innerHTML = getSharedCssRules(marginTop, marginRight, marginBottom, marginLeft, pageSize, currentChapterIndex)
+                        clonedDoc.head.appendChild(styleTag)
+                    }
+                },
+                jsPDF: { unit: 'mm' as const, format: pdfFormat, orientation: 'portrait' as const },
+                pagebreak: { mode: ['css', 'legacy'] as const, avoid: ['p', 'h1', 'h2', 'h3', '.chess-diagram-container'] }
+            }
+
+            console.log(`[PDF LIVE ENGINE] Generazione buffer PDF singolo per "${section.title}"...`);
+            const pdfBuffer = await html2pdf().set(options).from(containerClone).outputPdf('arraybuffer')
+            pdfBuffers.push(pdfBuffer)
+
+            console.log(`[PDF LIVE ENGINE] Buffer completato per "${section.title}": ${pdfBuffer.byteLength} byte.`);
+        }
+
+        // 5. COMPILAZIONE GENERALE TRAMITE PDF-LIB
+        console.log("[PDF LIVE ENGINE] Fusione finale dei flussi di pagina...");
+        const mergedPdf = await PDFDocument.create()
+        for (let i = 0; i < pdfBuffers.length; i++) {
+            const srcPdf = await PDFDocument.load(pdfBuffers[i])
+            console.log(`[PDF LIVE ENGINE] Unione -> ${store.sectionIndex[i].title} pagine totali: ${srcPdf.getPageCount()}`);
+            const copiedPages = await mergedPdf.copyPages(srcPdf, srcPdf.getPageIndices())
+            copiedPages.forEach((page) => mergedPdf.addPage(page))
+        }
+
+        const mergedPdfBytes = await mergedPdf.save()
+        const blob = new Blob([mergedPdfBytes] as BlobPart[], { type: 'application/pdf' })
+
+        const link = document.createElement('a')
+        link.href = URL.createObjectURL(blob)
+        link.download = `${store.metadata.title.toLowerCase().replace(/\s+/g, '_')}_completo.pdf`
+        link.click()
+
+        console.log("%c[PDF LIVE ENGINE] --- PROCESSO CONCLUSO CON SUCCESSO ---", "color: #16a34a; font-weight: bold;");
+
+    } catch (error) {
+        console.error("[PDF LIVE ENGINE] ERRORE CRITICO:", error)
+    } finally {
+        // 6. RIPRISTINO DELLO STATO UTENTE ORIGINALMENTE ATTIVO
+        if (originalActiveSectionId) {
+            await store.changeActiveSection(originalActiveSectionId)
+            if (editor.value) {
+                editor.value.commands.setContent(store.activeSectionHtml, { emitUpdate: false })
+            }
+        }
+        isGeneratingPdf.value = false
+    }
+}
+
+const generateFullBookPdf_old = async () => {
+    
+    if (store.sectionIndex.length === 0) {
+        alert("Nessun capitolo presente da esportare.")
+        return
+    }
+
     // Saliamo l'ID della sezione attualmente visualizzata per ripristinarla alla fine
     const originalActiveSectionId = store.activeSectionId
     isGeneratingPdf.value = true
@@ -546,6 +779,7 @@ const generateFullBookPdf = async () => {
 
             // 2. ATTESA DOPPIA (Vue Tick + Timeout per Tiptap ed estensioni diagrammi)
             await nextTick()
+            await new Promise((resolve) => requestAnimationFrame(resolve))
             await new Promise((resolve) => setTimeout(resolve, 400)) // Tempo fondamentale per far svegliare i Web Component dei diagrammi
 
             // 3. CATTURIAMO IL CONTENITORE VIVO APPENA MONTATO
@@ -694,7 +928,7 @@ const handleSplitTreeBlock = () => {
     // 3. Inseriamo SOLTANTO il secondo blocco mosse (senza il diagramma)
     if (targetPos !== -1) {
         editor.value
-            .chain()
+            ?.chain()
             .setTextSelection(targetPos)
             .insertContent([
                 {
@@ -904,5 +1138,48 @@ const currentChapterNumber = computed(() => {
 .tiptap [data-type="chess-tree-block"] p,
 .ProseMirror [data-type="chess-tree-block"] p {
     text-indent: 0;
+}
+
+/* Personalizzazione Caret (Cursore di Scrittura) */
+.ProseMirror {
+    caret-color: #2563eb !important; /* Cursore blu visibile ed elegante */
+}
+
+/* Quando l'editor è in focus, assicura che il cursore sia sempre visibile e marcato */
+.ProseMirror-focused {
+    outline: none !important;
+}
+
+/* Indicatore discreto di blocco/paragrafo attivo (Stile Google Docs / Notion) */
+.ProseMirror p.is-node-focused,
+.ProseMirror h2.is-node-focused,
+.ProseMirror h3.is-node-focused {
+    position: relative;
+    background-color: rgba(239, 246, 255, 0.4); /* Un leggerissimo azzurro di background */
+    border-radius: 2px;
+}
+
+/* Linea di focus laterale sul paragrafo/blocco in cui si trova il cursore */
+.ProseMirror p.is-node-focused::before,
+.ProseMirror h2.is-node-focused::before,
+.ProseMirror h3.is-node-focused::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background-color: #3b82f6;
+    border-radius: 2px;
+}
+
+/* Gestione paragrafi vuoti: mostra un segnaposto se il blocco vuoto ha il focus */
+.ProseMirror p.is-empty.is-node-focused::after {
+    content: 'Inizia a digitare qui...';
+    color: #9ca3af;
+    float: left;
+    height: 0;
+    pointer-events: none;
+    font-style: italic;
 }
 </style>

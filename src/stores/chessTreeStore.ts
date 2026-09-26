@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { Chess } from 'chess.js';
+import { db } from '../db'
 
 export interface ChessMoveNode {
   id: string;
@@ -30,6 +31,7 @@ export interface MoveSignalPayload {
   moveNumber: number;
   isVariant?: boolean; // Facoltativo: indica se la mossa è una variante o meno
 }
+
 
 export const useChessTreeStore = defineStore('chessTree', {
   state: () => ({
@@ -69,6 +71,28 @@ export const useChessTreeStore = defineStore('chessTree', {
   },
 
   actions: {
+    
+
+    /**
+     * Ripristina tutti gli alberi di varianti salvati da Dexie/IndexedDB
+     */
+    async restoreFromIndexedDB(): Promise<boolean> {
+      try {
+        const savedTrees = await db.trees.toArray()
+        if (!savedTrees || savedTrees.length === 0) return false
+
+        this.trees = savedTrees.map(item => item.data)
+        if (this.trees.length > 0) {
+          this.activeTreeId = this.trees[0].id
+          this.setActiveNode(this.trees[0].activeNodeId || null)
+        }
+        return true
+      } catch (error) {
+        console.error('[ChessTreeStore] Errore durante il ripristino da Dexie:', error)
+        return false
+      }
+    },
+
     /**
      * Inizializza un nuovo albero (Partita o Posizione di studio separata)
      */
@@ -88,6 +112,7 @@ export const useChessTreeStore = defineStore('chessTree', {
       this.activeTreeId = newTree.id;
       this.activeNodeId = null;
       this.activeFen = startingFen;
+
       return newTree;
     },
 
@@ -112,6 +137,7 @@ export const useChessTreeStore = defineStore('chessTree', {
           this.activeFen = node.fen
         }
       }
+
     },
 
     /**
@@ -207,7 +233,9 @@ export const useChessTreeStore = defineStore('chessTree', {
         return false;
       };
 
-      return removeNodeRecursive(this.currentTree.rootNodes);
+      const success = removeNodeRecursive(this.currentTree.rootNodes)
+
+      return success
     },
 
     /**

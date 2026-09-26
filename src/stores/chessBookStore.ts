@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import JSZip from 'jszip'
+import { db } from '../db'
 
 // 1. DEFINIZIONE DELLE INTERFACCE
 export type SectionType = 'cover' | 'index' | 'chapter'
 export type PageFormat = 'a4' | 'crown-quarto' | 'b-format'
+export type SaveStatus = 'saved' | 'saving' | 'unsaved'
 
 export interface SectionIndexItem {
     id: string
@@ -27,6 +29,7 @@ export interface BookMetadata {
     pageMarginLeft: number
 }
 
+
 export const useChessBookStore = defineStore('chessBook', () => {
     // --- STATO ESISTENTE (Scacchiera e Segnali) ---
     const activeFen = ref('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
@@ -35,6 +38,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
     const exportSignal = ref(0)
     const exportFullBookSignal = ref(0)
     const isBookLoaded = ref(false)
+    const saveStatus = ref<SaveStatus>('saved')
 
     // --- NUOVO STATO (Metadati e Struttura Libro) ---
     const metadata = ref<BookMetadata>({
@@ -295,6 +299,41 @@ export const useChessBookStore = defineStore('chessBook', () => {
         return id
     }
 
+
+
+
+    /**
+ * Ripristina la sessione da IndexedDB al ricaricamento della pagina (F5)
+ */
+    async function restoreFromIndexedDB(): Promise<boolean> {
+        try {
+            const savedState = await db.bookState.get('current_book')
+            if (!savedState) return false
+
+            metadata.value = savedState.metadata
+            sectionIndex.value = savedState.sectionIndex
+
+            const allSections = await db.sections.toArray()
+            zippedSectionsCache.value = {}
+
+            allSections.forEach(sec => {
+                zippedSectionsCache.value[sec.id] = JSON.stringify({ id: sec.id, html: sec.html })
+            })
+
+            if (savedState.activeSectionId) {
+                await changeActiveSection(savedState.activeSectionId)
+            } else if (sectionIndex.value.length > 0) {
+                await changeActiveSection(sectionIndex.value[0].id)
+            }
+
+            isBookLoaded.value = true
+            return true
+        } catch (error) {
+            console.error('Errore nel ripristino da IndexedDB:', error)
+            return false
+        }
+    }
+
     return {
         // Stato esistente
         activeFen,
@@ -321,6 +360,11 @@ export const useChessBookStore = defineStore('chessBook', () => {
         changeActiveSection,
         loadMtcBook,
         exportMtcBook,
-        createNewSection
+        createNewSection,
+
+        // Funzioni di salvataggio e ripristino
+
+        restoreFromIndexedDB,
+        saveStatus
     }
 })
