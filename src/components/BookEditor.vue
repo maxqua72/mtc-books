@@ -46,7 +46,7 @@
                             'is-structural-page': store.activeSectionInfo?.type === 'cover' || store.activeSectionInfo?.type === 'index'
                         }" 
                         :style="{
-                        '--chapter-index': currentChapterNumber,
+                        '--chapter-index': store.currentChapterNumber,
                         '--page-width': getPageSizeStyles.width,
                         '--page-height': getPageSizeStyles.height,
                         '--page-margin-top': (store.metadata.pageMarginTop || 25) + 'mm',
@@ -434,6 +434,94 @@ const getSharedCssRules = (marginTop: number, marginRight: number, marginBottom:
     margin: 0 auto !important;
     overflow: visible !important;
   }
+
+  /* 1. Nasconde la toolbar delle azioni (bottoni taglia, cestino, matita) */
+  .diagram-actions-menu {
+    display: none !important;
+  }
+
+  /* 1. Contenitore esterno del Badge (rettangolo nero) */
+  .diagram-number-badge {
+    position: absolute !important;
+    top: 30px !important;
+    right: 100% !important;
+    margin-right: 10px !important;
+    
+    width: auto !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    background-color: #000000 !important;
+    padding: 0 7px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    
+    display: block !important;
+  }
+
+  /* 2. Blocco di testo interno (div) con margine / offset controllato */
+  .diagram-number-badge .badge-text {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    
+    /* Altezza riga e font leggibile */
+    line-height: 24px !important;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    text-align: center !important;
+    
+    /* Reset assoluto dei margini/padding ereditati */
+    margin: -6px 0 0 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    
+  }
+
+  /* 3. Stabilizza l'indicatore del tratto */
+  .turn-indicator {
+    position: absolute !important;
+    top: 70px !important;
+    right: 100% !important;
+    margin-right: 10px !important;
+    width: 20px !important;
+    height: 20px !important;
+    border-radius: 50% !important;
+    box-sizing: border-box !important;
+  }
+  .turn-indicator.white {
+    background-color: #ffffff !important;
+    border: 2px solid #000000 !important;
+  }
+  .turn-indicator.black {
+    background-color: #000000 !important;
+    border: 2px solid #000000 !important;
+  }
+
+  /* 4. Resetta completamente la Didascalia (rimuove il box grigio da edit/focus) */
+  .diagram-caption,
+  .diagram-caption.is-editing,
+  .diagram-caption:focus,
+  .diagram-caption:hover {
+    background-color: transparent !important;
+    border-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    font-family: Georgia, Cambria, serif !important;
+    font-size: 9.5pt !important;
+    color: #525252 !important;
+    font-style: italic !important;
+    text-align: center !important;
+    margin-top: 0.5rem !important;
+    padding: 0 !important;
+  }
+  .diagram-caption p,
+  .diagram-caption div {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
   
   /* STILI DI STAMPA PER IL CHESS TREE BLOCK */
   .chess-tree-block-container {
@@ -532,7 +620,7 @@ const generatePdf = () => {
         ? [parseFloat(pageSize.width), parseFloat(pageSize.height)] as [number, number]
         : 'a4'
 
-    const currentChapterIndex = currentChapterNumber.value
+    const currentChapterIndex = store.currentChapterNumber
 
     const options = {
         margin: [0, 0, 0, 0] as [number, number, number, number],
@@ -987,7 +1075,7 @@ watch(() => store.exportFullBookSignal, () => {
 })
 
 // Calcola la numerazione corretta del capitolo attivo filtrando solo i tipi 'chapter'
-const currentChapterNumber = computed(() => {
+/*const currentChapterNumber = computed(() => {
     if (!store.activeSectionId) return 1
 
     // Trova l'elenco di tutti i capitoli fino a quello corrente
@@ -996,7 +1084,8 @@ const currentChapterNumber = computed(() => {
 
     // Restituisce l'indice basato su 1 (es. Capitolo 1 = 1, Capitolo 2 = 2)
     return currentIndex !== -1 ? currentIndex + 1 : 1
-})
+})*/
+
 </script>
 
 <style>

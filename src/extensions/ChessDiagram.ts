@@ -22,8 +22,12 @@ export const ChessDiagram = Node.create({
         default: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
       },
       size: {
-      default: null, // Se è null, userà la dimensione globale dello store
-    }
+        default: null, // Se è null, userà la dimensione globale dello store
+      },
+      // <--- NUOVO ATTRIBUTO per editare la didascalia --->
+      captionEditable: {
+        default: true, // Di default la didascalia è attiva/editabile
+      }
     }
   },
 

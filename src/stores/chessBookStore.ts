@@ -75,6 +75,16 @@ export const useChessBookStore = defineStore('chessBook', () => {
         return sectionIndex.value.find(s => s.id === activeSectionId.value) || null
     })
 
+    const currentChapterNumber = computed(() => {
+        if (!activeSectionId.value) return 1
+
+        // Filtra solo i capitoli reali ignorando indici/sezioni speciali
+        const chapters = sectionIndex.value.filter(s => s.type === 'chapter')
+        const currentIndex = chapters.findIndex(s => s.id === activeSectionId.value)
+
+        return currentIndex !== -1 ? currentIndex + 1 : 1
+    })
+
     /**
     * Genera dinamicamente la struttura HTML dell'indice basandosi sui capitoli presenti
     */
@@ -365,6 +375,8 @@ export const useChessBookStore = defineStore('chessBook', () => {
         // Funzioni di salvataggio e ripristino
 
         restoreFromIndexedDB,
-        saveStatus
+        saveStatus,
+
+        currentChapterNumber
     }
 })
