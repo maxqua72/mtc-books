@@ -10,6 +10,15 @@
                 <p class="text-sm text-neutral-500 mt-1">Stiamo assemblando i capitoli e i diagrammi.</p>
             </div>
         </div>
+        <!-- OVERLAY DI CARICAMENTO PDF -->
+        <div v-if="pdfStore.isGeneratingPdf"
+            class="absolute inset-0 bg-white/95 backdrop-blur-sm z-[99999] flex flex-col items-center justify-center gap-4">
+            <div class="w-12 h-12 border-4 border-neutral-800 border-t-transparent rounded-full animate-spin"></div>
+            <div class="text-center">
+                <p class="font-semibold text-neutral-800 text-lg">Generazione del PDF sul server in corso...</p>
+                <p class="text-sm text-neutral-500 mt-1">Elaborazione dei font e della paginazione con Playwright.</p>
+            </div>
+        </div>
 
         <!-- Inserimento della Toolbar Modulare -->
         <EditorToolbar v-if="editor" 
@@ -71,18 +80,24 @@ import { PDFDocument } from 'pdf-lib'
 import { watch, onMounted, onBeforeUnmount, computed, ref, nextTick } from 'vue'
 import { useChessBookStore } from '../stores/chessBookStore'
 import { useChessTreeStore } from '../stores/chessTreeStore'
-import { ChessDiagram } from '../extensions/ChessDiagram'
+import { ChessDiagram } from '../extensions/ChessDiagram.ts'
 import { CustomHeading } from '../extensions/CustomHeading' // Aggiusta il percorso se serve
 import { ChessTreeBlock } from '../extensions/ChessTreeBlock' // <-- Nuova Estensione Blocco Ibrido
 import EditorToolbar from './EditorToolbar.vue'
 import Focus from '@tiptap/extension-focus'
 
+import { usePdfStore } from '../stores/pdfStore'
+
 
 // @ts-ignore
 import html2pdf from 'html2pdf.js'
 
+import pdfPrintStyles from '../assets/styles/pdf-print.css?raw'
+
 const store = useChessBookStore()
 const treeStore = useChessTreeStore()
+const pdfStore = usePdfStore()
+
 const isGeneratingPdf = ref(false)
 
 const isInsertingFromEngine = ref(false)
@@ -289,7 +304,7 @@ watch(() => store.activeSectionId, (newSectionId) => {
     if (currentSection?.type === 'cover' && !store.activeSectionHtml) {
         editor.value.setOptions({ editable: true })
         editor.value.commands.setContent(`
-      <h1 style="text-align: center; font-size: 32pt; margin-top: 50mm; font-family: Georgia, serif;">Titolo del Libro</h1>
+      <h1 style="text-align: center; font-size: 32pt; margin-top: 50mm; font-family: Lora, Georgia, serif;">Titolo del Libro</h1>
       <p style="text-align: center; font-style: italic; font-size: 14pt; margin-top: 10mm;">Autore</p>
     `)
         return
@@ -376,7 +391,7 @@ const getSharedCssRules = (marginTop: number, marginRight: number, marginBottom:
     transform: none !important; /* Garantisce la scala nativa WYSIWYG per il PDF */
   }
   .book-text-engine, .tiptap, .book-text-engine p, .tiptap p {
-    font-family: Georgia, Cambria, serif !important;
+    font-family: Lora,Georgia, Cambria, serif !important;
     color: #171717 !important;
     font-size: 11pt !important;
     line-height: 1.5 !important;
@@ -394,7 +409,7 @@ const getSharedCssRules = (marginTop: number, marginRight: number, marginBottom:
     margin-top: 0 !important;
     margin-bottom: 6mm !important;
     padding: 0 !important;
-    font-family: Georgia, serif !important; 
+    font-family: Lora, Georgia, serif !important; 
     page-break-inside: avoid !important; 
     break-inside: avoid !important; 
   }
@@ -409,7 +424,7 @@ const getSharedCssRules = (marginTop: number, marginRight: number, marginBottom:
     font-weight: bold !important; 
     margin-top: 18pt !important; 
     margin-bottom: 9pt !important; 
-    font-family: Georgia, serif !important; 
+    font-family: Lora,Georgia, serif !important; 
     page-break-inside: avoid !important; 
     break-inside: avoid !important; 
   }
@@ -509,7 +524,7 @@ const getSharedCssRules = (marginTop: number, marginRight: number, marginBottom:
     border: none !important;
     box-shadow: none !important;
     outline: none !important;
-    font-family: Georgia, Cambria, serif !important;
+    font-family: Lora, Georgia, Cambria, serif !important;
     font-size: 9.5pt !important;
     color: #525252 !important;
     font-style: italic !important;
@@ -546,6 +561,29 @@ const getSharedCssRules = (marginTop: number, marginRight: number, marginBottom:
   .show-numbering h3::before { content: counter(section-count) " " !important; }
   .is-structural-page h2::before, .is-structural-page h3::before { content: none !important; }
 `
+
+const getSharedCssRulesServer = (
+  marginTop: number, 
+  marginRight: number, 
+  marginBottom: number, 
+  marginLeft: number, 
+  pageSize: { width: string; height: string }, 
+  currentChapterIndex: number
+) => {
+  // Inietta solo le variabili CSS che sovrascrivono i default di pdf-print.css
+  const customVariables = `
+    :root {
+      --page-margin-top: ${marginTop}mm;
+      --page-margin-right: ${marginRight}mm;
+      --page-margin-bottom: ${marginBottom}mm;
+      --page-margin-left: ${marginLeft}mm;
+      --page-width: ${pageSize.width};
+      --chapter-index: ${currentChapterIndex};
+    }
+  `
+
+  return `${customVariables}\n${pdfPrintStyles}`
+}
 
 // Funzione ausiliaria per convertire il FEN nella stringa di testo originale per il font Chess Merida
 const fenToChessFontString = (fen: string): string => {
@@ -1074,6 +1112,16 @@ watch(() => store.exportFullBookSignal, () => {
     generateFullBookPdf()
 })
 
+// Ascolta il segnale per l'esportazione capitolo via Server
+watch(() => store.exportServerChapterSignal, () => {
+  generateServerChapterPdf()
+})
+
+// Ascolta il segnale per l'esportazione libro completo via Server
+watch(() => store.exportServerFullBookSignal, () => {
+  generateServerFullBookPdf()
+})
+
 // Calcola la numerazione corretta del capitolo attivo filtrando solo i tipi 'chapter'
 /*const currentChapterNumber = computed(() => {
     if (!store.activeSectionId) return 1
@@ -1085,6 +1133,138 @@ watch(() => store.exportFullBookSignal, () => {
     // Restituisce l'indice basato su 1 (es. Capitolo 1 = 1, Capitolo 2 = 2)
     return currentIndex !== -1 ? currentIndex + 1 : 1
 })*/
+
+
+
+// GESTIONE CREAZIONE PDF TRAMITE SERVER
+// Helper per raccogliere le regole CSS dinamiche correnti
+const getComputedCssRules = (currentChapterIndex: number) => {
+  const pageSize = getPageSizeStyles.value
+  const marginTop = store.metadata.pageMarginTop || 25
+  const marginRight = store.metadata.pageMarginRight || 20
+  const marginBottom = store.metadata.pageMarginBottom || 25
+  const marginLeft = store.metadata.pageMarginLeft || 20
+
+  // Combina le regole CSS condivise definite in getSharedCssRules
+  //return getSharedCssRules(marginTop, marginRight, marginBottom, marginLeft, pageSize, currentChapterIndex)
+  return getSharedCssRulesServer(marginTop, marginRight, marginBottom, marginLeft, pageSize, currentChapterIndex)
+}
+
+/**
+ * METODO 1: Esportazione Capitolo Singolo
+ */
+/*
+const generateServerChapterPdf = async () => {
+  if (!editor.value) return
+
+  const currentChapterIndex = store.currentChapterNumber
+  const customCss = getComputedCssRules(currentChapterIndex)
+  const title = store.activeSectionInfo?.title || 'capitolo'
+
+  try {
+    await pdfStore.exportCurrentChapter({
+      htmlContent: editor.value.getHTML(),
+      customCss,
+      title,
+      pageSize: store.metadata.pageFormat || 'a4'
+    })
+  } catch (err) {
+    alert("Si è verificato un errore durante l'esportazione del capitolo.")
+  }
+}*/
+const generateServerChapterPdf = async () => {
+  if (!editor.value) return
+
+  const currentChapterIndex = store.currentChapterNumber
+  const customCss = getComputedCssRules(currentChapterIndex)
+  const title = store.activeSectionInfo?.title || 'capitolo'
+
+  // --- PUNTO 2: CATTURA DEL DOM REALE ---
+  // Selezioniamo il contenitore HTML dell'editor visibile nella pagina
+  const editorEl = document.querySelector('.tiptap') || document.querySelector('.ProseMirror')
+
+  if (!editorEl) {
+    alert("Impossibile trovare il contenuto dell'editor da esportare.")
+    return
+  }
+
+  // Cloniamo il nodo DOM per poterlo manipolare senza toccare l'interfaccia dell'utente
+  const clonedEditor = editorEl.cloneNode(true) as HTMLElement
+
+  // Rimuoviamo elementi d'interfaccia/hover non voluti per la stampa (es. header con bottone "Elimina")
+  clonedEditor.querySelectorAll('.block-header, .diagram-actions-menu').forEach(el => el.remove())
+
+  
+  // 2. Svuota il testo contenuto nei badge per evitare la duplicazione con ::before
+  clonedEditor.querySelectorAll('.badge-text').forEach(el => {
+    el.textContent = ''
+  })
+
+  // Estraiamo l'HTML reale con tutti i componenti Vue espanse/renderizzate
+  const processedHtml = clonedEditor.innerHTML
+  // --------------------------------------
+
+  try {
+    await pdfStore.exportCurrentChapter({
+      htmlContent: processedHtml, // Passiamo l'HTML processato invece di editor.value.getHTML()
+      customCss,
+      title,
+      pageSize: store.metadata.pageFormat || 'a4'
+    })
+  } catch (err) {
+    alert("Si è verificato un errore durante l'esportazione del capitolo.")
+  }
+}
+
+/**
+ * METODO 2: Esportazione Libro Completo
+ */
+const generateServerFullBookPdf = async () => {
+  if (store.sectionIndex.length === 0) {
+    alert("Nessun capitolo presente da esportare.")
+    return
+  }
+
+  // Prepara l'elenco delle sezioni leggendo le righe aggiornate dallo store/cache
+  const preparedSections = store.sectionIndex.map((section, index) => {
+    let sectionHtml = ''
+    if (section.type === 'index') {
+      sectionHtml = store.generatedTocHtml
+    } else {
+      const cachedData = store.zippedSectionsCache[section.id]
+      if (cachedData) {
+        try {
+          const parsed = JSON.parse(cachedData)
+          sectionHtml = parsed.html || ''
+        } catch (e) {
+          console.error(`Errore parsing cache sezione ${section.id}:`, e)
+        }
+      } else if (section.id === store.activeSectionId && editor.value) {
+        sectionHtml = editor.value.getHTML()
+      }
+    }
+
+    return {
+      id: section.id,
+      title: section.title,
+      type: section.type,
+      html: sectionHtml
+    }
+  })
+
+  const customCss = getComputedCssRules(1)
+
+  try {
+    await pdfStore.exportFullBook({
+      sections: preparedSections,
+      customCss,
+      bookTitle: store.metadata.title || 'libro',
+      pageSize: store.metadata.pageFormat || 'a4'
+    })
+  } catch (err) {
+    alert("Si è verificato un errore durante l'esportazione del libro completo.")
+  }
+}
 
 </script>
 
@@ -1115,7 +1295,7 @@ watch(() => store.exportFullBookSignal, () => {
 /* Stili Tipografici Assoluti in punti (pt) condivisi nativamente con l'editor */
 .book-text-engine,
 .tiptap {
-    font-family: Georgia, Cambria, serif !important;
+    font-family: Lora, Georgia, Cambria, serif !important;
     font-size: 11pt !important;
     line-height: 1.5 !important;
     color: #171717 !important;

@@ -71,7 +71,7 @@
           @click="executeExport"
           class="px-4 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-l shadow transition cursor-pointer border-r border-blue-700 active:bg-blue-800"
         >
-          {{ exportMode === 'chapter' ? 'Esporta Capitolo' : 'Esporta Libro' }}
+          {{ exportButtonLabel }}
         </button>
         
         <!-- Pulsante Trigger Menu -->
@@ -89,14 +89,14 @@
         <!-- Menu Opzioni Dropdown -->
         <div v-if="isDropdownOpen" class="absolute right-2 top-full mt-1 w-48 bg-white border border-neutral-200 rounded shadow-lg z-50 py-1 font-sans">
           <button 
-            @click="selectMode('chapter')"
+            @click="selectMode('chapter-local')"
             class="w-full text-left px-4 py-2 text-xs text-neutral-700 hover:bg-neutral-50 flex items-center justify-between cursor-pointer"
           >
             <div class="flex flex-col">
               <span class="font-semibold">Esporta Capitolo</span>
               <span class="text-[10px] text-neutral-400 font-normal">Scarica solo la pagina corrente</span>
             </div>
-            <svg v-if="exportMode === 'chapter'" class="w-3 h-3 text-blue-600 shrink-0 ml-2" fill="currentColor" viewBox="0 0 20 20">
+            <svg v-if="exportMode === 'chapter-local'" class="w-3 h-3 text-blue-600 shrink-0 ml-2" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
             </svg>
           </button>
@@ -104,14 +104,40 @@
           <div class="border-t border-neutral-100 my-1"></div>
           
           <button 
-            @click="selectMode('book')"
+            @click="selectMode('book-local')"
             class="w-full text-left px-4 py-2 text-xs text-neutral-700 hover:bg-neutral-50 flex items-center justify-between cursor-pointer"
           >
             <div class="flex flex-col">
               <span class="font-semibold">Esporta Libro</span>
               <span class="text-[10px] text-neutral-400 font-normal">Genera l'opera intera</span>
             </div>
-            <svg v-if="exportMode === 'book'" class="w-3 h-3 text-blue-600 shrink-0 ml-2" fill="currentColor" viewBox="0 0 20 20">
+            <svg v-if="exportMode === 'book-local'" class="w-3 h-3 text-blue-600 shrink-0 ml-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+
+          <button 
+            @click="selectMode('chapter-server')"
+            class="w-full text-left px-4 py-2 text-xs text-neutral-700 hover:bg-neutral-50 flex items-center justify-between cursor-pointer"
+          >
+            <div class="flex flex-col">
+              <span class="font-semibold text-blue-700">Esporta Capitolo (Server)</span>
+              <span class="text-[10px] text-neutral-400 font-normal">Rendering vettoriale via Node/Playwright</span>
+            </div>
+            <svg v-if="exportMode === 'chapter-server'" class="w-3 h-3 text-blue-600 shrink-0 ml-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+
+          <button 
+            @click="selectMode('book-server')"
+            class="w-full text-left px-4 py-2 text-xs text-neutral-700 hover:bg-neutral-50 flex items-center justify-between cursor-pointer"
+          >
+            <div class="flex flex-col">
+              <span class="font-semibold text-blue-700">Esporta Libro (Server)</span>
+              <span class="text-[10px] text-neutral-400 font-normal">Genera l'opera intera con impaginazione server</span>
+            </div>
+            <svg v-if="exportMode === 'book-server'" class="w-3 h-3 text-blue-600 shrink-0 ml-2" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
             </svg>
           </button>
@@ -132,6 +158,8 @@
 import { ref, computed } from 'vue'
 import { useChessBookStore } from '../stores/chessBookStore'
 
+type ExportMode = 'chapter-local' | 'book-local' | 'chapter-server' | 'book-server'
+
 const store = useChessBookStore()
 const fileInput = ref<HTMLInputElement | null>(null)
 const isDropdownOpen = ref(false)
@@ -140,7 +168,22 @@ const isDropdownOpen = ref(false)
 const saveStatus = computed(() => store.saveStatus)
 
 // La scelta persiste: l'utente clicca la freccia per cambiare, ma l'azione non scatta finché non preme il bottone principale
-const exportMode = ref<'chapter' | 'book'>('chapter')
+// Modalità predefinita
+const exportMode = ref<ExportMode>('chapter-local')
+
+  // Titolo dinamico del pulsante
+const exportButtonLabel = computed(() => {
+  switch (exportMode.value) {
+    case 'chapter-local':
+      return 'Esporta Capitolo (Locale)'
+    case 'book-local':
+      return 'Esporta Libro (Locale)'
+    case 'chapter-server':
+      return 'Esporta Capitolo (Server)'
+    case 'book-server':
+      return 'Esporta Libro (Server)'
+  }
+})
 
 const toggleDropdown = () => {
   isDropdownOpen.value = !isDropdownOpen.value
@@ -151,21 +194,26 @@ const closeDropdown = () => {
 }
 
 // Cambia la modalità predefinita in modo persistente senza scatenare l'export immediato
-const selectMode = (mode: 'chapter' | 'book') => {
+const selectMode = (mode: ExportMode) => {
   exportMode.value = mode
   isDropdownOpen.value = false
 }
 
 // Esegue l'azione persistente impostata sul blocco di sinistra
 const executeExport = () => {
-  if (exportMode.value === 'chapter') {
-    store.triggerPdfExport()
-  } else {
-    if (typeof (store as any).triggerFullBookPdfExport === 'function') {
-      (store as any).triggerFullBookPdfExport()
-    } else {
-      window.dispatchEvent(new CustomEvent('request-full-book-pdf-export'))
-    }
+  switch (exportMode.value) {
+    case 'chapter-local':
+      store.triggerPdfExport()
+      break
+    case 'book-local':
+      store.triggerFullBookPdfExport()
+      break
+    case 'chapter-server':
+      store.triggerServerChapterPdfExport()
+      break
+    case 'book-server':
+      store.triggerServerFullBookPdfExport()
+      break
   }
 }
 

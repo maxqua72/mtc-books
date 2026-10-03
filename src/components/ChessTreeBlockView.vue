@@ -131,7 +131,7 @@ const deleteBlock = () => {
 .block-content {
   padding: 0;
   line-height: 1.6;
-  font-family: Georgia, Cambria, serif;
+  font-family: Lora, Georgia, Cambria, serif;
 }
 
 .empty-tree-placeholder {

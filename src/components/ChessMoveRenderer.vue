@@ -314,7 +314,7 @@ const convertToChessFont = (san: string): string => {
 .variant-block-break {
   display: block;
   margin: 0.2rem 0 0.2rem 0rem;
-  font-family: Georgia, Cambria, serif;
+  font-family: Lora, Georgia, Cambria, serif;
   line-height: 1.4;
 }
 

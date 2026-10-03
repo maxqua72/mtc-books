@@ -71,8 +71,44 @@ html, body, #app {
   font-display: swap;
 }
 
+/* --- LORA REGULAR  --- */
+      @font-face {
+        font-family: 'Lora';
+        src: url('./assets/fonts/lora-regular.ttf') format('truetype');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      /* --- LORA ITALIC  --- */
+      @font-face {
+        font-family: 'Lora';
+        src: url('./assets/fonts/lora-italic.ttf') format('truetype');
+        font-weight: 400;
+        font-style: italic;
+        font-display: swap;
+      }
+
+      /* --- LORA BOLD  --- */
+      @font-face {
+        font-family: 'Lora';
+        src: url('./assets/fonts/lora-bold.ttf') format('truetype');
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      /* --- LORA BOLD ITALIC  --- */
+      @font-face {
+        font-family: 'Lora';
+        src: url('./assets/fonts/lora-bold-italic.ttf') format('truetype');
+        font-weight: 700;
+        font-style: italic;
+        font-display: swap;
+      }
+
 .font-text {
-  font-family: 'EB Garamond', Georgia, serif !important;
+  font-family: 'Lora, EB Garamond', Georgia, serif !important;
 }
 
 /* Classe di utilità per la scacchiera tipografica */

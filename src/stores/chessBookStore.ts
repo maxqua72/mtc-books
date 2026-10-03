@@ -37,6 +37,11 @@ export const useChessBookStore = defineStore('chessBook', () => {
     const insertSignal = ref(0)
     const exportSignal = ref(0)
     const exportFullBookSignal = ref(0)
+
+    // --- NUOVI SEGNALI PER ESPORTAZIONE SERVER (PLAYWRIGHT) ---
+    const exportServerChapterSignal = ref(0)  // Esportazione Capitolo (Server)
+    const exportServerFullBookSignal = ref(0) // Esportazione Libro (Server)
+
     const isBookLoaded = ref(false)
     const saveStatus = ref<SaveStatus>('saved')
 
@@ -101,7 +106,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
         }
 
         const parser = new DOMParser()
-        let htmlResult = `<div class="toc-container"><h2 style="font-family: Georgia, serif; font-size: 2rem; margin-bottom: 1.5rem;">Indice Generale</h2><ul style="list-style: none; padding: 0; margin: 0; font-family: Georgia, serif;">`
+        let htmlResult = `<div class="toc-container"><h2 style="font-family: Lora, Georgia, serif; font-size: 2rem; margin-bottom: 1.5rem;">Indice Generale</h2><ul style="list-style: none; padding: 0; margin: 0; font-family: Lora,Georgia, serif;">`
 
         let mainCounter = 0
 
@@ -170,6 +175,15 @@ export const useChessBookStore = defineStore('chessBook', () => {
 
     function triggerFullBookPdfExport() {
         exportFullBookSignal.value++
+    }
+
+    // --- NUOVE FUNZIONI TRIGGER PER ESPORTAZIONE SERVER ---
+    function triggerServerChapterPdfExport() {
+        exportServerChapterSignal.value++
+    }
+
+    function triggerServerFullBookPdfExport() {
+        exportServerFullBookSignal.value++
     }
 
     // --- NUOVE FUNZIONI: NAVIGAZIONE (LAZY LOADING) ---
@@ -351,10 +365,16 @@ export const useChessBookStore = defineStore('chessBook', () => {
         insertSignal,
         exportSignal,
         exportFullBookSignal,
+        // Nuovi segnali per Server
+        exportServerChapterSignal,
+        exportServerFullBookSignal,
         updateActiveFen,
         triggerInsertDiagram,
         triggerPdfExport,
         triggerFullBookPdfExport,
+        // Nuovi trigger Server
+        triggerServerChapterPdfExport,
+        triggerServerFullBookPdfExport,
 
         // Nuovo Stato Strutturale
         isBookLoaded,

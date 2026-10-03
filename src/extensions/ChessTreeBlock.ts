@@ -21,7 +21,10 @@ export const ChessTreeBlock = Node.create({
         parseHTML: element => element.getAttribute('tree-id'),
         renderHTML: attributes => {
           if (!attributes.treeId) return {}
-          return { 'tree-id': attributes.treeId }
+          return { 
+            'tree-id': attributes.treeId,
+            'data-tree-id': attributes.treeId 
+          }
         },
       },
     }
@@ -30,14 +33,31 @@ export const ChessTreeBlock = Node.create({
   parseHTML() {
     return [
       {
+        // Riconosce il div salvato da renderHTML tramite il data-type
+        tag: 'div[data-type="chess-tree-block"]',
+      },
+      {
+        // Compatibilità con nodi che hanno l'attributo tree-id
+        tag: 'div[tree-id]',
+      },
+      {
+        // Compatibilità legacy se in precedenza usavi il tag custom
         tag: 'chess-tree-block',
       },
     ]
   },
 
-  renderHTML({ HTMLAttributes }) {
-    return ['chess-tree-block', mergeAttributes(HTMLAttributes)]
-  },
+  renderHTML({ node, HTMLAttributes }) {
+  return [
+    'div',
+    mergeAttributes(HTMLAttributes, {
+      'data-type': 'chess-tree-block',
+      class: 'chess-tree-block-container'
+    }),
+    // 0 indica a Tiptap di inserire il contenuto HTML passato durante l'esportazione
+    ['div', { class: 'block-content' }]
+  ]
+},
 
   addNodeView() {
     // Ora riceve il componente corretto e VueNodeViewRenderer saprà come montarlo
