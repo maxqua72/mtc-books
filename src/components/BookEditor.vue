@@ -33,15 +33,17 @@
         id="book-editor-content" 
         ref="scrollContainer" 
         class="flex-1 overflow-y-auto p-8"
-        :style="{ overflowX: currentZoomOption === 'fit-width' ? 'hidden' : 'auto' }"
+        
         @click="handleCanvasClick"
         >
             <!-- Contenitore flessibile privo di justify-center per evitare il bug del taglio a sinistra -->
-            <div class="editor-scroll-wrapper">
+            <div class="editor-scroll-wrapper"
+                :style="{ minWidth: currentZoomOption === 'fit-width' ? '0px' : 'min-content' }"
+            >
                 
                 <!-- Wrapper di Trasformazione Zoom -->
                 <div 
-                    class="zoom-transform-wrapper transition-transform duration-150 ease-out origin-top"
+                    class="zoom-transform-wrapper transition-transform duration-150 ease-out origin-top-left ml-0"
                     :style="{
                         transform: `scale(${computedZoomScale})`,
                         width: `${getPagePixelWidth()}px`,
@@ -130,15 +132,23 @@ const calculateZoom = () => {
         if (!scrollContainer.value) return
         
         // clientWidth misura lo spazio visibile escludendo la barra di scorrimento verticale
-        const padding = 32 // Margine di sicurezza
+        const padding = 64 // Margine di sicurezza
         const availableWidth = scrollContainer.value.clientWidth - padding
         const pageWidth = getPagePixelWidth()
-        
+
         // Calcola il fattore di scala esatto
-        const scale = availableWidth / pageWidth
+        //const scale = availableWidth / pageWidth
         
         // Limitiamo lo zoom minimo/massimo e applichiamo una tolleranza
-        computedZoomScale.value = Math.max(0.3, Math.min(2.5, scale))
+        //computedZoomScale.value = Math.max(0.3, Math.min(2.5, scale))
+
+        if (availableWidth > 0) {
+            const scale = availableWidth / pageWidth
+            // Impostiamo un limite minimo (es. 0.35) e massimo (2.5)
+            computedZoomScale.value = Math.max(0.35, Math.min(2.5, scale))
+        }
+        
+        
     } else {
         computedZoomScale.value = parseFloat(currentZoomOption.value) / 100
     }
@@ -1281,13 +1291,16 @@ const generateServerFullBookPdf = async () => {
 .editor-scroll-wrapper {
     display: flex;
     flex-direction: column;
-    align-items: center; /* Centra l'elemento solo lungo l'asse verticale/orizzontale senza tagliare a sinistra */
+    /*align-items: center;*//* Centra l'elemento solo lungo l'asse verticale/orizzontale senza tagliare a sinistra */
+    align-items: flex-start; /* CAMBIATO: da 'center' a 'flex-start' per ancorare a sinistra */
     min-width: min-content; /* Permette all'elemento di espandere il contenitore nativo di scorrimento */
     width: 100%;
 }
 
 .zoom-transform-wrapper {
-    margin: 0 auto; /* Centra automaticamente quando c'è spazio sufficiente */
+    /*margin: 0 auto; *//* Centra automaticamente quando c'è spazio sufficiente */
+    margin-left: 0 !important; /* CAMBIATO: rimuove la centratura orizzontale automatica */
+    margin-right: auto !important;
     box-sizing: border-box;
     will-change: transform;
 }
@@ -1361,7 +1374,7 @@ const generateServerFullBookPdf = async () => {
     min-width: var(--page-width, 210mm) !important;
     min-height: var(--page-height, 297mm);
 
-    margin: 0 auto 2rem auto;
+    margin: 0 auto 2rem 0 !important;
     box-sizing: border-box;
 
     /* Posizionamento millimetrico esatto dell'area grigia di overflow */
