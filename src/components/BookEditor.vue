@@ -1214,11 +1214,14 @@ const generateServerChapterPdf = async () => {
   const processedHtml = clonedEditor.innerHTML
   // --------------------------------------
 
+  console.log('Exporting chapter ' + currentChapterIndex + ' with title: ' + title)
+
   try {
     await pdfStore.exportCurrentChapter({
       htmlContent: processedHtml, // Passiamo l'HTML processato invece di editor.value.getHTML()
       customCss,
       title,
+      chapterNumber: currentChapterIndex,
       pageSize: store.metadata.pageFormat || 'a4'
     })
   } catch (err) {
@@ -1229,6 +1232,7 @@ const generateServerChapterPdf = async () => {
 /**
  * METODO 2: Esportazione Libro Completo
  */
+/*
 const generateServerFullBookPdf = async () => {
   if (store.sectionIndex.length === 0) {
     alert("Nessun capitolo presente da esportare.")
@@ -1274,7 +1278,173 @@ const generateServerFullBookPdf = async () => {
   } catch (err) {
     alert("Si è verificato un errore durante l'esportazione del libro completo.")
   }
+}*/
+
+/*
+const generateServerFullBookPdf = async () => {
+  if (store.sectionIndex.length === 0) {
+    alert("Nessun capitolo presente da esportare.")
+    return
+  }
+
+  // Memorizziamo l'id del capitolo attivo per ripristinarlo alla fine
+  const originalSectionId = store.activeSectionId
+  
+  // Attiviamo l'overlay visivo
+  isGeneratingPdf.value = true
+
+  const preparedSections = []
+
+  try {
+    for (const section of store.sectionIndex) {
+      let sectionHtml = ''
+
+      if (section.type === 'index') {
+        sectionHtml = store.generatedTocHtml
+      } else {
+        // 1. Carichiamo la sezione nell'editor (questo cambia store.activeSectionId e carica il contenuto Tiptap)
+        if (store.activeSectionId !== section.id) {
+          await store.changeActiveSection(section.id)
+          // Cambia questa chiamata con il tuo metodo dello store per cambiare capitolo
+        }
+
+        // 2. Attendiamo che Vue aggiorni il DOM
+        await nextTick()
+
+        // 3. Piccola pausa di sicurezza (50ms - 100ms) per permettere ai componenti Vue/Tree/Chessboard di essere renderizzati completamente
+        await new Promise(resolve => setTimeout(resolve, 100))
+
+        // 4. Catturiamo il DOM Reale con il Tree renderizzato
+        sectionHtml = captureCurrentEditorHtml()
+      }
+
+      preparedSections.push({
+        id: section.id,
+        title: section.title,
+        type: section.type,
+        html: sectionHtml
+      })
+    }
+
+    // Ripristiniamo la sezione iniziale dell'utente
+    if (originalSectionId && store.activeSectionId !== originalSectionId) {
+      await store.changeActiveSection(originalSectionId)
+      await nextTick()
+    }
+
+    const currentChapterIndex = store.currentChapterNumber
+    const customCss = getComputedCssRules(currentChapterIndex)
+
+    // Inviamo tutte le sezioni complete di DOM reale al server PDF
+    await pdfStore.exportFullBook({
+      sections: preparedSections,
+      customCss,
+      bookTitle: store.metadata.title || 'libro',
+      pageSize: store.metadata.pageFormat || 'a4'
+    })
+
+  } catch (err) {
+    console.error("Errore esportazione libro:", err)
+    alert("Si è verificato un errore durante l'esportazione del libro completo.")
+  } finally {
+    // Nascondiamo l'overlay
+    isGeneratingPdf.value = false
+  }
 }
+*/
+const captureCurrentEditorHtml = (chapterNumber: number): string => {
+  const editorEl = document.querySelector('.tiptap') || document.querySelector('.ProseMirror')
+  if (!editorEl) return ''
+
+  // Clona il nodo visivo renderizzato
+  const clonedEditor = editorEl.cloneNode(true) as HTMLElement
+
+  // Rimuove bottoni di azione e menu
+  clonedEditor.querySelectorAll('.block-header, .diagram-actions-menu').forEach(el => el.remove())
+
+  // Svuota i badge per evitare duplicazioni visive
+  clonedEditor.querySelectorAll('.badge-text').forEach(el => {
+    el.textContent = ''
+  })
+
+  // Assicura che l'elemento clonato contenga la variabile CSS per il numero di capitolo corrente
+  clonedEditor.style.setProperty('--chapter-index', chapterNumber.toString())
+
+  return clonedEditor.innerHTML
+}
+
+const generateServerFullBookPdf = async () => {
+  if (store.sectionIndex.length === 0) {
+    alert("Nessun capitolo presente da esportare.")
+    return
+  }
+
+  const originalSectionId = store.activeSectionId
+  isGeneratingPdf.value = true
+
+  const preparedSections = []
+  let chapterCounter = 0 // Contatore progressivo per i soli capitoli
+
+  try {
+    for (const section of store.sectionIndex) {
+      let sectionHtml = ''
+      
+      // Incrementa il contatore solo per le sezioni che sono capitoli effettivi
+      if (section.type === 'chapter') {
+        chapterCounter++
+      }
+
+      if (section.type === 'index') {
+        sectionHtml = store.generatedTocHtml
+      } else {
+        // 1. Carica la sezione nell'editor
+        if (store.activeSectionId !== section.id) {
+          await store.changeActiveSection(section.id)
+        }
+
+        // 2. Attendi il rendering di Vue
+        await nextTick()
+        await new Promise(resolve => setTimeout(resolve, 100))
+
+        // 3. Cattura l'HTML passando il numero di capitolo corrente
+        sectionHtml = captureCurrentEditorHtml(chapterCounter)
+      }
+
+      preparedSections.push({
+        id: section.id,
+        title: section.title,
+        type: section.type,
+        chapterNumber: chapterCounter, // Utile se il backend accetta il numero capitolo per sezione
+        html: sectionHtml
+      })
+    }
+
+    // Ripristina la sezione iniziale dell'utente
+    if (originalSectionId && store.activeSectionId !== originalSectionId) {
+      await store.changeActiveSection(originalSectionId)
+      await nextTick()
+    }
+
+    // Genera il CSS globale (o passa le regole base)
+    const customCss = getComputedCssRules(1) 
+
+    // Invia i dati al backend
+    await pdfStore.exportFullBook({
+      sections: preparedSections,
+      customCss,
+      bookTitle: store.metadata.title || 'libro',
+      pageSize: store.metadata.pageFormat || 'a4'
+    })
+
+  } catch (err) {
+    console.error("Errore esportazione libro:", err)
+    alert("Si è verificato un errore durante l'esportazione del libro completo.")
+  } finally {
+    isGeneratingPdf.value = false
+  }
+}
+
+
 
 </script>
 

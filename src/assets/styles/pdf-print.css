@@ -1,12 +1,4 @@
 /* src/assets/styles/pdf-print.css */
-:root {
-  --page-margin-top: 25mm;
-  --page-margin-right: 20mm;
-  --page-margin-bottom: 25mm;
-  --page-margin-left: 20mm;
-  --page-width: 210mm;
-  --chapter-index: 1;
-}
 
 @page {
   size: A4;
@@ -51,10 +43,32 @@ body {
   transform: none !important;
 }
 
-.book-print-container,
 .tiptap-container {
   counter-reset: chapter-count var(--chapter-index, 1) section-count 0 !important;
 }
+
+/* --- REGOLA UNIFICATA PER TUTTI I PDF --- */
+
+/* La sezione è l'unità base di conteggio */
+.book-section {
+  /* Prende il valore dal tag style inline style="--chapter-index: X", con fallback a 1 */
+  counter-reset: chapter-count var(--chapter-index, 1) section-count 0 !important;
+  page-break-before: always;
+  break-before: page;
+}
+
+/* La prima sezione del documento non deve avere l'interruzione di pagina prima */
+.book-print-container > .book-section:first-child {
+  page-break-before: avoid;
+  break-before: avoid;
+}
+
+/* Rimuovi completamente counter-reset da .book-print-container e .tiptap-container */
+.book-print-container,
+.tiptap-container {
+  counter-reset: none !important;
+}
+/* ----- */
 
 .book-text-engine, .tiptap, .book-text-engine p, .tiptap p {
   font-family: Lora,Georgia, Cambria, serif !important;
@@ -255,7 +269,8 @@ body {
 }
 .show-numbering h3::before,
 .book-print-container h3::before { 
-  content: counter(section-count) " " !important; 
+  counter-increment: section-count !important;
+  content: counter(chapter-count) "." counter(section-count) " " !important;
 }
 .is-structural-page h2::before, 
 .is-structural-page h3::before { 

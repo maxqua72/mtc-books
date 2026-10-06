@@ -26,10 +26,13 @@ export const usePdfStore = defineStore('pdf', () => {
     htmlContent: string
     customCss: string
     title: string
+    chapterNumber?: number
     pageSize?: string
   }) => {
     isGeneratingPdf.value = true
     error.value = null
+
+    console.log('[exportCurrentChapter] Exporting chapter ' + (payload.chapterNumber) + ' with title: ' + payload.title)
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/pdf/generate`, {
@@ -38,6 +41,7 @@ export const usePdfStore = defineStore('pdf', () => {
         body: JSON.stringify({
           htmlContent: payload.htmlContent,
           customCss: payload.customCss,
+          chapterNumber: payload.chapterNumber || 1,
           pageSize: payload.pageSize || 'A4'
         })
       })
