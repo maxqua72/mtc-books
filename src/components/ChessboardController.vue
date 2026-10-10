@@ -1,6 +1,11 @@
 <template>
   <div class="w-[400px] flex flex-col items-center gap-6">
     <!-- Componente Scacchiera Grafica -->
+     <p v-if="treeStore.isRecordingMoves && !treeStore.currentTree"
+      class="text-xs text-amber-600 text-center">
+      Nessuna partita selezionata: le mosse non vengono registrate.
+      Clicca un blocco partita nel testo oppure creane uno nuovo.
+    </p>
     <ChessboardView ref="chessboardRef" :fen="treeStore.activeFen" :turn-color="currentTurnColor" :dests="playableDests"
       @move="handlePhysicsMove" />
 
@@ -34,11 +39,7 @@ const chessboardRef = ref()
 
 // Inizializza un albero di default se vuoto all'avvio
 onMounted(() => {
-  if (treeStore.trees.length === 0) {
-    treeStore.createNewTree('Capitolo 1: Analisi')
-  } else {
-    chess.load(treeStore.activeFen)
-  }
+  chess.load(treeStore.activeFen)
 
   setTimeout(() => {
     chessboardRef.value?.redraw()
@@ -94,9 +95,9 @@ const handlePhysicsMove = (orig: Key, dest: Key) => {
 
     // 🔴 CORREZIONE: Se la registrazione live è disattivata, 
     // aggiorna la scacchiera locale ma NON salvare la mossa nell'albero di Pinia
-    if (!treeStore.isRecordingMoves) {
-      // Sincronizza il FEN attivo temporaneo dello store per mostrare la mossa sulla scacchiera,
-      // ma senza aggiungere un nodo reale all'albero delle mosse.
+    // Se non c’è un albero attivo, la scacchiera funziona in modalità libera (aggiorna solo la posizione)
+    const canRecord = treeStore.isRecordingMoves && !!treeStore.currentTree
+    if (!canRecord) {
       treeStore.activeFen = newFen
       return
     }
@@ -136,6 +137,12 @@ watch(() => treeStore.activeFen, (newFen) => {
     }
   }
 }, { immediate: true })
+
+// riallinea la scacchiera quando riattivi la registrazione, altrimenti la posizione 
+// libera resta e le nuove mosse si agganciano al nodo sbagliato
+watch(() => treeStore.isRecordingMoves, (on) => {
+  if (on) treeStore.setActiveNode(treeStore.activeNodeId)
+})
 
 const resetBoard = () => {
   chess.reset()

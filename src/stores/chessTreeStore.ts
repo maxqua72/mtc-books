@@ -274,7 +274,7 @@ export const useChessTreeStore = defineStore('chessTree', {
       this.activeTreeId = null;
       this.activeNodeId = null;
       this.activeFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-      this.isRecordingMoves = false;
+      //this.isRecordingMoves = false;
       this.lastRecordedMoveSignal = null;
     },
 

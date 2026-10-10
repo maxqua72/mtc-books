@@ -105,7 +105,7 @@ const processFile = async (file: File) => {
     const buffer = await file.arrayBuffer()
     await store.loadMtcBook(buffer)
     // @ts-ignore
-    store.isBookLoaded = true
+    //store.isBookLoaded = true
   } catch (e) {
     alert('Errore nel caricamento del progetto.')
   }
@@ -122,6 +122,7 @@ const handleFileDrop = (e: DragEvent) => {
   if (file) processFile(file)
 }
 
+/*
 const handleCreateBook = () => {
   if (!form.title.trim()) return alert('Inserisci un titolo')
   
@@ -136,5 +137,12 @@ const handleCreateBook = () => {
   // @ts-ignore
   store.isBookLoaded = true
   showCreateModal.value = false
+}*/
+
+const handleCreateBook = async () => {
+  if (!form.title.trim()) return alert('Inserisci un titolo')
+  await store.startNewBook(form.title.trim(), form.author.trim() || 'Autore')
+  showCreateModal.value = false
 }
+
 </script>

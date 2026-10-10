@@ -229,6 +229,7 @@ const insertNewChessTreeBlock = () => {
     if (!editor.value) return
 
     // 1. Genera l'ID unico per l'albero scacchi
+    /*
     const uniqueTreeId = `tree_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
     // 2. Crea l'albero nello store di Pinia
@@ -242,6 +243,9 @@ const insertNewChessTreeBlock = () => {
 
     // Imposta questo nuovo blocco come attivo nello store
     treeStore.activeTreeId = uniqueTreeId
+    */
+    const newTree = treeStore.createNewTree(`Albero #${treeStore.trees.length + 1}`)
+    const uniqueTreeId = newTree.id
     treeStore.activeNodeId = null
 
     // 3. Sposta il cursore alla fine del documento e inserisci il blocco scacchi
@@ -280,13 +284,11 @@ watch(
 )
 
 
-// Ascolta se lo store cambia la sezione attiva esternamente (es: all'apertura di un file)
-// Ascolta se lo store cambia la sezione attiva esternamente (es: selezione dalla barra laterale)
-watch(() => store.activeSectionId, (newSectionId) => {
-    if (!newSectionId || !editor.value) return
+const loadSectionIntoEditor = (sectionId: string | null) => {
+    if (!sectionId || !editor.value) return
 
     // 1. Recuperiamo le info della sezione corrente
-    const currentSection = store.sectionIndex.find(s => s.id === newSectionId)
+    const currentSection = store.sectionIndex.find(s => s.id === sectionId)
 
     // 2. Se è l'INDICE, carichiamo il getter computato e blocchiamo l'editor (sola lettura)
     if (currentSection?.type === 'index') {
@@ -322,7 +324,16 @@ watch(() => store.activeSectionId, (newSectionId) => {
         // Se ha già del testo salvato, lo carichiamo normalmente
         editor.value.commands.setContent(store.activeSectionHtml)
     }
-})
+}
+
+// Ascolta se lo store cambia la sezione attiva esternamente (es: all'apertura di un file)
+// Ascolta se lo store cambia la sezione attiva esternamente (es: selezione dalla barra laterale)
+watch(() => store.activeSectionId, (id) => loadSectionIntoEditor(id))
+
+// L'editor viene creato dopo il montaggio: al primo istante il watcher sopra non scatta
+watch(editor, (ed) => {
+    if (ed) loadSectionIntoEditor(store.activeSectionId)
+}, { immediate: true })
 
 // Se l'utente sta visualizzando l'indice e l'indice cambia (es. aggiunge capitoli), aggiorna lo schermo
 watch(() => store.generatedTocHtml, (newTocHtml) => {

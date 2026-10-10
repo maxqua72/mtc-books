@@ -53,7 +53,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
     const saveStatus = ref<SaveStatus>('saved')
 
     // --- NUOVO STATO (Metadati e Struttura Libro) ---
-    const metadata = ref<BookMetadata>({
+    const defaultMetadata = (): BookMetadata => ({
         version: '1.0.0',
         title: 'Nuovo Libro di Scacchi',
         author: 'Autore',
@@ -62,12 +62,13 @@ export const useChessBookStore = defineStore('chessBook', () => {
         pageFormat: 'a4',
         isTwoColumns: false,
         showNumbering: true,
-        // Nuovi campi per i margini di stampa
         pageMarginTop: 25,
         pageMarginRight: 20,
         pageMarginBottom: 25,
         pageMarginLeft: 20
     })
+
+    const metadata = ref<BookMetadata>(defaultMetadata())
 
     // L'indice delle sezioni (caricato subito in Fase A)
     const sectionIndex = ref<SectionIndexItem[]>([])
@@ -228,6 +229,21 @@ export const useChessBookStore = defineStore('chessBook', () => {
         // 3. DOPO: Impostiamo l'ID e l'HTML per attivare il re-render dell'editor Tiptap
         activeSectionId.value = nextSectionId
         activeSectionHtml.value = nextHtml
+    }
+
+    async function startNewBook(title: string, author: string) {
+        // Azzera tutto PRIMA: con activeSectionId null changeActiveSection non congela nulla
+        activeSectionId.value = null
+        activeSectionHtml.value = ''
+        zippedSectionsCache.value = {}
+        sectionIndex.value = []
+        useChessTreeStore().setChapterTrees([])
+
+        metadata.value = { ...defaultMetadata(), title, author }
+
+        const firstId = createNewSection('Capitolo 1', 'chapter')
+        await changeActiveSection(firstId)
+        isBookLoaded.value = true
     }
 
     // --- NUOVE FUNZIONI: I/O FILE .MTCBOOK (JSZIP) ---
@@ -483,6 +499,8 @@ export const useChessBookStore = defineStore('chessBook', () => {
         saveStatus,
 
         currentChapterNumber,
-        syncActiveSectionToCache
+        syncActiveSectionToCache,
+
+        startNewBook
     }
 })

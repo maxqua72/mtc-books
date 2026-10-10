@@ -28,6 +28,7 @@
                 @click="handleSectionClick(section.id)" 
                 :draggable="section.type === 'chapter'"
                 @dragstart="onDragStart(index)"
+                @dragend="onDragEnd"
                 @dragover.prevent="onDragOver(index)"
                 @dragleave="onDragLeave(index)"
                 @drop="onDrop(index)"
@@ -38,7 +39,8 @@
                         : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900',
                     section.type === 'chapter' ? 'cursor-grab active:cursor-grabbing' : '',
                     // Classi dinamiche per il feedback visivo del drag
-                    activeDropIndex === index && section.type === 'chapter' ? 'bg-neutral-100 border-t-2 border-neutral-900 pt-1.5' : ''
+                    //activeDropIndex === index && section.type === 'chapter' ? 'bg-neutral-100 border-t-2 border-neutral-900 pt-1.5' : ''
+                    dropIndicatorClass(index, section)
                 ]">
                 
                 <div class="flex items-center gap-2 truncate">
@@ -187,7 +189,7 @@ const onDragLeave = (index: number) => {
         activeDropIndex.value = null
     }
 }
-
+/*
 const onDrop = (targetIndex: number) => {
     const fromIndex = draggedIndex.value
     
@@ -212,5 +214,41 @@ const onDrop = (targetIndex: number) => {
     // Spostamento effettivo delle posizioni
     store.sectionIndex.splice(fromIndex, 1)
     store.sectionIndex.splice(finalTargetIndex, 0, draggedSection)
+}*/
+
+const onDrop = (targetIndex: number) => {
+    const fromIndex = draggedIndex.value
+    draggedIndex.value = null
+    activeDropIndex.value = null
+    if (fromIndex === null || fromIndex === targetIndex) return
+
+    const sections = store.sectionIndex
+    const dragged = sections[fromIndex]
+    const target = sections[targetIndex]
+
+    if (dragged.type !== 'chapter') return
+    if (target.type === 'cover') return
+
+    // Sull'Indice: il capitolo si ferma subito prima
+    let finalIndex = targetIndex
+    if (target.type === 'index' && fromIndex < targetIndex) finalIndex = targetIndex - 1
+
+    sections.splice(fromIndex, 1)
+    sections.splice(finalIndex, 0, dragged)
+}
+
+const onDragEnd = () => {
+    draggedIndex.value = null
+    activeDropIndex.value = null
+}
+
+// Linea di inserimento: sopra se si sale, sotto se si scende, sempre sopra sull'Indice
+const dropIndicatorClass = (index: number, section: SectionIndexItem) => {
+    if (activeDropIndex.value !== index || draggedIndex.value === null) return ''
+    if (section.type === 'cover') return ''
+    const movingDown = draggedIndex.value < index && section.type === 'chapter'
+    return movingDown
+        ? 'bg-neutral-100 shadow-[inset_0_-2px_0_0_#171717]'
+        : 'bg-neutral-100 shadow-[inset_0_2px_0_0_#171717]'
 }
 </script>
