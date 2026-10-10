@@ -1,6 +1,14 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
+export interface ExportSection {
+  id: string
+  title: string
+  type: string
+  chapterNumber?: number
+  html: string
+}
+
 export const usePdfStore = defineStore('pdf', () => {
   const isGeneratingPdf = ref(false)
   const error = ref<string | null>(null)
@@ -46,8 +54,10 @@ export const usePdfStore = defineStore('pdf', () => {
         })
       })
 
-      if (!response.ok) throw new Error('Errore nella generazione del capitolo PDF.')
-
+      if (!response.ok) {
+        const detail = await response.text().catch(() => '')
+        throw new Error(`Errore nella generazione del capitolo PDF. ${detail}`.trim())
+      }
       const blob = await response.blob()
       downloadBlob(blob, `${payload.title.toLowerCase().replace(/\s+/g, '_')}.pdf`)
     } catch (err: any) {
@@ -63,7 +73,7 @@ export const usePdfStore = defineStore('pdf', () => {
    * 2. Esporta l'intero libro (assemblato lato server)
    */
   const exportFullBook = async (payload: {
-    sections: Array<{ id: string; title: string; type: string; html: string }>
+    sections: ExportSection[]
     customCss: string
     bookTitle: string
     pageSize?: string
@@ -83,7 +93,10 @@ export const usePdfStore = defineStore('pdf', () => {
         })
       })
 
-      if (!response.ok) throw new Error('Errore nella generazione del libro completo.')
+      if (!response.ok) {
+        const detail = await response.text().catch(() => '')
+        throw new Error(`Errore nella generazione del libro completo. ${detail}`.trim())
+      }
 
       const blob = await response.blob()
       downloadBlob(blob, `${payload.bookTitle.toLowerCase().replace(/\s+/g, '_')}_completo.pdf`)

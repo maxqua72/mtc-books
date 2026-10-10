@@ -301,7 +301,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
      */
     async function exportMtcBook(currentEditorContent: string): Promise<Blob> {
         const zip = new JSZip()
-        const chessTreeStore = useChessTreeStore()
+        //const chessTreeStore = useChessTreeStore()
 
         // 1. Prima della pulizia, eseguiamo la Garbage Collection sui tree del solo capitolo attivo
         syncActiveSectionToCache({ html: currentEditorContent, prune: true })
@@ -335,10 +335,19 @@ export const useChessBookStore = defineStore('chessBook', () => {
         zip.file('book.json', JSON.stringify(bookJsonData, null, 2))
 
         // 3. Iniettiamo tutte le sezioni dalla cache nella cartella virtuale
-        const sectionsFolder = zip.folder('sections')
+        /*const sectionsFolder = zip.folder('sections')
         if (sectionsFolder) {
             for (const [id, jsonString] of Object.entries(zippedSectionsCache.value)) {
                 sectionsFolder.file(`${id}.json`, jsonString)
+            }
+        }*/
+
+        // 3. Iniettiamo nella cartella virtuale solo le sezioni presenti nell'indice
+        const sectionsFolder = zip.folder('sections')
+        if (sectionsFolder) {
+            for (const item of sectionIndex.value) {
+                const json = zippedSectionsCache.value[item.id]
+                if (json) sectionsFolder.file(`${item.id}.json`, json)
             }
         }
 

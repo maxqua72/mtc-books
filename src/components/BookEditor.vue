@@ -21,42 +21,27 @@
         </div>
 
         <!-- Inserimento della Toolbar Modulare -->
-        <EditorToolbar v-if="editor" 
-            :editor="editor" 
-            :zoom="currentZoomOption" 
-            @update:zoom="handleZoomChange"
-            @insert-tree-block="insertNewChessTreeBlock" 
-            @split-tree-block="handleSplitTreeBlock" />
+        <EditorToolbar v-if="editor" :editor="editor" :zoom="currentZoomOption" @update:zoom="handleZoomChange"
+            @insert-tree-block="insertNewChessTreeBlock" @split-tree-block="handleSplitTreeBlock" />
 
         <!-- Area di Scrittura Effettiva (Scroll Container) -->
-        <div 
-        id="book-editor-content" 
-        ref="scrollContainer" 
-        class="flex-1 overflow-y-auto p-8"
-        
-        @click="handleCanvasClick"
-        >
+        <div id="book-editor-content" ref="scrollContainer" class="flex-1 overflow-y-auto p-8"
+            @click="handleCanvasClick">
             <!-- Contenitore flessibile privo di justify-center per evitare il bug del taglio a sinistra -->
             <div class="editor-scroll-wrapper"
-                :style="{ minWidth: currentZoomOption === 'fit-width' ? '0px' : 'min-content' }"
-            >
-                
+                :style="{ minWidth: currentZoomOption === 'fit-width' ? '0px' : 'min-content' }">
+
                 <!-- Wrapper di Trasformazione Zoom -->
-                <div 
-                    class="zoom-transform-wrapper transition-transform duration-150 ease-out origin-top-left ml-0"
+                <div class="zoom-transform-wrapper transition-transform duration-150 ease-out origin-top-left ml-0"
                     :style="{
                         transform: `scale(${computedZoomScale})`,
                         width: `${getPagePixelWidth()}px`,
                         marginBottom: zoomMarginBottom
-                    }"
-                >
-                    <div @click.self="handlePageClick"
-                        class="tiptap-container" 
-                        :class="{
-                            'show-numbering': store.metadata.showNumbering,
-                            'is-structural-page': store.activeSectionInfo?.type === 'cover' || store.activeSectionInfo?.type === 'index'
-                        }" 
-                        :style="{
+                    }">
+                    <div @click.self="handlePageClick" class="tiptap-container" :class="{
+                        'show-numbering': store.metadata.showNumbering,
+                        'is-structural-page': store.activeSectionInfo?.type === 'cover' || store.activeSectionInfo?.type === 'index'
+                    }" :style="{
                         '--chapter-index': store.currentChapterNumber,
                         '--page-width': getPageSizeStyles.width,
                         '--page-height': getPageSizeStyles.height,
@@ -64,7 +49,7 @@
                         '--page-margin-bottom': (store.metadata.pageMarginBottom || 25) + 'mm',
                         '--page-margin-left': (store.metadata.pageMarginLeft || 20) + 'mm',
                         '--page-margin-right': (store.metadata.pageMarginRight || 20) + 'mm'
-                        }">
+                    }">
                         <editor-content :editor="editor" />
                     </div>
                 </div>
@@ -87,8 +72,7 @@ import { CustomHeading } from '../extensions/CustomHeading' // Aggiusta il perco
 import { ChessTreeBlock } from '../extensions/ChessTreeBlock' // <-- Nuova Estensione Blocco Ibrido
 import EditorToolbar from './EditorToolbar.vue'
 import Focus from '@tiptap/extension-focus'
-
-import { usePdfStore } from '../stores/pdfStore'
+import { usePdfStore, type ExportSection } from '../stores/pdfStore'
 
 
 // @ts-ignore
@@ -130,7 +114,7 @@ const getPagePixelHeight = () => {
 const calculateZoom = () => {
     if (currentZoomOption.value === 'fit-width') {
         if (!scrollContainer.value) return
-        
+
         // clientWidth misura lo spazio visibile escludendo la barra di scorrimento verticale
         const padding = 64 // Margine di sicurezza
         const availableWidth = scrollContainer.value.clientWidth - padding
@@ -138,7 +122,7 @@ const calculateZoom = () => {
 
         // Calcola il fattore di scala esatto
         //const scale = availableWidth / pageWidth
-        
+
         // Limitiamo lo zoom minimo/massimo e applichiamo una tolleranza
         //computedZoomScale.value = Math.max(0.3, Math.min(2.5, scale))
 
@@ -147,8 +131,8 @@ const calculateZoom = () => {
             // Impostiamo un limite minimo (es. 0.35) e massimo (2.5)
             computedZoomScale.value = Math.max(0.35, Math.min(2.5, scale))
         }
-        
-        
+
+
     } else {
         computedZoomScale.value = parseFloat(currentZoomOption.value) / 100
     }
@@ -179,7 +163,7 @@ watch(() => store.metadata.pageFormat, () => {
 // Gestisce il clic nello spazio vuoto della pagina A4 (sotto l'ultimo paragrafo)
 const handlePageClick = (event: MouseEvent) => {
     if (!editor.value) return
-    
+
     // Porta il focus in fondo al documento se il clic è avvenuto direttamente nel container della pagina
     editor.value.chain().focus('end').run()
 }
@@ -575,15 +559,15 @@ const getSharedCssRules = (marginTop: number, marginRight: number, marginBottom:
 `
 
 const getSharedCssRulesServer = (
-  marginTop: number, 
-  marginRight: number, 
-  marginBottom: number, 
-  marginLeft: number, 
-  pageSize: { width: string; height: string }, 
-  currentChapterIndex: number
+    marginTop: number,
+    marginRight: number,
+    marginBottom: number,
+    marginLeft: number,
+    pageSize: { width: string; height: string },
+    currentChapterIndex: number
 ) => {
-  // Inietta solo le variabili CSS che sovrascrivono i default di pdf-print.css
-  const customVariables = `
+    // Inietta solo le variabili CSS che sovrascrivono i default di pdf-print.css
+    const customVariables = `
     :root {
       --page-margin-top: ${marginTop}mm;
       --page-margin-right: ${marginRight}mm;
@@ -594,7 +578,7 @@ const getSharedCssRulesServer = (
     }
   `
 
-  return `${customVariables}\n${pdfPrintStyles}`
+    return `${customVariables}\n${pdfPrintStyles}`
 }
 
 // Funzione ausiliaria per convertire il FEN nella stringa di testo originale per il font Chess Merida
@@ -885,7 +869,7 @@ const generateFullBookPdf = async () => {
 }
 
 const generateFullBookPdf_old = async () => {
-    
+
     if (store.sectionIndex.length === 0) {
         alert("Nessun capitolo presente da esportare.")
         return
@@ -1098,81 +1082,81 @@ watch(() => store.insertSignal, () => {
 })*/
 
 watch(() => store.insertSignal, () => {
-  if (!editor.value) return
+    if (!editor.value) return
 
-  try {
-    const currentTreeId = treeStore.activeTreeId
-    const activeNodeId = treeStore.activeNodeId
+    try {
+        const currentTreeId = treeStore.activeTreeId
+        const activeNodeId = treeStore.activeNodeId
 
-    // 🟢 CASO A: Se una mossa dentro un Tree è selezionata
-    if (currentTreeId && activeNodeId) {
+        // 🟢 CASO A: Se una mossa dentro un Tree è selezionata
+        if (currentTreeId && activeNodeId) {
 
-      // 1. Troviamo l'albero corrente nello store
-      const currentTree = treeStore.trees.find(t => t.id === currentTreeId)
+            // 1. Troviamo l'albero corrente nello store
+            const currentTree = treeStore.trees.find(t => t.id === currentTreeId)
 
-      // 2. Chiamiamo il getter passando le rootNodes dell'albero trovato
-      const activeNode = currentTree 
-        ? treeStore.findNodeById(currentTree.rootNodes, activeNodeId) 
-        : null
+            // 2. Chiamiamo il getter passando le rootNodes dell'albero trovato
+            const activeNode = currentTree
+                ? treeStore.findNodeById(currentTree.rootNodes, activeNodeId)
+                : null
 
-      // 3. Verifichiamo in sicurezza se ha mosse successive
-      const hasNextMoves = Boolean(activeNode?.children && activeNode.children.length > 0)
+            // 3. Verifichiamo in sicurezza se ha mosse successive
+            const hasNextMoves = Boolean(activeNode?.children && activeNode.children.length > 0)
 
-      const diagramFen = treeStore.activeFen
+            const diagramFen = treeStore.activeFen
 
-      // 4. Troviamo la posizione del blocco chessTreeBlock corrente
-      let insertPos = -1
-      editor.value.state.doc.descendants((node, pos) => {
-        if (node.type.name === 'chessTreeBlock' && node.attrs.treeId === currentTreeId) {
-          insertPos = pos + node.nodeSize
+            // 4. Troviamo la posizione del blocco chessTreeBlock corrente
+            let insertPos = -1
+            editor.value.state.doc.descendants((node, pos) => {
+                if (node.type.name === 'chessTreeBlock' && node.attrs.treeId === currentTreeId) {
+                    insertPos = pos + node.nodeSize
+                }
+            })
+
+            if (insertPos !== -1) {
+                if (hasNextMoves) {
+                    // CASO A.1: Mossa INTERMEDIA -> Spezza l'albero e inserisci al centro
+                    const newTreeId = treeStore.splitTree(currentTreeId, activeNodeId)
+                    if (!newTreeId) return
+
+                    editor.value
+                        .chain()
+                        .focus()
+                        .insertContentAt(insertPos, [
+                            { type: 'chessDiagram', attrs: { fen: diagramFen } },
+                            { type: 'chessTreeBlock', attrs: { treeId: newTreeId } },
+                            { type: 'paragraph' }
+                        ])
+                        .run()
+                } else {
+                    // CASO A.2: ULTIMA mossa -> Inserisci il Diagramma SOTTO senza spezzare
+                    editor.value
+                        .chain()
+                        .focus()
+                        .insertContentAt(insertPos, [
+                            { type: 'chessDiagram', attrs: { fen: diagramFen } },
+                            { type: 'paragraph' }
+                        ])
+                        .run()
+                }
+
+                store.activeSectionHtml = editor.value.getHTML()
+            }
+            return
         }
-      })
 
-      if (insertPos !== -1) {
-        if (hasNextMoves) {
-          // CASO A.1: Mossa INTERMEDIA -> Spezza l'albero e inserisci al centro
-          const newTreeId = treeStore.splitTree(currentTreeId, activeNodeId)
-          if (!newTreeId) return
-
-          editor.value
+        // 🔵 CASO B: Nessun tree selezionato -> Inserimento alla posizione corrente del cursore
+        editor.value
             .chain()
             .focus()
-            .insertContentAt(insertPos, [
-              { type: 'chessDiagram', attrs: { fen: diagramFen } },
-              { type: 'chessTreeBlock', attrs: { treeId: newTreeId } },
-              { type: 'paragraph' }
-            ])
+            .insertChessDiagram({ fen: store.activeFen })
+            .insertContent({ type: 'paragraph' })
             .run()
-        } else {
-          // CASO A.2: ULTIMA mossa -> Inserisci il Diagramma SOTTO senza spezzare
-          editor.value
-            .chain()
-            .focus()
-            .insertContentAt(insertPos, [
-              { type: 'chessDiagram', attrs: { fen: diagramFen } },
-              { type: 'paragraph' }
-            ])
-            .run()
-        }
 
         store.activeSectionHtml = editor.value.getHTML()
-      }
-      return
+
+    } catch (error) {
+        console.error('Errore durante l\'inserimento del diagramma:', error)
     }
-
-    // 🔵 CASO B: Nessun tree selezionato -> Inserimento alla posizione corrente del cursore
-    editor.value
-      .chain()
-      .focus()
-      .insertChessDiagram({ fen: store.activeFen })
-      .insertContent({ type: 'paragraph' })
-      .run()
-
-    store.activeSectionHtml = editor.value.getHTML()
-
-  } catch (error) {
-    console.error('Errore durante l\'inserimento del diagramma:', error)
-  }
 })
 
 // Rileva quando viene registrata una nuova mossa sulla scacchiera.
@@ -1205,12 +1189,12 @@ watch(() => store.exportFullBookSignal, () => {
 
 // Ascolta il segnale per l'esportazione capitolo via Server
 watch(() => store.exportServerChapterSignal, () => {
-  generateServerChapterPdf()
+    generateServerChapterPdf()
 })
 
 // Ascolta il segnale per l'esportazione libro completo via Server
 watch(() => store.exportServerFullBookSignal, () => {
-  generateServerFullBookPdf()
+    generateServerFullBookPdf()
 })
 
 // Calcola la numerazione corretta del capitolo attivo filtrando solo i tipi 'chapter'
@@ -1230,15 +1214,15 @@ watch(() => store.exportServerFullBookSignal, () => {
 // GESTIONE CREAZIONE PDF TRAMITE SERVER
 // Helper per raccogliere le regole CSS dinamiche correnti
 const getComputedCssRules = (currentChapterIndex: number) => {
-  const pageSize = getPageSizeStyles.value
-  const marginTop = store.metadata.pageMarginTop || 25
-  const marginRight = store.metadata.pageMarginRight || 20
-  const marginBottom = store.metadata.pageMarginBottom || 25
-  const marginLeft = store.metadata.pageMarginLeft || 20
+    const pageSize = getPageSizeStyles.value
+    const marginTop = store.metadata.pageMarginTop || 25
+    const marginRight = store.metadata.pageMarginRight || 20
+    const marginBottom = store.metadata.pageMarginBottom || 25
+    const marginLeft = store.metadata.pageMarginLeft || 20
 
-  // Combina le regole CSS condivise definite in getSharedCssRules
-  //return getSharedCssRules(marginTop, marginRight, marginBottom, marginLeft, pageSize, currentChapterIndex)
-  return getSharedCssRulesServer(marginTop, marginRight, marginBottom, marginLeft, pageSize, currentChapterIndex)
+    // Combina le regole CSS condivise definite in getSharedCssRules
+    //return getSharedCssRules(marginTop, marginRight, marginBottom, marginLeft, pageSize, currentChapterIndex)
+    return getSharedCssRulesServer(marginTop, marginRight, marginBottom, marginLeft, pageSize, currentChapterIndex)
 }
 
 /**
@@ -1264,50 +1248,50 @@ const generateServerChapterPdf = async () => {
   }
 }*/
 const generateServerChapterPdf = async () => {
-  if (!editor.value) return
+    if (!editor.value) return
 
-  const currentChapterIndex = store.currentChapterNumber
-  const customCss = getComputedCssRules(currentChapterIndex)
-  const title = store.activeSectionInfo?.title || 'capitolo'
+    const currentChapterIndex = store.currentChapterNumber
+    const customCss = getComputedCssRules(currentChapterIndex)
+    const title = store.activeSectionInfo?.title || 'capitolo'
 
-  // --- PUNTO 2: CATTURA DEL DOM REALE ---
-  // Selezioniamo il contenitore HTML dell'editor visibile nella pagina
-  const editorEl = document.querySelector('.tiptap') || document.querySelector('.ProseMirror')
+    // --- PUNTO 2: CATTURA DEL DOM REALE ---
+    // Selezioniamo il contenitore HTML dell'editor visibile nella pagina
+    const editorEl = document.querySelector('.tiptap') || document.querySelector('.ProseMirror')
 
-  if (!editorEl) {
-    alert("Impossibile trovare il contenuto dell'editor da esportare.")
-    return
-  }
+    if (!editorEl) {
+        alert("Impossibile trovare il contenuto dell'editor da esportare.")
+        return
+    }
 
-  // Cloniamo il nodo DOM per poterlo manipolare senza toccare l'interfaccia dell'utente
-  const clonedEditor = editorEl.cloneNode(true) as HTMLElement
+    // Cloniamo il nodo DOM per poterlo manipolare senza toccare l'interfaccia dell'utente
+    const clonedEditor = editorEl.cloneNode(true) as HTMLElement
 
-  // Rimuoviamo elementi d'interfaccia/hover non voluti per la stampa (es. header con bottone "Elimina")
-  clonedEditor.querySelectorAll('.block-header, .diagram-actions-menu').forEach(el => el.remove())
+    // Rimuoviamo elementi d'interfaccia/hover non voluti per la stampa (es. header con bottone "Elimina")
+    clonedEditor.querySelectorAll('.block-header, .diagram-actions-menu').forEach(el => el.remove())
 
-  
-  // 2. Svuota il testo contenuto nei badge per evitare la duplicazione con ::before
-  clonedEditor.querySelectorAll('.badge-text').forEach(el => {
-    el.textContent = ''
-  })
 
-  // Estraiamo l'HTML reale con tutti i componenti Vue espanse/renderizzate
-  const processedHtml = clonedEditor.innerHTML
-  // --------------------------------------
-
-  console.log('Exporting chapter ' + currentChapterIndex + ' with title: ' + title)
-
-  try {
-    await pdfStore.exportCurrentChapter({
-      htmlContent: processedHtml, // Passiamo l'HTML processato invece di editor.value.getHTML()
-      customCss,
-      title,
-      chapterNumber: currentChapterIndex,
-      pageSize: store.metadata.pageFormat || 'a4'
+    // 2. Svuota il testo contenuto nei badge per evitare la duplicazione con ::before
+    clonedEditor.querySelectorAll('.badge-text').forEach(el => {
+        el.textContent = ''
     })
-  } catch (err) {
-    alert("Si è verificato un errore durante l'esportazione del capitolo.")
-  }
+
+    // Estraiamo l'HTML reale con tutti i componenti Vue espanse/renderizzate
+    const processedHtml = clonedEditor.innerHTML
+    // --------------------------------------
+
+    console.log('Exporting chapter ' + currentChapterIndex + ' with title: ' + title)
+
+    try {
+        await pdfStore.exportCurrentChapter({
+            htmlContent: processedHtml, // Passiamo l'HTML processato invece di editor.value.getHTML()
+            customCss,
+            title,
+            chapterNumber: currentChapterIndex,
+            pageSize: store.metadata.pageFormat || 'a4'
+        })
+    } catch (err) {
+        alert("Si è verificato un errore durante l'esportazione del capitolo.")
+    }
 }
 
 /**
@@ -1433,122 +1417,216 @@ const generateServerFullBookPdf = async () => {
   }
 }
 */
-const captureCurrentEditorHtml = (chapterNumber: number): string => {
-  const editorEl = document.querySelector('.tiptap') || document.querySelector('.ProseMirror')
-  if (!editorEl) return ''
 
-  // Clona il nodo visivo renderizzato
-  const clonedEditor = editorEl.cloneNode(true) as HTMLElement
+// Attende che l'editor abbia renderizzato la sezione appena caricata.
+// Va chiamato dopo changeActiveSection: dopo il nextTick i watcher hanno già fatto setContent,
+// quindi il documento ProseMirror è quello nuovo e possiamo contare i blocchi attesi.
+const waitForSectionRender = async (timeoutMs = 4000) => {
+    const raf = () => new Promise<void>(r => requestAnimationFrame(() => r()))
+    await nextTick()
 
-  // Rimuove bottoni di azione e menu
-  clonedEditor.querySelectorAll('.block-header, .diagram-actions-menu').forEach(el => el.remove())
+    const start = performance.now()
+    while (performance.now() - start < timeoutMs) {
+        const expected = getActiveTreeIds().length
+        const rendered = editor.value
+            ? editor.value.view.dom.querySelectorAll('.chess-tree-block-container').length
+            : 0
+        if (expected === rendered) break
+        await raf()
+    }
 
-  // Svuota i badge per evitare duplicazioni visive
-  clonedEditor.querySelectorAll('.badge-text').forEach(el => {
-    el.textContent = ''
-  })
-
-  // Assicura che l'elemento clonato contenga la variabile CSS per il numero di capitolo corrente
-  clonedEditor.style.setProperty('--chapter-index', chapterNumber.toString())
-
-  return clonedEditor.innerHTML
+    await document.fonts.ready   // i font Merida/Cases devono essere pronti per la misura del DOM
+    await raf()
+    await raf()
 }
+const captureCurrentEditorHtml = (chapterNumber: number): string => {
+    const editorEl = document.querySelector('.tiptap') || document.querySelector('.ProseMirror')
+    if (!editorEl) return ''
 
-const generateServerFullBookPdf = async () => {
-  if (store.sectionIndex.length === 0) {
-    alert("Nessun capitolo presente da esportare.")
-    return
-  }
+    // Clona il nodo visivo renderizzato
+    const clonedEditor = editorEl.cloneNode(true) as HTMLElement
 
-  const originalSectionId = store.activeSectionId
-  isGeneratingPdf.value = true
+    // Rimuove bottoni di azione e menu
+    clonedEditor.querySelectorAll('.block-header, .diagram-actions-menu').forEach(el => el.remove())
 
-  const preparedSections = []
-  let chapterCounter = 0 // Contatore progressivo per i soli capitoli
-
-  try {
-    for (const section of store.sectionIndex) {
-      let sectionHtml = ''
-      
-      // Incrementa il contatore solo per le sezioni che sono capitoli effettivi
-      if (section.type === 'chapter') {
-        chapterCounter++
-      }
-
-      if (section.type === 'index') {
-        sectionHtml = store.generatedTocHtml
-      } else {
-        // 1. Carica la sezione nell'editor
-        if (store.activeSectionId !== section.id) {
-          await store.changeActiveSection(section.id)
-        }
-
-        // 2. Attendi il rendering di Vue
-        await nextTick()
-        await new Promise(resolve => setTimeout(resolve, 100))
-
-        // 3. Cattura l'HTML passando il numero di capitolo corrente
-        sectionHtml = captureCurrentEditorHtml(chapterCounter)
-      }
-
-      preparedSections.push({
-        id: section.id,
-        title: section.title,
-        type: section.type,
-        chapterNumber: chapterCounter, // Utile se il backend accetta il numero capitolo per sezione
-        html: sectionHtml
-      })
-    }
-
-    // Ripristina la sezione iniziale dell'utente
-    if (originalSectionId && store.activeSectionId !== originalSectionId) {
-      await store.changeActiveSection(originalSectionId)
-      await nextTick()
-    }
-
-    // Genera il CSS globale (o passa le regole base)
-    const customCss = getComputedCssRules(1) 
-
-    // Invia i dati al backend
-    await pdfStore.exportFullBook({
-      sections: preparedSections,
-      customCss,
-      bookTitle: store.metadata.title || 'libro',
-      pageSize: store.metadata.pageFormat || 'a4'
+    // Svuota i badge per evitare duplicazioni visive
+    clonedEditor.querySelectorAll('.badge-text').forEach(el => {
+        el.textContent = ''
     })
 
-  } catch (err) {
-    console.error("Errore esportazione libro:", err)
-    alert("Si è verificato un errore durante l'esportazione del libro completo.")
-  } finally {
-    isGeneratingPdf.value = false
-  }
+    // Assicura che l'elemento clonato contenga la variabile CSS per il numero di capitolo corrente
+    clonedEditor.style.setProperty('--chapter-index', chapterNumber.toString())
+
+    return clonedEditor.innerHTML
+}
+/* 
+const generateServerFullBookPdf = async () => {
+    if (store.sectionIndex.length === 0) {
+        alert("Nessun capitolo presente da esportare.")
+        return
+    }
+
+    const originalSectionId = store.activeSectionId
+    isGeneratingPdf.value = true
+
+    const preparedSections = []
+    let chapterCounter = 0 // Contatore progressivo per i soli capitoli
+
+    try {
+        for (const section of store.sectionIndex) {
+            let sectionHtml = ''
+
+            // Incrementa il contatore solo per le sezioni che sono capitoli effettivi
+            if (section.type === 'chapter') {
+                chapterCounter++
+            }
+
+            if (section.type === 'index') {
+                sectionHtml = store.generatedTocHtml
+            } else {
+                // 1. Carica la sezione nell'editor
+                if (store.activeSectionId !== section.id) {
+                    await store.changeActiveSection(section.id)
+                }
+
+                // 2. Attendi il rendering di Vue
+                await nextTick()
+                await new Promise(resolve => setTimeout(resolve, 100))
+
+                // 3. Cattura l'HTML passando il numero di capitolo corrente
+                sectionHtml = captureCurrentEditorHtml(chapterCounter)
+            }
+
+            preparedSections.push({
+                id: section.id,
+                title: section.title,
+                type: section.type,
+                chapterNumber: chapterCounter, // Utile se il backend accetta il numero capitolo per sezione
+                html: sectionHtml
+            })
+        }
+
+        // Ripristina la sezione iniziale dell'utente
+        if (originalSectionId && store.activeSectionId !== originalSectionId) {
+            await store.changeActiveSection(originalSectionId)
+            await nextTick()
+        }
+
+        // Genera il CSS globale (o passa le regole base)
+        const customCss = getComputedCssRules(1)
+
+        // Invia i dati al backend
+        await pdfStore.exportFullBook({
+            sections: preparedSections,
+            customCss,
+            bookTitle: store.metadata.title || 'libro',
+            pageSize: store.metadata.pageFormat || 'a4'
+        })
+
+    } catch (err) {
+        console.error("Errore esportazione libro:", err)
+        alert("Si è verificato un errore durante l'esportazione del libro completo.")
+    } finally {
+        isGeneratingPdf.value = false
+    }
+} */
+const generateServerFullBookPdf = async () => {
+    if (isGeneratingPdf.value) return   // evita due export concorrenti (doppio click)
+    if (store.sectionIndex.length === 0) {
+        alert("Nessun capitolo presente da esportare.")
+        return
+    }
+
+    isGeneratingPdf.value = true
+    const originalSectionId = store.activeSectionId
+    let restored = false
+
+    const restoreOriginalSection = async () => {
+        if (restored) return
+        restored = true
+        if (originalSectionId && store.activeSectionId !== originalSectionId) {
+            await store.changeActiveSection(originalSectionId)
+            await nextTick()
+        }
+    }
+
+    try {
+        // 0. CONGELA il capitolo attivo (editor -> store -> cache, con html e alberi)
+        //    Senza questo passaggio le modifiche recenti andrebbero perse al ripristino finale.
+        window.dispatchEvent(new CustomEvent('request-editor-sync'))
+        if (store.activeSectionInfo?.type !== 'index') {
+            store.syncActiveSectionToCache()
+        }
+
+        const preparedSections: ExportSection[] = []
+        let chapterCounter = 0
+
+        for (const section of store.sectionIndex) {
+            if (section.type === 'chapter') chapterCounter++
+
+            let sectionHtml = ''
+            if (section.type === 'index') {
+                sectionHtml = store.generatedTocHtml
+            } else {
+                if (store.activeSectionId !== section.id) {
+                    // Senza contenuto: la sezione in uscita è già in cache
+                    await store.changeActiveSection(section.id)
+                }
+                await waitForSectionRender()
+                sectionHtml = captureCurrentEditorHtml(chapterCounter)
+            }
+
+            preparedSections.push({
+                id: section.id,
+                title: section.title,
+                type: section.type,
+                chapterNumber: chapterCounter,
+                html: sectionHtml
+            })
+        }
+
+        // Riporta l'utente dov'era PRIMA della chiamata di rete (che può essere lunga)
+        await restoreOriginalSection()
+
+        await pdfStore.exportFullBook({
+            sections: preparedSections,
+            customCss: getComputedCssRules(1),
+            bookTitle: store.metadata.title || 'libro',
+            pageSize: store.metadata.pageFormat || 'a4'
+        })
+    } catch (err) {
+        console.error("Errore esportazione libro:", err)
+        alert("Si è verificato un errore durante l'esportazione del libro completo.")
+    } finally {
+        await restoreOriginalSection()   // se qualcosa è fallito a metà, ripristina comunque
+        isGeneratingPdf.value = false
+    }
 }
 
 /**
  * Raccoglie tutti i treeId dai nodi 'chessTreeBlock' attualmente presenti nell'editor
  */
 const getActiveTreeIds = (): string[] => {
-  if (!editor.value) return []
+    if (!editor.value) return []
 
-  const activeIds: string[] = []
+    const activeIds: string[] = []
 
-  // Scansiona l'albero sintattico di ProseMirror/Tiptap
-  editor.value.state.doc.descendants((node) => {
-    if (node.type.name === 'chessTreeBlock' && node.attrs.treeId) {
-      activeIds.push(node.attrs.treeId)
-    }
-  })
+    // Scansiona l'albero sintattico di ProseMirror/Tiptap
+    editor.value.state.doc.descendants((node) => {
+        if (node.type.name === 'chessTreeBlock' && node.attrs.treeId) {
+            activeIds.push(node.attrs.treeId)
+        }
+    })
 
-  return activeIds
+    return activeIds
 }
 
 /**
  * Esegue la pulizia automatica degli alberi orfani
  */
 const purgeOrphanTrees = () => {
-  const activeIds = getActiveTreeIds()
-  treeStore.cleanOrphanTrees(activeIds)
+    const activeIds = getActiveTreeIds()
+    treeStore.cleanOrphanTrees(activeIds)
 }
 
 // -------------------------------------------------------------
@@ -1577,15 +1655,20 @@ const purgeOrphanTrees = () => {
 .editor-scroll-wrapper {
     display: flex;
     flex-direction: column;
-    /*align-items: center;*//* Centra l'elemento solo lungo l'asse verticale/orizzontale senza tagliare a sinistra */
-    align-items: flex-start; /* CAMBIATO: da 'center' a 'flex-start' per ancorare a sinistra */
-    min-width: min-content; /* Permette all'elemento di espandere il contenitore nativo di scorrimento */
+    /*align-items: center;*/
+    /* Centra l'elemento solo lungo l'asse verticale/orizzontale senza tagliare a sinistra */
+    align-items: flex-start;
+    /* CAMBIATO: da 'center' a 'flex-start' per ancorare a sinistra */
+    min-width: min-content;
+    /* Permette all'elemento di espandere il contenitore nativo di scorrimento */
     width: 100%;
 }
 
 .zoom-transform-wrapper {
-    /*margin: 0 auto; *//* Centra automaticamente quando c'è spazio sufficiente */
-    margin-left: 0 !important; /* CAMBIATO: rimuove la centratura orizzontale automatica */
+    /*margin: 0 auto; */
+    /* Centra automaticamente quando c'è spazio sufficiente */
+    margin-left: 0 !important;
+    /* CAMBIATO: rimuove la centratura orizzontale automatica */
     margin-right: auto !important;
     box-sizing: border-box;
     will-change: transform;
@@ -1711,7 +1794,8 @@ const purgeOrphanTrees = () => {
 
 /* Personalizzazione Caret (Cursore di Scrittura) */
 .ProseMirror {
-    caret-color: #2563eb !important; /* Cursore blu visibile ed elegante */
+    caret-color: #2563eb !important;
+    /* Cursore blu visibile ed elegante */
 }
 
 /* Quando l'editor è in focus, assicura che il cursore sia sempre visibile e marcato */
@@ -1724,7 +1808,8 @@ const purgeOrphanTrees = () => {
 .ProseMirror h2.is-node-focused,
 .ProseMirror h3.is-node-focused {
     position: relative;
-    background-color: rgba(239, 246, 255, 0.4); /* Un leggerissimo azzurro di background */
+    background-color: rgba(239, 246, 255, 0.4);
+    /* Un leggerissimo azzurro di background */
     border-radius: 2px;
 }
 

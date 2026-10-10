@@ -170,8 +170,7 @@ export const useChessTreeStore = defineStore('chessTree', {
       // 1. Controlla se la mossa esiste già tra i fratelli (l'utente sta ripercorrendo una linea)
       const existingNode = siblingNodes.find(n => n.san === san);
       if (existingNode) {
-        this.activeNodeId = existingNode.id;
-        this.activeFen = existingNode.fen;
+        this.setActiveNode(existingNode.id)
         return { node: existingNode, isNew: false };
       }
 
@@ -191,8 +190,7 @@ export const useChessTreeStore = defineStore('chessTree', {
       siblingNodes.push(newNode);
 
       // 4. Aggiorna lo stato di navigazione
-      this.activeNodeId = newNode.id;
-      this.activeFen = newNode.fen;
+      this.setActiveNode(newNode.id)
 
       // Modifica: Genera il segnale per l'editor se la scrittura live è attiva
       if (this.isRecordingMoves) {
@@ -263,14 +261,8 @@ export const useChessTreeStore = defineStore('chessTree', {
 
       // Se è presente almeno un albero, imposta come attivo il primo
       if (this.trees.length > 0) {
-        const firstTree = this.trees[0]
-        this.activeTreeId = firstTree.id
-        
-        // Se l'albero ha un nodo attivo salvato, ripristina la FEN corretto
-        if (firstTree.activeNodeId) {
-          this.activeNodeId = firstTree.activeNodeId
-          // Assicurati che activeFen rifletta la FEN di quel nodo specifico
-        }
+        this.activeTreeId = this.trees[0].id
+        this.setActiveNode(this.trees[0].activeNodeId ?? null)   // imposta anche activeFen
       }
     },
 
