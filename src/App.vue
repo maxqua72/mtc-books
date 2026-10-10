@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col w-screen h-screen bg-neutral-50 font-sans antialiased overflow-hidden">
-    
+
     <!-- 1. Barra di Navigazione Superiore (Sempre Attiva) -->
     <AppHeader />
 
@@ -10,7 +10,7 @@
 
     <!-- Altrimenti, sblocca l'ambiente di lavoro completo a 3 Colonne -->
     <div v-else class="flex flex-1 overflow-hidden animate-fade-in">
-      
+
       <!-- Colonna Sinistra (Nuova): Organizzatore dei capitoli -->
       <BookOrganizer />
 
@@ -20,7 +20,8 @@
       </main>
 
       <!-- Colonna Destra: Console di Supporto e Scacchiera -->
-      <aside class="w-[460px] bg-white border-l border-neutral-200 py-6 px-3 flex flex-col items-center justify-start overflow-y-auto shrink-0 no-print">
+      <aside
+        class="w-[460px] bg-white border-l border-neutral-200 py-6 px-3 flex flex-col items-center justify-start overflow-y-auto shrink-0 no-print">
         <!-- <ChessBoard />  -->
         <!-- Sostituito ChessBoard con ChessboardController passandogli l'istanza dell'editor -->
         <ChessboardController />
@@ -49,10 +50,11 @@ let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
 
 // --- RIPRISTINO ALL'AVVIO ---
 onMounted(async () => {
-  const bookRestored = await bookStore.restoreFromIndexedDB()
+  /*const bookRestored = await bookStore.restoreFromIndexedDB()
   if (bookRestored) {
     await treeStore.restoreFromIndexedDB()
-  }
+  }*/
+  await bookStore.restoreFromIndexedDB()
 })
 
 // --- WATCHER GLOBALE UNIFICATO ---
@@ -71,23 +73,21 @@ watch(
     if (autoSaveTimer) clearTimeout(autoSaveTimer)
 
     // 2. Avvia la scrittura su IndexedDB solo dopo 800ms di inattività
-    autoSaveTimer = setTimeout(() => {
-      if (bookStore.isBookLoaded) {
-        bookStore.saveStatus = 'saving' // <-- Mostra "Salvataggio in corso..."
-        saveFullStateToIndexedDB(
+    autoSaveTimer = setTimeout(async () => {
+      if (!bookStore.isBookLoaded) return
+      bookStore.saveStatus = 'saving'
+      try {
+        bookStore.syncActiveSectionToCache()   // niente prune: l'autosave non cancella mai alberi
+        await saveFullStateToIndexedDB(
           bookStore.metadata,
           bookStore.sectionIndex,
           bookStore.activeSectionId,
-          bookStore.zippedSectionsCache,
-          bookStore.activeSectionHtml,
-          treeStore.trees
+          bookStore.zippedSectionsCache
         )
-
-        // Breve ritardo artificiale (es. 300ms) se la Scrittura è troppo veloce, 
-        // così l'utente nota il cambio di stato
-        setTimeout(() => {
-          bookStore.saveStatus = 'saved' // <-- Mostra "Salvato"
-        }, 300)
+        bookStore.saveStatus = 'saved'
+      } catch (e) {
+        console.error(e)
+        bookStore.saveStatus = 'unsaved'
       }
     }, 800)
   },
@@ -100,8 +100,16 @@ watch(
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out forwards;
 }
+
 @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.99); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.99);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 </style>

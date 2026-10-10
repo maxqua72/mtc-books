@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import JSZip from 'jszip'
 import { db } from '../db'
+import { useChessTreeStore, type ChessTree } from './chessTreeStore'
 
 // 1. DEFINIZIONE DELLE INTERFACCE
 export type SectionType = 'cover' | 'index' | 'chapter'
@@ -12,6 +13,12 @@ export interface SectionIndexItem {
     id: string
     type: SectionType
     title: string
+}
+
+interface SectionData {
+    id: string
+    html: string
+    trees: ChessTree[] // <--- I tree di QUESTA specifica sezione
 }
 
 export interface BookMetadata {
@@ -194,29 +201,33 @@ export const useChessBookStore = defineStore('chessBook', () => {
      * @param currentEditorContent L'HTML aggiornato dell'editor prima di chiuderlo
      */
     async function changeActiveSection(nextSectionId: string, currentEditorContent?: string) {
+        const chessTreeStore = useChessTreeStore()
         // 1. Se c'era una sezione aperta, congeliamo il suo contenuto attuale nella cache di memoria
         if (activeSectionId.value && currentEditorContent !== undefined) {
-            zippedSectionsCache.value[activeSectionId.value] = JSON.stringify({
-                id: activeSectionId.value,
-                html: currentEditorContent
-            })
+            syncActiveSectionToCache({ html: currentEditorContent, prune: true })
         }
 
-        // 2. Svuotiamo l'editor per forzare la distruzione dei vecchi nodi del DOM
-        activeSectionId.value = null
-        activeSectionHtml.value = ''
 
-        // 3. Recuperiamo la nuova sezione dalla cache "congelata"
         const cachedData = zippedSectionsCache.value[nextSectionId]
+        let nextHtml = ''
+        let nextTrees: ChessTree[] = []
+
         if (cachedData) {
-            const parsed = JSON.parse(cachedData)
-            activeSectionId.value = nextSectionId
-            activeSectionHtml.value = parsed.html
-        } else {
-            // Se non esiste ancora (es. nuova sezione appena creata), inizializziamo a vuoto
-            activeSectionId.value = nextSectionId
-            activeSectionHtml.value = ''
+            try {
+                const parsed = JSON.parse(cachedData)
+                nextHtml = parsed.html || ''
+                nextTrees = parsed.trees || []
+            } catch (e) {
+                console.error('Errore nel parsing della sezione:', e)
+            }
         }
+
+        // Carica subito i tree nello store (PRIMA di iniettare l'HTML nell'editor)
+        chessTreeStore.setChapterTrees(nextTrees)
+
+        // 3. DOPO: Impostiamo l'ID e l'HTML per attivare il re-render dell'editor Tiptap
+        activeSectionId.value = nextSectionId
+        activeSectionHtml.value = nextHtml
     }
 
     // --- NUOVE FUNZIONI: I/O FILE .MTCBOOK (JSZIP) ---
@@ -226,7 +237,15 @@ export const useChessBookStore = defineStore('chessBook', () => {
      * Legge solo i metadati; i capitoli rimangono congelati nella cache interna.
      */
     async function loadMtcBook(fileBuffer: ArrayBuffer | Blob) {
+        const chessTreeStore = useChessTreeStore()
+
+        // Resetta completamente lo store delle partite del vecchio libro aperto
+        //chessTreeStore.resetStore?.()
+
         const zip = await JSZip.loadAsync(fileBuffer)
+
+        // 1. Svuotiamo lo store globale delle partite
+        chessTreeStore.trees = []
 
         // 1. Estrazione del file di indice e metadati (leggero)
         const bookJsonRaw = await zip.file('book.json')?.async('string')
@@ -271,6 +290,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
         // 4. Apriamo automaticamente la prima sezione disponibile (se presente)
         if (sectionIndex.value.length > 0) {
             await changeActiveSection(sectionIndex.value[0].id)
+            await nextTick()
         }
         isBookLoaded.value = true
     }
@@ -281,14 +301,30 @@ export const useChessBookStore = defineStore('chessBook', () => {
      */
     async function exportMtcBook(currentEditorContent: string): Promise<Blob> {
         const zip = new JSZip()
+        const chessTreeStore = useChessTreeStore()
 
-        // 1. Aggiorniamo la cache con lo stato dell'editor corrente prima del salvataggio
-        if (activeSectionId.value) {
-            zippedSectionsCache.value[activeSectionId.value] = JSON.stringify({
-                id: activeSectionId.value,
-                html: currentEditorContent
-            })
-        }
+        // 1. Prima della pulizia, eseguiamo la Garbage Collection sui tree del solo capitolo attivo
+        syncActiveSectionToCache({ html: currentEditorContent, prune: true })
+
+        // --- GARBAGE COLLECTION PARTITE ZOMBI ---
+        /*
+        const allUsedTreeIds = new Set<string>()
+
+        // Raccoglie tutti i tree-id presenti in TUTTE le sezioni del libro
+        Object.values(zippedSectionsCache.value).forEach(jsonString => {
+            try {
+                const parsed = JSON.parse(jsonString)
+                const ids = extractTreeIdsFromHtml(parsed.html)
+                ids.forEach(id => allUsedTreeIds.add(id))
+            } catch (e) {
+                console.error("Errore nel parsing della sezione per la pulizia tree", e)
+            }
+        })
+
+        // Elimina dallo store tutti gli alberi che non compaiono in nessuna sezione del libro
+        chessTreeStore.cleanOrphanTrees(Array.from(allUsedTreeIds))
+        */
+        // ----------------------------------------
 
         // 2. Prepariamo il payload del file book.json
         metadata.value.updatedAt = new Date().toISOString()
@@ -323,6 +359,26 @@ export const useChessBookStore = defineStore('chessBook', () => {
         return id
     }
 
+    /**
+ * Estrae tutti gli attributi 'tree-id' o 'data-tree-id' presenti nel codice HTML di un capitolo
+ */
+    function extractTreeIdsFromHtml(html: string): string[] {
+        if (!html) return []
+        const parser = new DOMParser()
+        const doc = parser.parseFromString(html, 'text/html')
+
+        const treeIds: string[] = []
+        // Cerca i nodi custom del tree (modifica il selettore in base a come Tiptap serializza il nodo in HTML)
+        const treeNodes = doc.querySelectorAll('chess-tree-block, [data-type="chess-tree-block"]')
+
+        treeNodes.forEach((node) => {
+            const id = node.getAttribute('tree-id') || node.getAttribute('data-tree-id')
+            if (id) treeIds.push(id)
+        })
+
+        return treeIds
+    }
+
 
 
 
@@ -334,20 +390,25 @@ export const useChessBookStore = defineStore('chessBook', () => {
             const savedState = await db.bookState.get('current_book')
             if (!savedState) return false
 
+            // 1. Ripristina metadati e indice capitoli
             metadata.value = savedState.metadata
             sectionIndex.value = savedState.sectionIndex
 
+            // 2. Recupera le sezioni salvate da Dexie
             const allSections = await db.sections.toArray()
             zippedSectionsCache.value = {}
 
+            // 🟢 AGGIORNAMENTO: Mantiene la stringa JSON integra ({ id, html, trees })
             allSections.forEach(sec => {
-                zippedSectionsCache.value[sec.id] = JSON.stringify({ id: sec.id, html: sec.html })
+                zippedSectionsCache.value[sec.id] = sec.json
             })
 
-            if (savedState.activeSectionId) {
-                await changeActiveSection(savedState.activeSectionId)
-            } else if (sectionIndex.value.length > 0) {
-                await changeActiveSection(sectionIndex.value[0].id)
+            // 3. Determina la sezione da caricare
+            const sectionToOpen = savedState.activeSectionId || sectionIndex.value[0]?.id
+
+            if (sectionToOpen) {
+                // changeActiveSection farà il parse del JSON dalla cache e popolerà sia l'HTML che treeStore.trees
+                await changeActiveSection(sectionToOpen)
             }
 
             isBookLoaded.value = true
@@ -356,6 +417,21 @@ export const useChessBookStore = defineStore('chessBook', () => {
             console.error('Errore nel ripristino da IndexedDB:', error)
             return false
         }
+    }
+
+    function syncActiveSectionToCache(opts: { html?: string; prune?: boolean } = {}) {
+        const id = activeSectionId.value
+        if (!id) return
+        const treeStore = useChessTreeStore()
+        const html = opts.html ?? activeSectionHtml.value
+
+        let trees = treeStore.trees
+        if (opts.prune) {
+            // copia filtrata, NON modifica lo store
+            const used = new Set(extractTreeIdsFromHtml(html))
+            trees = trees.filter(t => used.has(t.id))
+        }
+        zippedSectionsCache.value[id] = JSON.stringify({ id, html, trees })
     }
 
     return {
@@ -397,6 +473,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
         restoreFromIndexedDB,
         saveStatus,
 
-        currentChapterNumber
+        currentChapterNumber,
+        syncActiveSectionToCache
     }
 })

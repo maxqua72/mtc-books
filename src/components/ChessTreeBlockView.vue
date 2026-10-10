@@ -4,7 +4,7 @@
     <div class="block-header">
       <span class="game-title">📊 {{ currentTree?.title || 'Analisi Scacchi' }}</span>
       <button @click.stop="deleteBlock" class="delete-btn" title="Elimina intero blocco partita">
-        ✕ Rimuovi Partita
+        ✕
       </button>
     </div>
     
@@ -42,10 +42,12 @@ const currentTree = computed(() => {
 })
 
 const activateTree = () => {
-  if (props.node.attrs.treeId && treeStore.activeTreeId !== props.node.attrs.treeId) {
-    treeStore.activeTreeId = props.node.attrs.treeId
-    const lastActiveNodeId = currentTree.value?.activeNodeId || null
-    treeStore.setActiveNode(lastActiveNodeId)
+  const id = props.node.attrs.treeId
+  if (!id) return
+  treeStore.ensureTree(id)
+  if (treeStore.activeTreeId !== id) {
+    treeStore.activeTreeId = id
+    treeStore.setActiveNode(currentTree.value?.activeNodeId || null)
   }
 }
 

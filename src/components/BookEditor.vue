@@ -236,6 +236,7 @@ const editor = useEditor({
     onUpdate({ editor }) {
         if (isInsertingFromEngine.value) return
         store.activeSectionHtml = editor.getHTML()
+        //purgeOrphanTrees()
     }
 })
 
@@ -249,7 +250,7 @@ const insertNewChessTreeBlock = () => {
     // 2. Crea l'albero nello store di Pinia
     treeStore.trees.push({
         id: uniqueTreeId,
-        title: `Analisi Partita #${treeStore.trees.length + 1}`,
+        title: `Albero #${treeStore.trees.length + 1}`,
         startingFen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
         rootNodes: [] as any[],
         activeNodeId: null
@@ -378,6 +379,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
     window.removeEventListener('request-editor-sync', syncEditorContent)
     if (resizeObserver) resizeObserver.disconnect()
+    //purgeOrphanTrees()
 })
 
 const getSharedCssRules = (marginTop: number, marginRight: number, marginBottom: number, marginLeft: number, pageSize: { width: string; height: string }, currentChapterIndex: number) => `
@@ -1080,6 +1082,7 @@ const handleSplitTreeBlock = () => {
 }
 
 // 1. INSERIMENTO DIAGRAMMA SEMPLICE (Premendo "Inserisci Diagramma" dalla Console Scacchiera)
+/*
 watch(() => store.insertSignal, () => {
     if (!editor.value) return
 
@@ -1092,6 +1095,84 @@ watch(() => store.insertSignal, () => {
         .run()
 
     store.activeSectionHtml = editor.value.getHTML()
+})*/
+
+watch(() => store.insertSignal, () => {
+  if (!editor.value) return
+
+  try {
+    const currentTreeId = treeStore.activeTreeId
+    const activeNodeId = treeStore.activeNodeId
+
+    // 🟢 CASO A: Se una mossa dentro un Tree è selezionata
+    if (currentTreeId && activeNodeId) {
+
+      // 1. Troviamo l'albero corrente nello store
+      const currentTree = treeStore.trees.find(t => t.id === currentTreeId)
+
+      // 2. Chiamiamo il getter passando le rootNodes dell'albero trovato
+      const activeNode = currentTree 
+        ? treeStore.findNodeById(currentTree.rootNodes, activeNodeId) 
+        : null
+
+      // 3. Verifichiamo in sicurezza se ha mosse successive
+      const hasNextMoves = Boolean(activeNode?.children && activeNode.children.length > 0)
+
+      const diagramFen = treeStore.activeFen
+
+      // 4. Troviamo la posizione del blocco chessTreeBlock corrente
+      let insertPos = -1
+      editor.value.state.doc.descendants((node, pos) => {
+        if (node.type.name === 'chessTreeBlock' && node.attrs.treeId === currentTreeId) {
+          insertPos = pos + node.nodeSize
+        }
+      })
+
+      if (insertPos !== -1) {
+        if (hasNextMoves) {
+          // CASO A.1: Mossa INTERMEDIA -> Spezza l'albero e inserisci al centro
+          const newTreeId = treeStore.splitTree(currentTreeId, activeNodeId)
+          if (!newTreeId) return
+
+          editor.value
+            .chain()
+            .focus()
+            .insertContentAt(insertPos, [
+              { type: 'chessDiagram', attrs: { fen: diagramFen } },
+              { type: 'chessTreeBlock', attrs: { treeId: newTreeId } },
+              { type: 'paragraph' }
+            ])
+            .run()
+        } else {
+          // CASO A.2: ULTIMA mossa -> Inserisci il Diagramma SOTTO senza spezzare
+          editor.value
+            .chain()
+            .focus()
+            .insertContentAt(insertPos, [
+              { type: 'chessDiagram', attrs: { fen: diagramFen } },
+              { type: 'paragraph' }
+            ])
+            .run()
+        }
+
+        store.activeSectionHtml = editor.value.getHTML()
+      }
+      return
+    }
+
+    // 🔵 CASO B: Nessun tree selezionato -> Inserimento alla posizione corrente del cursore
+    editor.value
+      .chain()
+      .focus()
+      .insertChessDiagram({ fen: store.activeFen })
+      .insertContent({ type: 'paragraph' })
+      .run()
+
+    store.activeSectionHtml = editor.value.getHTML()
+
+  } catch (error) {
+    console.error('Errore durante l\'inserimento del diagramma:', error)
+  }
 })
 
 // Rileva quando viene registrata una nuova mossa sulla scacchiera.
@@ -1444,6 +1525,41 @@ const generateServerFullBookPdf = async () => {
   }
 }
 
+/**
+ * Raccoglie tutti i treeId dai nodi 'chessTreeBlock' attualmente presenti nell'editor
+ */
+const getActiveTreeIds = (): string[] => {
+  if (!editor.value) return []
+
+  const activeIds: string[] = []
+
+  // Scansiona l'albero sintattico di ProseMirror/Tiptap
+  editor.value.state.doc.descendants((node) => {
+    if (node.type.name === 'chessTreeBlock' && node.attrs.treeId) {
+      activeIds.push(node.attrs.treeId)
+    }
+  })
+
+  return activeIds
+}
+
+/**
+ * Esegue la pulizia automatica degli alberi orfani
+ */
+const purgeOrphanTrees = () => {
+  const activeIds = getActiveTreeIds()
+  treeStore.cleanOrphanTrees(activeIds)
+}
+
+// -------------------------------------------------------------
+// PUNTI DI AGGANCIO (Dove chiamare purgeOrphanTrees):
+// -------------------------------------------------------------
+
+// 1. Prima di salvare il capitolo/libro sul database
+// onBeforeUnmount(() => {
+//  purgeOrphanTrees()
+//})
+
 
 
 </script>
@@ -1548,6 +1664,7 @@ const generateServerFullBookPdf = async () => {
     box-sizing: border-box;
 
     /* Posizionamento millimetrico esatto dell'area grigia di overflow */
+    /*
     background-image:
         linear-gradient(to bottom,
             transparent calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm) - 1px),
@@ -1564,7 +1681,7 @@ const generateServerFullBookPdf = async () => {
 
     background-size: 100% var(--page-height, 297mm);
     background-repeat: repeat-y;
-    background-position: 0 0;
+    background-position: 0 0; */
 }
 
 .tiptap:focus {

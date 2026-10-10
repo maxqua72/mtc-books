@@ -30,17 +30,14 @@ let resizeObserver: ResizeObserver | null = null
 
 const updateBoard = () => {
   if (!cgApi) return
-  if (cgApi.getFen() === props.fen) return 
-
-  cgApi.set({
-    fen: props.fen,
-    turnColor: props.turnColor,
-    movable: {
-      color: props.turnColor,
-      dests: props.dests
-    }
-  })
+  if (cgApi.getFen() === props.fen.split(' ')[0]) return
+  resync()
 }
+const resync = () => cgApi?.set({
+  fen: props.fen,
+  turnColor: props.turnColor,
+  movable: { color: props.turnColor, dests: props.dests }
+})
 
 watch(() => props.fen, updateBoard)
 watch(() => props.dests, updateBoard)
@@ -106,9 +103,7 @@ const forceRedraw = () => {
   }
 }
 
-defineExpose({
-  redraw: forceRedraw
-})
+defineExpose({ redraw: forceRedraw, resync })
 </script>
 
 <style scoped>

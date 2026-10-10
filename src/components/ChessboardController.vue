@@ -1,20 +1,13 @@
 <template>
   <div class="w-[400px] flex flex-col items-center gap-6">
     <!-- Componente Scacchiera Grafica -->
-    <ChessboardView ref="chessboardRef"
-      :fen="treeStore.activeFen" :turn-color="currentTurnColor" :dests="playableDests"
+    <ChessboardView ref="chessboardRef" :fen="treeStore.activeFen" :turn-color="currentTurnColor" :dests="playableDests"
       @move="handlePhysicsMove" />
 
     <!-- Componente Console -->
-    <ChessboardConsole 
-      :current-fen="treeStore.activeFen" 
-      :last-move="lastMoveNotation" 
-      @reset="resetBoard"
-      @insert-diagram="insertDiagramIntoText" 
-      @delete-branch="deleteActiveBranch" 
-      @update-fen="handleManualFenUpdate"
-      @import-pgn="handlePgnImport"
-    />
+    <ChessboardConsole :current-fen="treeStore.activeFen" :last-move="lastMoveNotation" @reset="resetBoard"
+      @insert-diagram="insertDiagramIntoText" @delete-branch="deleteActiveBranch" @update-fen="handleManualFenUpdate"
+      @import-pgn="handlePgnImport" />
   </div>
 </template>
 
@@ -110,12 +103,17 @@ const handlePhysicsMove = (orig: Key, dest: Key) => {
 
     // 2. Registra la mossa nell'albero dello store dedicato
     // L'azione addMove genererà internamente il lastRecordedMoveSignal corretto
-    treeStore.addMove(moveData.san, newFen)
+    const result = treeStore.addMove(moveData.san, newFen)
+    if (!result) {
+      chess.load(treeStore.activeFen)     // riallinea chess.js allo store
+      chessboardRef.value?.resync()       // riporta il pezzo dov'era
+    }
 
   } catch (error) {
     console.warn("[BoardController] Mossa illegale tentata su chess.js:", error)
-    // Ripristina la posizione grafica precedente in caso di mossa illegale
-    treeStore.setActiveNode(treeStore.activeNodeId)
+    // Riallinea chess.js allo store e riporta il pezzo sulla scacchiera dov'era
+    chess.load(treeStore.activeFen)
+    chessboardRef.value?.resync()
   }
 }
 
@@ -165,16 +163,16 @@ const handleManualFenUpdate = (newFen: string) => {
   try {
     // Validiamo il FEN caricandolo temporaneamente nell'istanza chess.js
     chess.load(newFen)
-    
+
     // Se il FEN è valido, aggiorniamo il FEN attivo nello store di Pinia
     treeStore.activeFen = chess.fen()
-    
+
     // Aggiorniamo la notazione dell'ultima mossa dato che la catena precedente si interrompe/cambia
     lastMoveNotation.value = 'FEN Incollato'
   } catch (error) {
     console.error("[BoardController] Il FEN inserito non è valido:", error)
     alert("Il FEN inserito non è valido. Verifica la stringa e riprova.")
-    
+
     // Forza il ripristino del FEN attuale nello store per ripulire l'input grafico errato
     const current = treeStore.activeFen
     treeStore.activeFen = ''
@@ -189,7 +187,7 @@ const handlePgnImport = (pgnString: string) => {
   try {
     const testChess = new Chess()
     testChess.loadPgn(pgnString)
-    
+
     if (testChess.history().length === 0) {
       throw new Error("PGN vuoto o privo di mosse leggibili")
     }

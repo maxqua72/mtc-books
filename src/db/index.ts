@@ -1,6 +1,5 @@
 import Dexie, { type Table } from 'dexie'
 import type { BookMetadata, SectionIndexItem } from '../stores/chessBookStore'
-import type { ChessTree } from '../stores/chessTreeStore'
 
 export interface LocalBookState {
   id: string // Sempre 'current_book'
@@ -12,25 +11,20 @@ export interface LocalBookState {
 
 export interface LocalSection {
   id: string
-  html: string
-}
-
-export interface LocalTree {
-  id: string
-  data: ChessTree
+  json: string // Conserva la stringa JSON completa della sezione ({ id, html, trees })
 }
 
 export class MtcDatabase extends Dexie {
   bookState!: Table<LocalBookState>
   sections!: Table<LocalSection>
-  trees!: Table<LocalTree>
 
   constructor() {
     super('MtcBookDatabase')
-    this.version(1).stores({
+
+    // Schema aggiornato: rimossa la tabella 'trees'
+    this.version(2).stores({
       bookState: 'id',
-      sections: 'id',
-      trees: 'id'
+      sections: 'id'
     })
   }
 }
@@ -44,12 +38,9 @@ export async function saveFullStateToIndexedDB(
   metadata: BookMetadata,
   sectionIndex: SectionIndexItem[],
   activeSectionId: string | null,
-  zippedSectionsCache: Record<string, string>,
-  activeSectionHtml: string,
-  trees: ChessTree[]
+  zippedSectionsCache: Record<string, string>
 ) {
-  try {
-    // 1. Salvataggio Metadati e Indice
+  await db.transaction('rw', db.bookState, db.sections, async () => {
     await db.bookState.put({
       id: 'current_book',
       metadata: JSON.parse(JSON.stringify(metadata)),
@@ -58,44 +49,24 @@ export async function saveFullStateToIndexedDB(
       updatedAt: new Date().toISOString()
     })
 
-    // 2. Preparazione delle Sezioni / Capitoli
-    const cacheCopy = { ...zippedSectionsCache }
-    if (activeSectionId) {
-      cacheCopy[activeSectionId] = JSON.stringify({
-        id: activeSectionId,
-        html: activeSectionHtml
-      })
-    }
+    const validIds = new Set(sectionIndex.map(s => s.id))
+    await db.sections.bulkPut(
+      Object.entries(zippedSectionsCache)
+        .filter(([id]) => validIds.has(id))
+        .map(([id, json]) => ({ id, json }))
+    )
 
-    const sectionsToSave: LocalSection[] = Object.entries(cacheCopy).map(([id, rawJson]) => {
-      try {
-        const parsed = JSON.parse(rawJson)
-        return { id, html: parsed.html || '' }
-      } catch {
-        return { id, html: '' }
-      }
-    })
-
-    if (sectionsToSave.length > 0) {
-      await db.sections.bulkPut(sectionsToSave)
-    }
-
-    // 3. Salvataggio Alberi Scacchistici
-    const treesToSave: LocalTree[] = trees.map(t => ({
-      id: t.id,
-      data: JSON.parse(JSON.stringify(t))
-    }))
-
-    if (treesToSave.length > 0) {
-      await db.trees.bulkPut(treesToSave)
-    }
-  } catch (error) {
-    console.error('[Dexie] Errore durante il salvataggio globale:', error)
-  }
+    // rimuove le sezioni eliminate o di libri precedenti
+    const stale = (await db.sections.toCollection().primaryKeys())
+      .filter(id => !validIds.has(id as string))
+    await db.sections.bulkDelete(stale)
+  })
 }
 
+/**
+ * Svuota completamente il database locale IndexedDB
+ */
 export async function clearIndexedDB() {
   await db.bookState.clear()
   await db.sections.clear()
-  await db.trees.clear()
 }

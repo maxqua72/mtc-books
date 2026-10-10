@@ -54,9 +54,13 @@ export const useChessTreeStore = defineStore('chessTree', {
      * Trova ricorsivamente un nodo specifico all'interno di un albero
      */
     findNodeById: () => (nodes: ChessMoveNode[], id: string): ChessMoveNode | null => {
+      if (!nodes || !Array.isArray(nodes)) return null; // Guard clause sui nodi di partenza
+
       for (const node of nodes) {
         if (node.id === id) return node;
-        if (node.children.length > 0) {
+        
+        // USIAMO ?.length: se node.children è undefined non va in crash
+        if (node.children?.length > 0) { 
           const found = useChessTreeStore().findNodeById(node.children, id);
           if (found) return found;
         }
@@ -71,11 +75,12 @@ export const useChessTreeStore = defineStore('chessTree', {
   },
 
   actions: {
-    
+
 
     /**
      * Ripristina tutti gli alberi di varianti salvati da Dexie/IndexedDB
      */
+    /*
     async restoreFromIndexedDB(): Promise<boolean> {
       try {
         const savedTrees = await db.trees.toArray()
@@ -91,7 +96,7 @@ export const useChessTreeStore = defineStore('chessTree', {
         console.error('[ChessTreeStore] Errore durante il ripristino da Dexie:', error)
         return false
       }
-    },
+    },*/
 
     /**
      * Inizializza un nuovo albero (Partita o Posizione di studio separata)
@@ -252,6 +257,23 @@ export const useChessTreeStore = defineStore('chessTree', {
       return false;
     },
 
+    setChapterTrees(newTrees: ChessTree[] = []) {
+      this.resetStore()
+      this.trees = [...newTrees]
+
+      // Se è presente almeno un albero, imposta come attivo il primo
+      if (this.trees.length > 0) {
+        const firstTree = this.trees[0]
+        this.activeTreeId = firstTree.id
+        
+        // Se l'albero ha un nodo attivo salvato, ripristina la FEN corretto
+        if (firstTree.activeNodeId) {
+          this.activeNodeId = firstTree.activeNodeId
+          // Assicurati che activeFen rifletta la FEN di quel nodo specifico
+        }
+      }
+    },
+
     /**
      * Reset completo dello store
      */
@@ -262,6 +284,17 @@ export const useChessTreeStore = defineStore('chessTree', {
       this.activeFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
       this.isRecordingMoves = false;
       this.lastRecordedMoveSignal = null;
+    },
+
+    ensureTree(treeId: string) {
+      if (this.trees.some(t => t.id === treeId)) return
+      this.trees.push({
+        id: treeId,
+        title: `Albero #${this.trees.length + 1}`,
+        startingFen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+        rootNodes: [],
+        activeNodeId: null
+      })
     },
 
     /**
@@ -411,6 +444,22 @@ export const useChessTreeStore = defineStore('chessTree', {
 
       this.trees.push(newTree)
       return newTreeId
+    },
+
+    /**
+     * Rimuove dallo store tutti gli alberi che non sono presenti nel documento Tiptap
+     */
+    cleanOrphanTrees(activeTreeIds: string[]) {
+      const activeSet = new Set(activeTreeIds)
+
+      // Filtra gli alberi mantenendo solo quelli con ID presente nell'array attivo
+      const initialCount = this.trees.length
+      this.trees = this.trees.filter(tree => activeSet.has(tree.id))
+
+      const removedCount = initialCount - this.trees.length
+      if (removedCount > 0) {
+        console.log(`[chessTreeStore] Rimosse ${removedCount} partite orfane dallo store.`)
+      }
     }
 
 
