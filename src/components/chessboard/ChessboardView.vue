@@ -27,6 +27,7 @@ const emit = defineEmits<{
 const boardElement = ref<HTMLElement | null>(null)
 let cgApi: Api | null = null
 let resizeObserver: ResizeObserver | null = null
+let rafId = 0
 
 const boardConfig = () => ({
   turnColor: props.turnColor,
@@ -45,6 +46,21 @@ const resync = () => cgApi?.set({ fen: props.fen, ...boardConfig() })
 watch(() => props.fen, updateBoard)
 watch(() => props.dests, updateBoard)
 
+// Chessground posiziona i pezzi con una misura della scacchiera messa in cache.
+// Se la misura è obsoleta (layout non definitivo, zoom del browser, animazioni CSS)
+// i pezzi risultano sfasati in modo progressivo verso destra e verso il basso:
+// per questo rimisuriamo (redrawAll) ogni volta che le dimensioni reali possono cambiare.
+const remeasure = () => {
+  cancelAnimationFrame(rafId)
+  rafId = requestAnimationFrame(() => cgApi?.redrawAll())
+}
+
+// Fine di una transizione/animazione su un antenato della scacchiera
+const onTransitionEnd = (e: Event) => {
+  const el = boardElement.value
+  if (el && e.target instanceof Node && e.target.contains(el)) remeasure()
+}
+
 onMounted(() => {
   if (!boardElement.value) return
 
@@ -62,51 +78,33 @@ onMounted(() => {
     }
   })
 
-  // Esposizione temporanea per la console
-    ;(window as any).cgApi = cgApi
+  // Solo per i test dalla console del browser
+  if (import.meta.env.DEV) (window as any).cgApi = cgApi
 
-  // 2. FORZATURA REDRAW:
-  // Ascoltiamo i cambiamenti dimensionali effettivi del DOM.
-  // Appena il div diventerà stabile a 400px, invochiamo redrawAll()
-  resizeObserver = new ResizeObserver(() => {
-    console.log("[ChessboardView] ResizeObserver: Forzando redrawAll()")
-    if (cgApi) {
-      console.log("[ChessboardView] ResizeObserver: cgApi esistente, invocando redrawAll()")
-      // Force-redraw della matrice e riposizionamento pezzi
-      console.log(cgApi)
-      cgApi.redrawAll()
-    }
-  })
-
+  resizeObserver = new ResizeObserver(remeasure)
   resizeObserver.observe(boardElement.value)
 
-  // 3. Secondo livello di sicurezza: forziamo un redraw al termine del tick di Vue
-  nextTick(() => {
-    console.log("[ChessboardView] nextTick: Forzando redrawAll()")
-    requestAnimationFrame(() => {
-      console.log("[ChessboardView] requestAnimationFrame: Forzando redrawAll()")
-      if (cgApi) cgApi.redrawAll()
-    })
-  })
-/*
-  setTimeout(() => {
-    if (cgApi) cgApi.redrawAll()
-  }, 100)*/
+  window.addEventListener('resize', remeasure)   // anche lo zoom del browser genera 'resize'
+  document.addEventListener('transitionend', onTransitionEnd, true)
+  document.addEventListener('animationend', onTransitionEnd, true)
+
+  // Misura finale a layout assestato e a font caricati
+  requestAnimationFrame(() => requestAnimationFrame(remeasure))
+  document.fonts?.ready.then(remeasure)
 })
 
 onBeforeUnmount(() => {
-  if (resizeObserver) resizeObserver.disconnect()
-  if (cgApi) cgApi.destroy()
+  cancelAnimationFrame(rafId)
+  resizeObserver?.disconnect()
+  window.removeEventListener('resize', remeasure)
+  document.removeEventListener('transitionend', onTransitionEnd, true)
+  document.removeEventListener('animationend', onTransitionEnd, true)
+  cgApi?.destroy()
 })
 
-// Alla fine del setup di ChessboardView.vue
-const forceRedraw = () => {
-  if (cgApi) {
-    cgApi.redrawAll()
-  }
-}
 
-defineExpose({ redraw: forceRedraw, resync })
+
+defineExpose({ redraw: remeasure, resync })
 </script>
 
 <style scoped>
