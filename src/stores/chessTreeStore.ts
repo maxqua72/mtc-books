@@ -58,9 +58,9 @@ export const useChessTreeStore = defineStore('chessTree', {
 
       for (const node of nodes) {
         if (node.id === id) return node;
-        
+
         // USIAMO ?.length: se node.children è undefined non va in crash
-        if (node.children?.length > 0) { 
+        if (node.children?.length > 0) {
           const found = useChessTreeStore().findNodeById(node.children, id);
           if (found) return found;
         }
@@ -71,7 +71,23 @@ export const useChessTreeStore = defineStore('chessTree', {
     currentNode(): ChessMoveNode | null {
       if (!this.activeNodeId || !this.currentTree) return null;
       return this.findNodeById(this.currentTree.rootNodes, this.activeNodeId);
-    }
+    },
+
+    /** Prosecuzioni dalla posizione attiva: [0] = linea principale, le altre = varianti */
+    currentChildren(): ChessMoveNode[] {
+      if (!this.currentTree) return []
+      if (this.activeNodeId === null) return this.currentTree.rootNodes
+      return this.currentNode?.children ?? []
+    },
+
+    /** Mosse alternative alla stessa altezza del nodo attivo (incluso il nodo stesso) */
+    currentSiblings(): ChessMoveNode[] {
+      const tree = this.currentTree
+      const node = this.currentNode
+      if (!tree || !node) return []
+      if (node.parentId === null) return tree.rootNodes
+      return this.findNodeById(tree.rootNodes, node.parentId)?.children ?? []
+    },
   },
 
   actions: {
@@ -143,6 +159,41 @@ export const useChessTreeStore = defineStore('chessTree', {
         }
       }
 
+    },
+
+        /** Cerca tra le prosecuzioni del nodo attivo una mossa con questa notazione */
+    findChildBySan(san: string): ChessMoveNode | null {
+      return this.currentChildren.find(n => n.san === san) ?? null
+    },
+
+    goToStart() {
+      this.setActiveNode(null)
+    },
+
+    goBack() {
+      const node = this.currentNode
+      if (node) this.setActiveNode(node.parentId)
+    },
+
+    goForward(index = 0) {
+      const child = this.currentChildren[index]
+      if (child) this.setActiveNode(child.id)
+    },
+
+    /** Segue la linea principale a partire dalla posizione attiva fino all'ultima mossa */
+    goToEnd() {
+      let node = this.currentChildren[0]
+      if (!node) return
+      while (node.children && node.children.length > 0) node = node.children[0]
+      this.setActiveNode(node.id)
+    },
+
+    /** Passa alla variante precedente (-1) o successiva (+1) alla stessa altezza */
+    goToSibling(delta: 1 | -1) {
+      const siblings = this.currentSiblings
+      const index = siblings.findIndex(n => n.id === this.activeNodeId)
+      const target = siblings[index + delta]
+      if (index !== -1 && target) this.setActiveNode(target.id)
     },
 
     /**

@@ -32,6 +32,8 @@
       </span>
     </div>
 
+
+
     <!-- Sistema di Navigazione Tab -->
     <div class="space-y-3">
       <div class="flex border-b border-neutral-200 text-xs font-semibold">
@@ -131,6 +133,8 @@ const treeStore = useChessTreeStore()
 const activeTab = ref<'fen' | 'pgn'>('fen')
 const pgnInput = ref('')
 const copied = ref(false)
+
+
 
 const copyFenToClipboard = async () => {
   try {
