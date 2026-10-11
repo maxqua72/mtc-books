@@ -21,11 +21,19 @@
         </div>
 
         <!-- Inserimento della Toolbar Modulare -->
-        <EditorToolbar v-if="editor" :editor="editor" :zoom="currentZoomOption" @update:zoom="handleZoomChange"
-            @insert-tree-block="insertNewChessTreeBlock" @split-tree-block="handleSplitTreeBlock" />
+        <EditorToolbar v-if="editor" v-show="!isCoverActive" :editor="editor" :zoom="currentZoomOption"
+            @update:zoom="handleZoomChange" @insert-tree-block="insertNewChessTreeBlock"
+            @split-tree-block="handleSplitTreeBlock" />
+
+        <!-- Copertina: una pagina fissa, non un documento di testo -->
+        <CoverEditor v-if="isCoverActive && store.coverModel" v-model="coverProxy" class="flex-1 min-h-0"
+            :image-url="store.coverImageUrl" :page-width-mm="coverPageMm.width"
+            :page-height-mm="coverPageMm.height" @pick-image="onPickCoverImage"
+            @remove-image="store.removeCoverImage()" />
+
 
         <!-- Area di Scrittura Effettiva (Scroll Container) -->
-        <div id="book-editor-content" ref="scrollContainer" class="flex-1 overflow-y-auto p-8"
+        <div v-show="!isCoverActive" id="book-editor-content" ref="scrollContainer" class="flex-1 overflow-y-auto p-8"
             @click="handleCanvasClick">
             <!-- Contenitore flessibile privo di justify-center per evitare il bug del taglio a sinistra -->
             <div class="editor-scroll-wrapper"
@@ -73,6 +81,8 @@ import { ChessTreeBlock } from '../extensions/ChessTreeBlock' // <-- Nuova Esten
 import { ProtectChessNodes } from '../extensions/ProtectChessNodes'
 import { DiagramRef } from '../extensions/DiagramRef'
 import EditorToolbar from './EditorToolbar.vue'
+import CoverEditor from './cover/CoverEditor.vue'
+import { getPageSizeMm, type BookCover } from '../utils/cover'
 import Focus from '@tiptap/extension-focus'
 import { usePdfStore, type ExportSection } from '../stores/pdfStore'
 
@@ -89,6 +99,22 @@ const pdfStore = usePdfStore()
 const isGeneratingPdf = ref(false)
 
 const isInsertingFromEngine = ref(false)
+
+// --- COPERTINA ---
+const isCoverActive = computed(() => store.activeSectionInfo?.type === 'cover')
+const coverPageMm = computed(() => getPageSizeMm(store.metadata.pageFormat))
+const coverProxy = computed<BookCover>({
+    get: () => store.coverModel as BookCover,
+    set: (v) => { store.coverModel = v }
+})
+
+const onPickCoverImage = async (file: File) => {
+    try {
+        await store.setCoverImage(file)
+    } catch (err: any) {
+        alert(err?.message || "Impossibile caricare l'immagine.")
+    }
+}
 
 // --- GESTIONE ZOOM ---
 const currentZoomOption = ref<string>('100')
@@ -301,15 +327,8 @@ const loadSectionIntoEditor = (sectionId: string | null) => {
         return
     }
 
-    // 3. Se è la COPERTINA e non ha testo, iniettiamo un template di base editabile
-    if (currentSection?.type === 'cover' && !store.activeSectionHtml) {
-        editor.value.setOptions({ editable: true })
-        editor.value.commands.setContent(`
-      <h1 style="text-align: center; font-size: 32pt; margin-top: 50mm; font-family: Lora, Georgia, serif;">Titolo del Libro</h1>
-      <p style="text-align: center; font-style: italic; font-size: 14pt; margin-top: 10mm;">Autore</p>
-    `)
-        return
-    }
+    // 3. La COPERTINA è gestita da CoverEditor: l'editor di testo non va toccato
+    if (currentSection?.type === 'cover') return
 
     // 4. Per i CAPITOLI normali, sblocchiamo l'editor e carichiamo il loro HTML
     editor.value.setOptions({ editable: true })
@@ -349,7 +368,8 @@ watch(() => store.generatedTocHtml, (newTocHtml) => {
 
 // Sincronizza l'HTML prima del salvataggio definitivo su file
 const syncEditorContent = () => {
-    if (editor.value) {
+    // Con la copertina attiva l'editor di testo contiene un vecchio capitolo: non va sincronizzato
+    if (editor.value && store.activeSectionInfo?.type !== 'cover') {
         store.activeSectionHtml = editor.value.getHTML()
     }
 }
@@ -1263,6 +1283,25 @@ const generateServerChapterPdf = async () => {
   }
 }*/
 const generateServerChapterPdf = async () => {
+
+        // Con la copertina attiva si esporta la copertina
+    if (store.activeSectionInfo?.type === 'cover') {
+        try {
+            store.syncActiveSectionToCache()
+            await pdfStore.exportCurrentChapter({
+                htmlContent: await store.buildCoverHtml(store.activeSectionId!),
+                customCss: getComputedCssRules(1),
+                title: store.activeSectionInfo.title || 'copertina',
+                chapterNumber: 1,
+                pageSize: store.metadata.pageFormat || 'a4'
+            })
+        } catch (err) {
+            alert("Si è verificato un errore durante l'esportazione della copertina.")
+        }
+        return
+    }
+
+
     if (!editor.value) return
 
     const currentChapterIndex = store.currentChapterNumber
@@ -1587,6 +1626,8 @@ const generateServerFullBookPdf = async () => {
             let sectionHtml = ''
             if (section.type === 'index') {
                 sectionHtml = store.generatedTocHtml
+            } else if (section.type === 'cover') {
+                sectionHtml = await store.buildCoverHtml(section.id)
             } else {
                 if (store.activeSectionId !== section.id) {
                     // Senza contenuto: la sezione in uscita è già in cache

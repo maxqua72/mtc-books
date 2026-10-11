@@ -386,3 +386,28 @@ body {
   background: none !important;
   outline: none !important;
 }
+
+/* ==========================================================================
+   COPERTINA: una sola pagina, a pieno foglio, senza margini
+   ========================================================================== */
+@page cover {
+  margin: 0 !important;
+}
+
+.cover-section {
+  page: cover;
+  break-before: page;
+  break-inside: avoid;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+/* Se la copertina è la prima sezione, nessuna interruzione prima */
+.book-print-container > .book-section:first-child .cover-section {
+  break-before: avoid;
+}
+
+.cover-page { overflow: hidden !important; break-inside: avoid; }
+.cover-text { margin: 0 !important; }
+.cover-image { max-width: none !important; }

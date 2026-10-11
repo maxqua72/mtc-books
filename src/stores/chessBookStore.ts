@@ -1,7 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed, nextTick } from 'vue'
 import JSZip from 'jszip'
-import { db } from '../db'
+import { db, putAsset, getAsset } from '../db'
+import {
+    type BookCover, createEmptyCover, normalizeCover, coverToHtml,
+    blobToDataUrl, getPageSizeMm, newCoverId
+} from '../utils/cover'
 import { useChessTreeStore, type ChessTree } from './chessTreeStore'
 
 // 1. DEFINIZIONE DELLE INTERFACCE
@@ -82,6 +86,102 @@ export const useChessBookStore = defineStore('chessBook', () => {
     // Il "disco virtuale": tiene in memoria i file compressi non ancora aperti
     // Chiave: sectionId, Valore: la stringa JSON grezza o l'oggetto compresso da estrarre su richiesta
     const zippedSectionsCache = ref<Record<string, string>>({})
+
+    // --- COPERTINA ---
+    // Modello della copertina quando la sezione attiva è di tipo 'cover' (altrimenti null)
+    const coverModel = ref<BookCover | null>(null)
+    // URL temporaneo dell'immagine di sfondo, per l'anteprima nell'editor
+    const coverImageUrl = ref<string | null>(null)
+    let coverObjectUrl: string | null = null
+
+    const EXT_BY_MIME: Record<string, string> = {
+        'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp'
+    }
+    const MIME_BY_EXT: Record<string, string> = {
+        png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp'
+    }
+    const MAX_COVER_IMAGE_BYTES = 25 * 1024 * 1024
+
+    const clearCoverImageUrl = () => {
+        if (coverObjectUrl) URL.revokeObjectURL(coverObjectUrl)
+        coverObjectUrl = null
+        coverImageUrl.value = null
+    }
+
+    async function refreshCoverImageUrl() {
+        const id = coverModel.value?.image?.assetId
+        if (!id) { clearCoverImageUrl(); return }
+
+        const asset = await getAsset(id)
+        // Nel frattempo l'immagine (o la sezione) può essere cambiata
+        if (coverModel.value?.image?.assetId !== id) return
+        if (!asset) { clearCoverImageUrl(); return }
+
+        clearCoverImageUrl()
+        coverObjectUrl = URL.createObjectURL(asset.blob)
+        coverImageUrl.value = coverObjectUrl
+    }
+
+    /** Salva l'immagine scelta come asset e la collega alla copertina attiva */
+    async function setCoverImage(file: File) {
+        if (!coverModel.value) return
+        if (!(file.type in EXT_BY_MIME)) throw new Error('Formato non supportato: usa PNG, JPEG o WebP.')
+        if (file.size > MAX_COVER_IMAGE_BYTES) throw new Error('Immagine troppo grande (massimo 25 MB).')
+        try {
+            (await createImageBitmap(file)).close() // verifica che sia un'immagine leggibile
+        } catch {
+            throw new Error("Impossibile leggere l'immagine.")
+        }
+
+        const id = newCoverId('img')
+        await putAsset({ id, blob: file, type: file.type, name: file.name })
+        coverModel.value = { ...coverModel.value, image: { assetId: id, x: 50, y: 50, zoom: 1 } }
+        await refreshCoverImageUrl()
+    }
+
+    async function removeCoverImage() {
+        if (!coverModel.value) return
+        coverModel.value = { ...coverModel.value, image: null }
+        clearCoverImageUrl()
+        // il file in IndexedDB viene eliminato al prossimo salvataggio
+    }
+
+    /** Identificativi delle immagini usate dalle copertine del libro */
+    function collectAssetIds(): string[] {
+        const ids = new Set<string>()
+        for (const item of sectionIndex.value) {
+            if (item.type !== 'cover') continue
+            let cover: BookCover | null = null
+            if (item.id === activeSectionId.value) {
+                cover = coverModel.value
+            } else {
+                try {
+                    cover = normalizeCover(JSON.parse(zippedSectionsCache.value[item.id] || '{}').cover)
+                } catch { cover = null }
+            }
+            if (cover?.image) ids.add(cover.image.assetId)
+        }
+        return [...ids]
+    }
+
+    /** HTML della copertina pronto per il PDF (con l'immagine incorporata) */
+    async function buildCoverHtml(sectionId: string): Promise<string> {
+        let cover: BookCover
+        if (sectionId === activeSectionId.value && coverModel.value) {
+            cover = coverModel.value
+        } else {
+            try {
+                cover = normalizeCover(JSON.parse(zippedSectionsCache.value[sectionId] || '{}').cover)
+            } catch { cover = createEmptyCover() }
+        }
+
+        let src: string | null = null
+        if (cover.image) {
+            const asset = await getAsset(cover.image.assetId)
+            if (asset) src = await blobToDataUrl(asset.blob)
+        }
+        return coverToHtml(cover, src, getPageSizeMm(metadata.value.pageFormat))
+    }
 
     // --- GETTERS COMPOSITI ---
     const activeSectionInfo = computed(() => {
@@ -281,27 +381,33 @@ export const useChessBookStore = defineStore('chessBook', () => {
             syncActiveSectionToCache({ html: currentEditorContent, prune: true })
         }
 
-
+        const nextType = sectionIndex.value.find(s => s.id === nextSectionId)?.type
         const cachedData = zippedSectionsCache.value[nextSectionId]
         let nextHtml = ''
         let nextTrees: ChessTree[] = []
+        let nextCover: unknown = null
 
         if (cachedData) {
             try {
                 const parsed = JSON.parse(cachedData)
                 nextHtml = parsed.html || ''
                 nextTrees = parsed.trees || []
+                nextCover = parsed.cover ?? null
             } catch (e) {
                 console.error('Errore nel parsing della sezione:', e)
             }
         }
 
-        // Carica subito i tree nello store (PRIMA di iniettare l'HTML nell'editor)
-        chessTreeStore.setChapterTrees(nextTrees)
+        // Carica subito partite e copertina negli store (PRIMA di cambiare sezione attiva)
+        chessTreeStore.setChapterTrees(nextType === 'cover' ? [] : nextTrees)
+        coverModel.value = nextType === 'cover' ? normalizeCover(nextCover) : null
 
-        // 3. DOPO: Impostiamo l'ID e l'HTML per attivare il re-render dell'editor Tiptap
+        // DOPO: impostiamo l'ID e l'HTML per attivare il re-render dell'editor
         activeSectionId.value = nextSectionId
         activeSectionHtml.value = nextHtml
+
+        if (nextType === 'cover') void refreshCoverImageUrl()
+        else clearCoverImageUrl()
     }
 
     async function startNewBook(title: string, author: string) {
@@ -376,6 +482,21 @@ export const useChessBookStore = defineStore('chessBook', () => {
             }
         }
 
+                // 3b. Immagini della copertina: dallo zip a IndexedDB
+        const assetsFolder = zip.folder('assets')
+        if (assetsFolder) {
+            const entries: { id: string; file: JSZip.JSZipObject; type: string }[] = []
+            assetsFolder.forEach((relativePath, file) => {
+                if (file.dir) return
+                const m = /^([\w-]{1,64})\.(png|jpg|jpeg|webp)$/i.exec(relativePath)
+                if (m) entries.push({ id: m[1], file, type: MIME_BY_EXT[m[2].toLowerCase()] })
+            })
+            for (const e of entries) {
+                const data = await e.file.async('arraybuffer')
+                await putAsset({ id: e.id, blob: new Blob([data], { type: e.type }), type: e.type, name: e.id })
+            }
+        }
+
         // 4. Apriamo automaticamente la prima sezione disponibile (se presente)
         if (sectionIndex.value.length > 0) {
             await changeActiveSection(sectionIndex.value[0].id)
@@ -440,6 +561,15 @@ export const useChessBookStore = defineStore('chessBook', () => {
             }
         }
 
+        // 3b. Immagini della copertina (da IndexedDB)
+        const assetsFolder = zip.folder('assets')
+        if (assetsFolder) {
+            for (const assetId of collectAssetIds()) {
+                const asset = await getAsset(assetId)
+                if (asset) assetsFolder.file(`${assetId}.${EXT_BY_MIME[asset.type] ?? 'png'}`, asset.blob)
+            }
+        }
+
         // 4. Generiamo il pacchetto binario compresso pronto per il download
         return await zip.generateAsync({ type: 'blob' })
     }
@@ -452,7 +582,11 @@ export const useChessBookStore = defineStore('chessBook', () => {
         const newItem: SectionIndexItem = { id, type, title }
 
         sectionIndex.value.push(newItem)
-        zippedSectionsCache.value[id] = JSON.stringify({ id, html: '' })
+        zippedSectionsCache.value[id] = JSON.stringify(
+            type === 'cover'
+                ? { id, html: '', trees: [], cover: createEmptyCover() }
+                : { id, html: '' }
+        )
 
         return id
     }
@@ -520,6 +654,17 @@ export const useChessBookStore = defineStore('chessBook', () => {
     function syncActiveSectionToCache(opts: { html?: string; prune?: boolean } = {}) {
         const id = activeSectionId.value
         if (!id) return
+
+        // La copertina non ha HTML né partite: si salva il suo modello
+        if (activeSectionInfo.value?.type === 'cover') {
+            if (coverModel.value) {
+                zippedSectionsCache.value[id] = JSON.stringify({
+                    id, html: '', trees: [], cover: coverModel.value
+                })
+            }
+            return
+        }
+
         const treeStore = useChessTreeStore()
         const html = opts.html ?? activeSectionHtml.value
 
@@ -577,6 +722,13 @@ export const useChessBookStore = defineStore('chessBook', () => {
         currentChapterNumber,
         syncActiveSectionToCache,
 
-        startNewBook
+        startNewBook,
+
+        coverModel,
+        coverImageUrl,
+        setCoverImage,
+        removeCoverImage,
+        buildCoverHtml,
+        collectAssetIds,
     }
 })

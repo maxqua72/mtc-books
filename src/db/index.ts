@@ -14,9 +14,27 @@ export interface LocalSection {
   json: string // Conserva la stringa JSON completa della sezione ({ id, html, trees })
 }
 
+export interface LocalAsset {
+  id: string
+  blob: Blob
+  type: string
+  name: string
+}
+
+export const putAsset = (asset: LocalAsset) => db.assets.put(asset)
+export const getAsset = (id: string) => db.assets.get(id)
+
+/** Elimina gli asset non più referenziati dal libro */
+export async function pruneAssets(keepIds: string[]) {
+  const keep = new Set(keepIds)
+  const stale = (await db.assets.toCollection().primaryKeys()).filter(id => !keep.has(id as string))
+  if (stale.length) await db.assets.bulkDelete(stale)
+}
+
 export class MtcDatabase extends Dexie {
   bookState!: Table<LocalBookState>
   sections!: Table<LocalSection>
+  assets!: Table<LocalAsset>
 
   constructor() {
     super('MtcBookDatabase')
@@ -24,7 +42,8 @@ export class MtcDatabase extends Dexie {
     // Schema aggiornato: rimossa la tabella 'trees'
     this.version(2).stores({
       bookState: 'id',
-      sections: 'id'
+      sections: 'id',
+      assets: 'id'
     })
   }
 }
@@ -38,9 +57,10 @@ export async function saveFullStateToIndexedDB(
   metadata: BookMetadata,
   sectionIndex: SectionIndexItem[],
   activeSectionId: string | null,
-  zippedSectionsCache: Record<string, string>
+  zippedSectionsCache: Record<string, string>,
+  keepAssetIds?: string[]
 ) {
-  await db.transaction('rw', db.bookState, db.sections, async () => {
+  await db.transaction('rw', db.bookState, db.sections, db.assets, async () => {
     await db.bookState.put({
       id: 'current_book',
       metadata: JSON.parse(JSON.stringify(metadata)),
@@ -60,6 +80,14 @@ export async function saveFullStateToIndexedDB(
     const stale = (await db.sections.toCollection().primaryKeys())
       .filter(id => !validIds.has(id as string))
     await db.sections.bulkDelete(stale)
+
+    // rimuove le immagini non più referenziate (copertine sostituite o eliminate)
+    if (keepAssetIds) {
+      const keep = new Set(keepAssetIds)
+      const staleAssets = (await db.assets.toCollection().primaryKeys())
+        .filter(id => !keep.has(id as string))
+      if (staleAssets.length) await db.assets.bulkDelete(staleAssets)
+    }
   })
 }
 
@@ -69,4 +97,5 @@ export async function saveFullStateToIndexedDB(
 export async function clearIndexedDB() {
   await db.bookState.clear()
   await db.sections.clear()
+  await db.assets.clear()
 }

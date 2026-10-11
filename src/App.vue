@@ -63,7 +63,8 @@ watch(
     () => bookStore.activeSectionHtml, // Modifica di anche 1 singolo carattere nell'editor
     () => bookStore.metadata,           // Cambiamento di titolo, autore, margini, ecc.
     () => bookStore.sectionIndex,       // Aggiunta, riordino o eliminazione capitoli
-    () => treeStore.trees              // Nuove mosse, varianti, commenti o split sulla scacchiera
+    () => treeStore.trees,              // Nuove mosse, varianti, commenti o split sulla scacchiera
+    () => bookStore.coverModel          // testi, posizioni, inquadratura, immagine
   ],
   () => {
     // 1. Appena l'utente modifica qualcosa, segnamo che ci sono modifiche pendenti
@@ -82,7 +83,8 @@ watch(
           bookStore.metadata,
           bookStore.sectionIndex,
           bookStore.activeSectionId,
-          bookStore.zippedSectionsCache
+          bookStore.zippedSectionsCache,
+          bookStore.collectAssetIds()     // le altre immagini vengono eliminate
         )
         bookStore.saveStatus = 'saved'
       } catch (e) {
