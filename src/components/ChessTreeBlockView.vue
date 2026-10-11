@@ -1,5 +1,6 @@
 <template>
-  <node-view-wrapper class="chess-tree-block-container" @click="activateTree">
+  <node-view-wrapper class="chess-tree-block-container" :class="{ 'is-active-tree': isActive }" @mousedown="onMouseDown"
+    @click="activateTree">
     <!-- Header comandi stile Gmail: compare in posizione assoluta solo all'hover del blocco -->
     <div class="block-header">
       <span class="game-title">📊 {{ currentTree?.title || 'Analisi Scacchi' }}</span>
@@ -7,19 +8,15 @@
         ✕
       </button>
     </div>
-    
+
     <div class="block-content">
       <!-- Se l'albero è vuoto, mostra un placeholder -->
       <div v-if="!currentTree || currentTree.rootNodes.length === 0" class="empty-tree-placeholder">
         Muovi i pezzi sulla scacchiera per iniziare a registrare la partita in questo blocco...
       </div>
-      
+
       <!-- Altrimenti avvia il ciclo ricorsivo di notazione -->
-      <ChessMoveRenderer 
-        v-else 
-        :nodes="currentTree.rootNodes" 
-        :tree-id="props.node.attrs.treeId"
-      />
+      <ChessMoveRenderer v-else :nodes="currentTree.rootNodes" :tree-id="props.node.attrs.treeId" />
     </div>
   </node-view-wrapper>
 </template>
@@ -51,6 +48,23 @@ const activateTree = () => {
   }
 }
 
+const isActive = computed(() => treeStore.activeTreeId === props.node.attrs.treeId)
+
+const onMouseDown = (event: MouseEvent) => {
+  const wrapper = event.currentTarget as HTMLElement
+  const target = event.target as HTMLElement
+
+  // Commenti editabili, input e bottoni mantengono il comportamento nativo.
+  // Il controllo "wrapper.contains" serve perché .ProseMirror è a sua volta contenteditable
+  const editable = target.closest(
+    '[contenteditable]:not([contenteditable="false"]), input, textarea, button'
+  )
+  if (editable && editable !== wrapper && wrapper.contains(editable)) return
+
+  event.preventDefault()          // il browser non sposta il cursore nel paragrafo vicino
+  props.editor.commands.blur()    // niente focus nel testo: nessun paragrafo evidenziato
+}
+
 const deleteBlock = () => {
   if (props.node.attrs.treeId) {
     if (confirm("Vuoi rimuovere interamente questa partita e tutta la sua notazione dal documento?")) {
@@ -67,13 +81,15 @@ const deleteBlock = () => {
   margin: 1.5rem 0;
   display: block;
   position: relative;
-  
+
   /* L'effetto allargamento: aggiungiamo spazio interno ma lo compensiamo 
      portando il riquadro all'esterno con i margini negativi */
   padding: 6px;
-  margin-left: -7px;  /* Sposta il riquadro a sinistra (-6px padding - 1px bordo) */
-  margin-right: -7px; /* Sposta il riquadro a destra */
-  
+  margin-left: -7px;
+  /* Sposta il riquadro a sinistra (-6px padding - 1px bordo) */
+  margin-right: -7px;
+  /* Sposta il riquadro a destra */
+
   border: 1px solid transparent;
   border-radius: 6px;
   transition: background-color 0.2s, border-color 0.2s;
@@ -104,6 +120,22 @@ const deleteBlock = () => {
 /* Mostra l'header comandi solo all'hover */
 .chess-tree-block-container:hover .block-header {
   display: flex;
+}
+
+.chess-tree-block-container.is-active-tree {
+  background-color: rgba(239, 246, 255, 0.4);
+}
+
+/* Stessa linea blu dei paragrafi (-12px), compensando il margin-left: -7px del blocco */
+.chess-tree-block-container.is-active-tree::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: #3b82f6;
+  border-radius: 2px;
 }
 
 .game-title {
@@ -155,6 +187,12 @@ const deleteBlock = () => {
     border: none !important;
     background-color: transparent !important;
   }
+
+  .chess-tree-block-container::before {
+    display: none !important;
+  }
+
+
   .block-header {
     display: none !important;
   }

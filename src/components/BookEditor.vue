@@ -70,6 +70,7 @@ import { useChessTreeStore } from '../stores/chessTreeStore'
 import { ChessDiagram } from '../extensions/ChessDiagram.ts'
 import { CustomHeading } from '../extensions/CustomHeading' // Aggiusta il percorso se serve
 import { ChessTreeBlock } from '../extensions/ChessTreeBlock' // <-- Nuova Estensione Blocco Ibrido
+import { ProtectChessNodes } from '../extensions/ProtectChessNodes'
 import EditorToolbar from './EditorToolbar.vue'
 import Focus from '@tiptap/extension-focus'
 import { usePdfStore, type ExportSection } from '../stores/pdfStore'
@@ -210,6 +211,7 @@ const editor = useEditor({
         CustomHeading, // <-- Estensione personalizzata per h2 e h3
         ChessDiagram, // <-- Registriamo l'estensione del nostro diagramma scacchistico
         ChessTreeBlock,
+        ProtectChessNodes,
     ],
     editorProps: {
         attributes: {
