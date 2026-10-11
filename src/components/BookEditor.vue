@@ -71,6 +71,7 @@ import { ChessDiagram } from '../extensions/ChessDiagram.ts'
 import { CustomHeading } from '../extensions/CustomHeading' // Aggiusta il percorso se serve
 import { ChessTreeBlock } from '../extensions/ChessTreeBlock' // <-- Nuova Estensione Blocco Ibrido
 import { ProtectChessNodes } from '../extensions/ProtectChessNodes'
+import { DiagramRef } from '../extensions/DiagramRef'
 import EditorToolbar from './EditorToolbar.vue'
 import Focus from '@tiptap/extension-focus'
 import { usePdfStore, type ExportSection } from '../stores/pdfStore'
@@ -212,6 +213,7 @@ const editor = useEditor({
         ChessDiagram, // <-- Registriamo l'estensione del nostro diagramma scacchistico
         ChessTreeBlock,
         ProtectChessNodes,
+        DiagramRef,
     ],
     editorProps: {
         attributes: {
@@ -1549,6 +1551,11 @@ const generateServerFullBookPdf = async () => {
         alert("Nessun capitolo presente da esportare.")
         return
     }
+
+    const orphans = store.unresolvedDiagramRefs.length
+    if (orphans > 0 && !confirm(
+        `Ci sono ${orphans} riferimenti a diagrammi che non esistono più (compaiono come "?"). Esportare comunque?`
+    )) return
 
     isGeneratingPdf.value = true
     const originalSectionId = store.activeSectionId

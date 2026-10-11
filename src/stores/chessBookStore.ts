@@ -168,6 +168,79 @@ export const useChessBookStore = defineStore('chessBook', () => {
         return htmlResult
     })
 
+
+    // ==========================================================
+    // RIFERIMENTI AI DIAGRAMMI
+    // ==========================================================
+    interface DiagramLabel { label: string; caption: string; sectionId: string }
+    interface SectionScan {
+        diagrams: { id: string | null; caption: string }[]
+        refTargets: string[]
+    }
+
+    // Fuori dalla reattività: un capitolo si rianalizza solo se la sua sorgente è cambiata
+    const sectionScanCache = new Map<string, { source: string; scan: SectionScan }>()
+
+    const scanSection = (sectionId: string, source: string, isJson: boolean): SectionScan => {
+        const cached = sectionScanCache.get(sectionId)
+        if (cached && cached.source === source) return cached.scan
+
+        let html = source
+        if (isJson) {
+            try { html = source ? JSON.parse(source).html || '' : '' } catch { html = '' }
+        }
+
+        const doc = new DOMParser().parseFromString(html, 'text/html')
+        const scan: SectionScan = {
+            diagrams: Array.from(doc.querySelectorAll('[data-type="chess-diagram"]')).map(el => ({
+                id: el.getAttribute('data-id'),
+                caption: el.querySelector('.diagram-caption')?.textContent?.trim() ?? ''
+            })),
+            refTargets: Array.from(doc.querySelectorAll('[data-type="diagram-ref"]'))
+                .map(el => el.getAttribute('data-target-id') || '')
+                .filter(Boolean)
+        }
+        sectionScanCache.set(sectionId, { source, scan })
+        return scan
+    }
+
+    const diagramData = computed(() => {
+        const labels = new Map<string, DiagramLabel>()
+        const refTargets: string[] = []
+        let chapterNumber = 0
+
+        for (const section of sectionIndex.value) {
+            if (section.type !== 'chapter') continue
+            chapterNumber++ // stessa regola del PDF: contano solo i capitoli
+
+            const scan = section.id === activeSectionId.value
+                ? scanSection(section.id, activeSectionHtml.value, false)
+                : scanSection(section.id, zippedSectionsCache.value[section.id] || '', true)
+
+            // Il progressivo conta TUTTI i diagrammi (anche quelli senza ID): coincide col contatore CSS del PDF
+            scan.diagrams.forEach((d, i) => {
+                if (d.id) {
+                    labels.set(d.id, {
+                        label: `${chapterNumber}.${i + 1}`,
+                        caption: d.caption,
+                        sectionId: section.id
+                    })
+                }
+            })
+            refTargets.push(...scan.refTargets)
+        }
+        return { labels, refTargets }
+    })
+
+    const diagramLabels = computed(() => diagramData.value.labels)
+    const diagramList = computed(() =>
+        Array.from(diagramLabels.value, ([id, v]) => ({ id, ...v }))
+    )
+    const unresolvedDiagramRefs = computed(() =>
+        diagramData.value.refTargets.filter(id => !diagramLabels.value.has(id))
+    )
+
+
     // --- FUNZIONI ESISTENTI ---
     function updateActiveFen(fen: string) {
         activeFen.value = fen
@@ -486,6 +559,9 @@ export const useChessBookStore = defineStore('chessBook', () => {
         zippedSectionsCache,
         activeSectionInfo,
         generatedTocHtml,
+        diagramLabels,
+        diagramList,
+        unresolvedDiagramRefs,
 
         // Nuove Funzioni operative
         changeActiveSection,

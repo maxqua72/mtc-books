@@ -378,3 +378,11 @@ body {
 .comment-editable-text:empty::before {
   content: "" !important;
 }
+
+/* --- RIFERIMENTI A DIAGRAMMI perché nel PDF il riferimento sia testo normale --- */
+.diagram-ref {
+  color: inherit !important;
+  font-weight: inherit !important;
+  background: none !important;
+  outline: none !important;
+}

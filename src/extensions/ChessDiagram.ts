@@ -1,4 +1,5 @@
 import { Node, mergeAttributes } from '@tiptap/core'
+import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { VueNodeViewRenderer } from '@tiptap/vue-3'
 import { fenToBoardString } from '../utils/chessFormatter.ts'
 import ChessDiagramNode from '../components/ChessDiagramNode.vue'
@@ -11,6 +12,9 @@ declare module '@tiptap/core' {
   }
 }
 
+const generateDiagramId = () =>
+  'dg_' + (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36))
+
 export const ChessDiagram = Node.create({
   name: 'chessDiagram',
   group: 'block',
@@ -19,6 +23,12 @@ export const ChessDiagram = Node.create({
 
   addAttributes() {
     return {
+      // Identificativo stabile: serve ai riferimenti nel testo
+      id: {
+        default: null,
+        parseHTML: element => element.getAttribute('data-id'),
+        renderHTML: attributes => (attributes.id ? { 'data-id': attributes.id } : {}),
+      },
       fen: {
         default: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
       },
@@ -99,5 +109,36 @@ export const ChessDiagram = Node.create({
           .run()
       },
     }
+  },
+
+  // Assegna un ID ai diagrammi che non ce l'hanno (nuovi o di libri precedenti)
+  // e rigenera quello dei duplicati (copia/incolla). Tagliare e incollare conserva l'ID.
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        key: new PluginKey('chessDiagramUniqueId'),
+        appendTransaction: (transactions, _oldState, newState) => {
+          if (!transactions.some(tr => tr.docChanged)) return null
+
+          const seen = new Set<string>()
+          const tr = newState.tr
+          let modified = false
+
+          newState.doc.descendants((node, pos) => {
+            if (node.type.name !== this.name) return
+            const id = node.attrs.id as string | null
+            if (!id || seen.has(id)) {
+              tr.setNodeMarkup(pos, undefined, { ...node.attrs, id: generateDiagramId() })
+              modified = true
+            } else {
+              seen.add(id)
+            }
+          })
+
+          // L'assegnazione degli ID non deve finire nella cronologia di annulla/ripristina
+          return modified ? tr.setMeta('addToHistory', false) : null
+        },
+      }),
+    ]
   },
 })
