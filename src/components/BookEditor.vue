@@ -56,7 +56,10 @@
                         '--page-margin-top': (store.metadata.pageMarginTop || 25) + 'mm',
                         '--page-margin-bottom': (store.metadata.pageMarginBottom || 25) + 'mm',
                         '--page-margin-left': (store.metadata.pageMarginLeft || 20) + 'mm',
-                        '--page-margin-right': (store.metadata.pageMarginRight || 20) + 'mm'
+                        '--page-margin-right': (store.metadata.pageMarginRight || 20) + 'mm',
+                        '--paragraph-spacing': bookSpacing.paragraph + 'mm',
+                        '--diagram-spacing': bookSpacing.diagram + 'mm',
+                        '--variation-spacing': bookSpacing.variation + 'mm',
                     }">
                         <editor-content :editor="editor" />
                     </div>
@@ -84,6 +87,7 @@ import EditorToolbar from './EditorToolbar.vue'
 import CoverEditor from './cover/CoverEditor.vue'
 import { getPageSizeMm, type BookCover } from '../utils/cover'
 import Focus from '@tiptap/extension-focus'
+import { TextStyle, Color } from '@tiptap/extension-text-style'
 import { usePdfStore, type ExportSection } from '../stores/pdfStore'
 
 
@@ -219,6 +223,18 @@ const getPageSizeStyles = computed(() => {
     return formats[format] || formats['a4']
 })
 
+const clampSpacing = (v: unknown, def: number) => {
+    if (v === '' || v === null || v === undefined) return def
+    const n = Number(v)
+    return Number.isFinite(n) ? Math.min(30, Math.max(0, n)) : def
+}
+
+const bookSpacing = computed(() => ({
+    paragraph: clampSpacing(store.metadata.paragraphSpacing, 4.5),
+    diagram: clampSpacing(store.metadata.diagramSpacing, 5),
+    variation: clampSpacing(store.metadata.variationSpacing, 4),
+}))
+
 const DEFAULT_CONTENT = `
   <h2>Capitolo 1 — Introduzione</h2>
   <p>Questo è il testo del tuo nuovo libro sugli scacchi. Puoi selezionare il testo per formattarlo in <strong>grassetto</strong> o <em>corsivo</em> utilizzando la toolbar superiore.</p>
@@ -235,6 +251,8 @@ const editor = useEditor({
             className: 'is-node-focused', // Classe CSS applicata al blocco/nodo attivo
             mode: 'deepest',              // Applica il focus sul nodo più profondo
         }),
+        TextStyle,
+        Color,
         CustomHeading, // <-- Estensione personalizzata per h2 e h3
         ChessDiagram, // <-- Registriamo l'estensione del nostro diagramma scacchistico
         ChessTreeBlock,
@@ -599,7 +617,8 @@ const getSharedCssRulesServer = (
     marginBottom: number,
     marginLeft: number,
     pageSize: { width: string; height: string },
-    currentChapterIndex: number
+    currentChapterIndex: number,
+    spacing: { paragraph: number; diagram: number; variation: number }
 ) => {
     // Inietta solo le variabili CSS che sovrascrivono i default di pdf-print.css
     const customVariables = `
@@ -610,6 +629,9 @@ const getSharedCssRulesServer = (
       --page-margin-left: ${marginLeft}mm;
       --page-width: ${pageSize.width};
       --chapter-index: ${currentChapterIndex};
+      --paragraph-spacing: ${spacing.paragraph}mm;
+      --diagram-spacing: ${spacing.diagram}mm;
+      --variation-spacing: ${spacing.variation}mm;
     }
   `
 
@@ -1257,7 +1279,7 @@ const getComputedCssRules = (currentChapterIndex: number) => {
 
     // Combina le regole CSS condivise definite in getSharedCssRules
     //return getSharedCssRules(marginTop, marginRight, marginBottom, marginLeft, pageSize, currentChapterIndex)
-    return getSharedCssRulesServer(marginTop, marginRight, marginBottom, marginLeft, pageSize, currentChapterIndex)
+        return getSharedCssRulesServer(marginTop, marginRight, marginBottom, marginLeft, pageSize, currentChapterIndex, bookSpacing.value)
 }
 
 /**
@@ -1747,8 +1769,15 @@ const purgeOrphanTrees = () => {
 .book-text-engine p,
 .tiptap p {
     margin-top: 0 !important;
-    margin-bottom: 12pt !important;
+    margin-bottom: var(--paragraph-spacing, 4.5mm) !important;
     padding: 0 !important;
+}
+
+/* Prima di un diagramma o di una partita lo spazio è esattamente quello del blocco:
+   il margine del paragrafo non si somma e non collassa con quello del blocco */
+.tiptap p:has(+ .chess-diagram-container),
+.tiptap p:has(+ .chess-tree-block-container) {
+    margin-bottom: 0 !important;
 }
 
 .book-text-engine h2,

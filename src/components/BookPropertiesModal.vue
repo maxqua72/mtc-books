@@ -34,6 +34,29 @@
           </select>
         </div>
 
+        <!-- Spaziatura -->
+        <div>
+          <label class="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Spaziatura (mm)</label>
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <span class="block text-[11px] text-neutral-500 mb-1">Tra paragrafi</span>
+              <input type="number" min="0" max="30" step="0.5" v-model.number="store.metadata.paragraphSpacing"
+                class="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-500" />
+            </div>
+            <div>
+              <span class="block text-[11px] text-neutral-500 mb-1">Intorno ai diagrammi</span>
+              <input type="number" min="0" max="30" step="0.5" v-model.number="store.metadata.diagramSpacing"
+                class="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-500" />
+            </div>
+            <div>
+              <span class="block text-[11px] text-neutral-500 mb-1">Intorno alle varianti</span>
+              <input type="number" min="0" max="30" step="0.5" v-model.number="store.metadata.variationSpacing"
+                class="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-500" />
+            </div>
+          </div>
+          <p class="text-xs text-neutral-400 mt-1">Valgono per tutto il libro, nell'editor e nel PDF.</p>
+        </div>
+
         <!-- Opzioni Booleane -->
         <div class="pt-2 space-y-3">
           <!-- Numerazione Titoli -->

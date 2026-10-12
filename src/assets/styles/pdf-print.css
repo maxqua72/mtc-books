@@ -80,7 +80,7 @@ body {
 .book-text-engine p, .tiptap p {
   display: block !important;
   margin-top: 0 !important;
-  margin-bottom: 4.5mm !important;
+  margin-bottom: var(--paragraph-spacing, 4.5mm) !important;
   padding: 0 !important;
 }
 
@@ -119,8 +119,8 @@ body {
   display: flex !important; 
   align-items: center !important; 
   justify-content: center !important;
-  margin-top: 5mm !important;
-  margin-bottom: 5mm !important;
+  margin-top: var(--diagram-spacing, 5mm) !important;
+  margin-bottom: var(--diagram-spacing, 5mm) !important;
   page-break-inside: avoid !important;
   break-inside: avoid !important;
 }
@@ -245,7 +245,7 @@ body {
 .chess-tree-block-container {
   border: none !important;
   border-radius: 6px !important;
-  margin: 4mm 0 !important;
+  margin: var(--variation-spacing, 4mm) 0 !important;
   page-break-inside: avoid !important;
   break-inside: avoid !important;
 }
@@ -385,6 +385,14 @@ body {
   font-weight: inherit !important;
   background: none !important;
   outline: none !important;
+}
+
+/* Spazio tra paragrafo e diagramma/partita = quello del blocco (niente somma né collasso dei margini) */
+.book-text-engine p:has(+ .chess-diagram-container),
+.book-text-engine p:has(+ .chess-tree-block-container),
+.tiptap p:has(+ .chess-diagram-container),
+.tiptap p:has(+ .chess-tree-block-container) {
+  margin-bottom: 0 !important;
 }
 
 /* ==========================================================================

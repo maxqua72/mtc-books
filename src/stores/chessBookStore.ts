@@ -38,6 +38,9 @@ export interface BookMetadata {
     pageMarginRight: number
     pageMarginBottom: number
     pageMarginLeft: number
+    paragraphSpacing: number   // mm: tra due paragrafi
+    diagramSpacing: number     // mm: sopra e sotto i diagrammi
+    variationSpacing: number   // mm: sopra e sotto i blocchi di partita/varianti
 }
 
 
@@ -69,7 +72,10 @@ export const useChessBookStore = defineStore('chessBook', () => {
         pageMarginTop: 25,
         pageMarginRight: 20,
         pageMarginBottom: 25,
-        pageMarginLeft: 20
+        pageMarginLeft: 20,
+        paragraphSpacing: 4.5,
+        diagramSpacing: 5,
+        variationSpacing: 4
     })
 
     const metadata = ref<BookMetadata>(defaultMetadata())
@@ -463,7 +469,10 @@ export const useChessBookStore = defineStore('chessBook', () => {
             pageMarginTop: bookData.pageMarginTop !== undefined ? Number(bookData.pageMarginTop) : 25,
             pageMarginRight: bookData.pageMarginRight !== undefined ? Number(bookData.pageMarginRight) : 20,
             pageMarginBottom: bookData.pageMarginBottom !== undefined ? Number(bookData.pageMarginBottom) : 25,
-            pageMarginLeft: bookData.pageMarginLeft !== undefined ? Number(bookData.pageMarginLeft) : 20
+            pageMarginLeft: bookData.pageMarginLeft !== undefined ? Number(bookData.pageMarginLeft) : 20,
+            paragraphSpacing: bookData.paragraphSpacing !== undefined ? Number(bookData.paragraphSpacing) : 4.5,
+            diagramSpacing: bookData.diagramSpacing !== undefined ? Number(bookData.diagramSpacing) : 5,
+            variationSpacing: bookData.variationSpacing !== undefined ? Number(bookData.variationSpacing) : 4
         }
         sectionIndex.value = bookData.sectionIndex
 
@@ -623,7 +632,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
             if (!savedState) return false
 
             // 1. Ripristina metadati e indice capitoli
-            metadata.value = savedState.metadata
+            metadata.value = { ...defaultMetadata(), ...savedState.metadata }
             sectionIndex.value = savedState.sectionIndex
 
             // 2. Recupera le sezioni salvate da Dexie

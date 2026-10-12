@@ -78,7 +78,10 @@ const deleteBlock = () => {
 
 <style scoped>
 .chess-tree-block-container {
-  margin: 1.5rem 0;
+    /* Padding (6px) e bordo (1px) stanno dentro il riquadro: li sottraiamo
+     perché lo spazio visibile coincida con quello del PDF, dove non ci sono */
+  margin-top: max(0px, calc(var(--variation-spacing, 4mm) - 7px));
+  margin-bottom: max(0px, calc(var(--variation-spacing, 4mm) - 7px));
   display: block;
   position: relative;
 

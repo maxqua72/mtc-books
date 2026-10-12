@@ -11,6 +11,22 @@
             C
         </button>
 
+        <!-- Colore del testo -->
+        <div class="flex items-center">
+            <label
+                class="relative p-1.5 rounded text-xs font-bold transition min-w-[28px] text-center cursor-pointer text-neutral-600 hover:bg-neutral-200"
+                title="Colore del testo">
+                <span class="block leading-none">A</span>
+                <span class="block h-[3px] mt-0.5 rounded-sm" :style="{ backgroundColor: currentTextColor }"></span>
+                <input type="color" :value="currentTextColor"
+                    @input="setTextColor(($event.target as HTMLInputElement).value)"
+                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+            </label>
+            <button v-if="hasTextColor" @mousedown.prevent @click="editor.chain().focus().unsetColor().run()"
+                class="p-1 rounded text-[10px] text-neutral-400 hover:bg-neutral-200 hover:text-neutral-700"
+                title="Ripristina il colore predefinito">✕</button>
+        </div>
+
         <div class="h-4 w-[1px] bg-neutral-300 mx-1"></div>
 
         <!-- Pulsante Titolo Principale (Livello 1 nell'indice) -->
@@ -133,4 +149,18 @@ const canSplitBlock = computed(() => {
     const sourceTree = treeStore.trees.find(t => t.id === currentTreeId)
     return sourceTree ? treeStore.isNodeInMainline(sourceTree.rootNodes, activeNodeId) : false
 })
+const DEFAULT_TEXT_COLOR = '#171717'
+
+// Il colore salvato può essere "#rrggbb" oppure "rgb(r, g, b)" (quando viene riletto dall'HTML salvato)
+const toHex = (color?: string | null) => {
+    if (!color) return DEFAULT_TEXT_COLOR
+    if (/^#[0-9a-f]{6}$/i.test(color)) return color
+    const m = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i.exec(color)
+    if (!m) return DEFAULT_TEXT_COLOR
+    return '#' + [m[1], m[2], m[3]].map(n => Number(n).toString(16).padStart(2, '0')).join('')
+}
+
+const hasTextColor = computed(() => !!props.editor.getAttributes('textStyle').color)
+const currentTextColor = computed(() => toHex(props.editor.getAttributes('textStyle').color))
+const setTextColor = (value: string) => props.editor.chain().focus().setColor(value).run()
 </script>
