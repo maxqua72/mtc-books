@@ -1,7 +1,7 @@
 <template>
-  <node-view-wrapper class="chess-diagram-container avoid-break">
+  <node-view-wrapper class="chess-diagram-container avoid-break" :data-align="align">
     <div class="diagram-card" 
-    :style="{ '--diagram-size': currentSize + 'px' }">
+    :style="{ '--diagram-size': currentSizePx + 'px' }">
 
       <!-- Spostiamo il menu dentro il wrapper per ancorarlo al testo reale -->
       <div class="board-wrapper" contenteditable="false">
@@ -22,7 +22,7 @@
         <!-- Action Bar in stile Gmail a comparsa (in alto a destra del bordo scacchiera) -->
         <div class="diagram-actions-menu">
           <!-- Bottone Dimensione Piccola -->
-          <button @click="updateLocalSize(24)" :class="{ active: props.node.attrs.size === 24 }"
+          <button @click="setSizeLevel('small')" :class="{ active: sizeLevel === 'small' }"
             title="Dimensione piccola" class="action-btn">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2">
@@ -31,8 +31,7 @@
           </button>
 
           <!-- Bottone Dimensione Media -->
-          <button @click="updateLocalSize(28)"
-            :class="{ active: props.node.attrs.size === 28 || (!props.node.attrs.size && store.globalDiagramSize === 28) }"
+          <button @click="setSizeLevel('medium')" :class="{ active: sizeLevel === 'medium' }"
             title="Dimensione media" class="action-btn">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2">
@@ -41,11 +40,38 @@
           </button>
 
           <!-- Bottone Dimensione Grande -->
-          <button @click="updateLocalSize(32)" :class="{ active: props.node.attrs.size === 32 }"
+          <button @click="setSizeLevel('large')" :class="{ active: sizeLevel === 'large' }"
             title="Dimensione grande" class="action-btn">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2">
               <rect x="2" y="2" width="20" height="20" rx="2" />
+            </svg>
+          </button>
+
+          <div class="action-divider"></div>
+
+          <button @click="setAlign('left')" :class="{ active: align === 'left' }"
+            title="A sinistra: il testo scorre accanto" class="action-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <rect x="3" y="3" width="8" height="8" rx="1" />
+              <path d="M15 5h6M15 9h6M3 15h18M3 19h18" />
+            </svg>
+          </button>
+          <button @click="setAlign('center')" :class="{ active: align === 'center' }"
+            title="Al centro" class="action-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <rect x="8" y="3" width="8" height="8" rx="1" />
+              <path d="M3 15h18M3 19h18" />
+            </svg>
+          </button>
+          <button @click="setAlign('right')" :class="{ active: align === 'right' }"
+            title="A destra: il testo scorre accanto" class="action-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <rect x="13" y="3" width="8" height="8" rx="1" />
+              <path d="M3 5h6M3 9h6M3 15h18M3 19h18" />
             </svg>
           </button>
 
@@ -87,6 +113,7 @@
 import { ref, computed, nextTick } from 'vue'
 import { nodeViewProps, NodeViewWrapper, NodeViewContent } from '@tiptap/vue-3'
 import { useChessBookStore } from '../stores/chessBookStore'
+import { normalizeSizeLevel, diagramFontPx, type DiagramSizeLevel } from '../utils/diagramSizes'
 
 const store = useChessBookStore()
 const props = defineProps(nodeViewProps)
@@ -132,6 +159,20 @@ const toggleOrFocusCaption = async () => {
   }
 }
 
+const sizeLevel = computed<DiagramSizeLevel>(() => normalizeSizeLevel(props.node.attrs.size))
+const currentSizePx = computed(() => diagramFontPx(sizeLevel.value, store.metadata.pageFormat))
+
+const setSizeLevel = (level: DiagramSizeLevel) => {
+  // 'medium' è il valore predefinito: si salva come null
+  props.updateAttributes({ size: level === 'medium' ? null : level })
+}
+
+const align = computed<'left' | 'center' | 'right'>(() => {
+  const value = props.node.attrs.align
+  return value === 'left' || value === 'right' ? value : 'center'
+})
+const setAlign = (value: 'left' | 'center' | 'right') => props.updateAttributes({ align: value })
+
 // Usa il getter centralizzato dallo store per il numero del capitolo
 const chapterNumber = computed(() => store.currentChapterNumber)
 // Calcola il numero progressivo del diagramma all'interno del capitolo
@@ -156,22 +197,7 @@ const diagramIndex = computed(() => {
 const diagramNumber = computed(() => `${chapterNumber.value}.${diagramIndex.value}`)
 
 // 1. Calcolo dinamico: priorità alla dimensione locale, altrimenti globale
-const currentSize = computed(() => {
-  return props.node.attrs.size || store.globalDiagramSize
-})
 
-const updateLocalSize = (pixels: number) => {
-  // Se clicchi sulla dimensione già attiva che coincide con quella globale, resetta a null
-  if (props.node.attrs.size === pixels || (!props.node.attrs.size && store.globalDiagramSize === pixels)) {
-    props.updateAttributes({ size: null })
-  } else {
-    props.updateAttributes({ size: pixels })
-  }
-}
-
-const resetToGlobal = () => {
-  props.updateAttributes({ size: null })
-}
 
 const isDarkSquare = (row: number, col: number) => {
   return (row + col) % 2 === 1
@@ -407,7 +433,7 @@ const boardString = computed(() => {
 /* ETICHETTA NUMERO DIAGRAMMA IN ALTO A SINISTRA */
 .diagram-number-badge {
   position: absolute;
-  top: 30px;
+  top: calc(var(--diagram-size) * 1.07);
 
   /*left: -70px;  Posizionato a sinistra del numero '8' */
 
@@ -431,7 +457,7 @@ const boardString = computed(() => {
 .turn-indicator {
   position: absolute;
   /* Allinea verticalmente con il numero '8' della scacchiera */
-  top: 70px; 
+  top: calc(var(--diagram-size) * 2.8);
   /*bottom:34px;*/
   /*left: -22px; */
 
@@ -440,8 +466,8 @@ const boardString = computed(() => {
   margin-right: 10px;
   
   /* Dimensione incrementata per renderlo ben visibile */
-  width: 20px;
-  height: 20px;
+  width: calc(var(--diagram-size) * 0.8);
+  height: calc(var(--diagram-size) * 0.8);
   border-radius: 50%;
   box-sizing: border-box;
   transition: all 0.2s ease;
@@ -458,6 +484,29 @@ const boardString = computed(() => {
 .turn-indicator.black {
   background-color: #000000;
   border: 2px solid #000000;
+}
+
+/* Diagramma a margine: il testo che segue scorre accanto */
+.chess-diagram-container[data-align="left"],
+.chess-diagram-container[data-align="right"] {
+  display: block;
+  width: max-content;
+  margin-top: 0 !important;
+}
+.chess-diagram-container[data-align="left"] {
+  float: left;
+  margin-right: var(--diagram-side-gap, 6mm);
+}
+.chess-diagram-container[data-align="right"] {
+  float: right;
+  margin-left: var(--diagram-side-gap, 6mm);
+}
+
+/* La didascalia segue la larghezza della scacchiera, non la allarga */
+.chess-diagram-container[data-align="left"] .diagram-caption,
+.chess-diagram-container[data-align="right"] .diagram-caption {
+  width: 0;
+  min-width: 100%;
 }
 
 /* Puoi rimuovere completamente le vecchie regole .delete-btn e .delete-btn:hover inutilizzate */

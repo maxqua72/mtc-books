@@ -141,7 +141,7 @@ body {
 /* RIGHE SCACCHIERA PERFETTE SENZA DISTACCO */
 .chess-pure-text {
   font-family: 'Chess Merida', serif !important;
-  font-size: var(--diagram-size, 28px) !important;
+  font-size: var(--diagram-size, 20px) !important;
   line-height: 1.0 !important; /* CORRETTO: A 1.0 le righe non si staccano */
   letter-spacing: 0px !important;
   white-space: pre !important;
@@ -162,7 +162,7 @@ body {
 /* Badge Numero Diagramma (es. 1.1) */
 .diagram-number-badge {
   position: absolute !important;
-  top: 30px !important;
+  top: calc(var(--diagram-size, 20px) * 1.07) !important;
   right: 100% !important;
   margin-right: 10px !important;
   width: auto !important;
@@ -197,11 +197,11 @@ body {
 /* Indicatore del tratto (Pallino Bianco/Nero) */
 .turn-indicator {
   position: absolute !important;
-  top: 70px !important;
+  top: calc(var(--diagram-size, 20px) * 2.5) !important;
   right: 100% !important;
   margin-right: 10px !important;
-  width: 20px !important;
-  height: 20px !important;
+  width: calc(var(--diagram-size, 20px) * 0.8);
+  height: calc(var(--diagram-size, 20px) * 0.8);
   border-radius: 50% !important;
   box-sizing: border-box !important;
 }
@@ -276,6 +276,8 @@ body {
 .is-structural-page h3::before { 
   content: none !important; 
 }
+
+
 
 /* ==========================================================================
    STILI PER ALBERO MOSSE, FIGURINE E COMMENTI (Export PDF)
@@ -388,11 +390,44 @@ body {
 }
 
 /* Spazio tra paragrafo e diagramma/partita = quello del blocco (niente somma né collasso dei margini) */
-.book-text-engine p:has(+ .chess-diagram-container),
+.book-text-engine p:has(+ .chess-diagram-container:not([data-align="left"]):not([data-align="right"])),
 .book-text-engine p:has(+ .chess-tree-block-container),
-.tiptap p:has(+ .chess-diagram-container),
+.tiptap p:has(+ .chess-diagram-container:not([data-align="left"]):not([data-align="right"])),
 .tiptap p:has(+ .chess-tree-block-container) {
   margin-bottom: 0 !important;
+}
+
+/* --- DIAGRAMMI A MARGINE: il testo che segue scorre accanto --- */
+.chess-diagram-container[data-align="left"],
+.chess-diagram-container[data-align="right"] {
+  display: block !important;
+  width: max-content !important;
+  margin-top: 0 !important;
+  break-inside: avoid !important;
+}
+.chess-diagram-container[data-align="left"] {
+  float: left !important;
+  margin-right: var(--diagram-side-gap, 6mm) !important;
+}
+.chess-diagram-container[data-align="right"] {
+  float: right !important;
+  margin-left: var(--diagram-side-gap, 6mm) !important;
+}
+.chess-diagram-container[data-align="left"] .diagram-caption,
+.chess-diagram-container[data-align="right"] .diagram-caption {
+  width: 0 !important;
+  min-width: 100% !important;
+}
+
+/* I titoli non si infilano accanto a un diagramma */
+.book-text-engine h2, .book-text-engine h3,
+.tiptap h2, .tiptap h3 {
+  clear: both;
+}
+
+/* Ogni sezione contiene i propri float: un diagramma non esce dal capitolo */
+.book-section {
+  display: flow-root;
 }
 
 /* ==========================================================================

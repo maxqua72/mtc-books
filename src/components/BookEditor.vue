@@ -1862,10 +1862,22 @@ const purgeOrphanTrees = () => {
 }
 
 .tiptap {
+    display: flow-root;   /* contiene i diagrammi a margine */
     width: 100%;
     max-width: 100%;
     word-break: break-word;
     overflow-wrap: break-word;
+}
+
+.tiptap h2,
+.tiptap h3 {
+    clear: both;          /* i titoli non si infilano accanto a un diagramma */
+}
+
+/* Sostituisce la regola della spaziatura aggiunta in precedenza */
+.tiptap p:has(+ .chess-diagram-container:not([data-align="left"]):not([data-align="right"])),
+.tiptap p:has(+ .chess-tree-block-container) {
+    margin-bottom: 0 !important;
 }
 
 /* Applica il rientro della prima riga ai paragrafi standard dell'editor */

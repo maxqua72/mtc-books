@@ -35,6 +35,14 @@ export const ChessDiagram = Node.create({
       size: {
         default: null, // Se è null, userà la dimensione globale dello store
       },
+      align: {
+        default: 'center',
+        parseHTML: element => {
+          const value = element.getAttribute('data-align')
+          return value === 'left' || value === 'right' ? value : 'center'
+        },
+        renderHTML: attributes => ({ 'data-align': attributes.align || 'center' }),
+      },
       captionEditable: {
         default: true, // Di default la didascalia è attiva/editabile
       }
