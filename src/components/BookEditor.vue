@@ -82,6 +82,8 @@ import { ChessDiagram } from '../extensions/ChessDiagram.ts'
 import { CustomHeading } from '../extensions/CustomHeading' // Aggiusta il percorso se serve
 import { ChessTreeBlock } from '../extensions/ChessTreeBlock' // <-- Nuova Estensione Blocco Ibrido
 import { ProtectChessNodes } from '../extensions/ProtectChessNodes'
+import { PgnInsertMarker } from '../extensions/PgnInsertMarker'
+
 import { DiagramRef } from '../extensions/DiagramRef'
 import EditorToolbar from './EditorToolbar.vue'
 import CoverEditor from './cover/CoverEditor.vue'
@@ -89,6 +91,7 @@ import { getPageSizeMm, type BookCover } from '../utils/cover'
 import Focus from '@tiptap/extension-focus'
 import { TextStyle, Color } from '@tiptap/extension-text-style'
 import { usePdfStore, type ExportSection } from '../stores/pdfStore'
+import { usePgnImportStore, type PgnPlacement } from '../stores/pgnImportStore'
 
 
 // @ts-ignore
@@ -99,6 +102,7 @@ import pdfPrintStyles from '../assets/styles/pdf-print.css?raw'
 const store = useChessBookStore()
 const treeStore = useChessTreeStore()
 const pdfStore = usePdfStore()
+const pgnStore = usePgnImportStore()
 
 const isGeneratingPdf = ref(false)
 
@@ -258,6 +262,7 @@ const editor = useEditor({
         ChessTreeBlock,
         ProtectChessNodes,
         DiagramRef,
+        PgnInsertMarker,
     ],
     editorProps: {
         attributes: {
@@ -1721,7 +1726,109 @@ const purgeOrphanTrees = () => {
 //  purgeOrphanTrees()
 //})
 
+const findTreeBlock = (treeId: string): { pos: number; size: number } | null => {
+    const ed = editor.value
+    if (!ed) return null
+    let found: { pos: number; size: number } | null = null
+    ed.state.doc.descendants((node, pos) => {
+        if (found) return false
+        if (node.type.name === 'chessTreeBlock' && node.attrs.treeId === treeId) {
+            found = { pos, size: node.nodeSize }
+            return false
+        }
+    })
+    return found
+}
 
+// Posizione (tra due blocchi di primo livello) in cui verrebbe inserito il nuovo blocco
+const resolveInsertPos = (placement: PgnPlacement): number | null => {
+    const ed = editor.value
+    if (!ed) return null
+    const { doc, selection } = ed.state
+
+    if (placement === 'end') return doc.content.size
+    if (placement === 'cursor') {
+        const $to = selection.$to
+        return $to.depth >= 1 ? $to.after(1) : selection.to   // mai dentro un paragrafo
+    }
+    const id = treeStore.activeTreeId
+    const block = id ? findTreeBlock(id) : null
+    return block ? block.pos + block.size : null
+}
+
+const describePlacement = (placement: PgnPlacement): string => {
+    const ed = editor.value
+    if (!ed) return ''
+    if (placement === 'end') return 'in fondo al capitolo'
+    if (placement === 'after-active') {
+        const tree = treeStore.currentTree
+        return tree ? `subito dopo il blocco «${tree.title}»` : ''
+    }
+    const pos = resolveInsertPos('cursor')
+    if (pos === null) return 'alla posizione del cursore'
+    const before = ed.state.doc.resolve(pos).nodeBefore
+    if (!before) return 'all’inizio del capitolo'
+    const text = before.textContent.trim()
+    if (!text) return 'dopo l’elemento precedente (diagramma o partita)'
+    return `dopo il paragrafo «${text.length > 50 ? text.slice(0, 50) + '…' : text}»`
+}
+
+pgnStore.registerPlacementApi({ resolve: resolveInsertPos, describe: describePlacement })
+
+// Riquadro tratteggiato nel punto di inserimento (solo con pannello aperto e "nuovo blocco")
+const syncPgnMarker = () => {
+    const ed = editor.value
+    if (!ed) return
+    const pos = pgnStore.isOpen && pgnStore.mode === 'new-block'
+        ? resolveInsertPos(pgnStore.placement)
+        : null
+    ed.commands.setPgnInsertMarker(pos)
+}
+watch(
+    () => [pgnStore.isOpen, pgnStore.mode, pgnStore.placement, treeStore.activeTreeId],
+    syncPgnMarker
+)
+watch(() => store.activeSectionId, () => nextTick(syncPgnMarker))
+
+// Il marcatore segue il cursore quando si sceglie "dopo il cursore"
+watch(editor, (ed) => {
+    if (!ed) return
+    ed.on('selectionUpdate', () => {
+        if (!pgnStore.isOpen) return
+        pgnStore.touchSelection()
+        syncPgnMarker()
+    })
+}, { immediate: true })
+
+const revealTreeBlock = (treeId: string) => {
+    const ed = editor.value
+    const block = findTreeBlock(treeId)
+    if (!ed || !block) return
+    const dom = ed.view.nodeDOM(block.pos) as HTMLElement | null
+    if (!dom) return
+    dom.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    dom.classList.add('diagram-flash')
+    setTimeout(() => dom.classList.remove('diagram-flash'), 1600)
+}
+
+// Richieste dal pannello di importazione: inserisce il blocco (se serve) e lo porta in vista
+watch(() => pgnStore.request, async (req) => {
+    const ed = editor.value
+    if (!req || !ed) return
+
+    if (req.placement) {
+        const pos = resolveInsertPos(req.placement) ?? ed.state.doc.content.size
+        const atEnd = pos >= ed.state.doc.content.size
+        ed.chain().insertContentAt(pos, [
+            { type: 'chessTreeBlock', attrs: { treeId: req.treeId } },
+            // in fondo al documento serve un paragrafo per poter continuare a scrivere
+            ...(atEnd ? [{ type: 'paragraph' }] : [])
+        ]).run()
+    }
+
+    await nextTick()
+    revealTreeBlock(req.treeId)
+})
 
 </script>
 
@@ -1937,5 +2044,17 @@ const purgeOrphanTrees = () => {
     height: 0;
     pointer-events: none;
     font-style: italic;
+}
+
+.pgn-insert-marker {
+    margin: 8px 0;
+    padding: 6px 10px;
+    border: 2px dashed #3b82f6;
+    border-radius: 6px;
+    background: rgba(59, 130, 246, 0.06);
+    color: #1d4ed8;
+    font: 600 11px ui-sans-serif, system-ui, sans-serif;
+    text-align: center;
+    user-select: none;
 }
 </style>

@@ -73,6 +73,7 @@
       </div>
 
       <!-- CONTENUTO TAB PGN (Nuova area di testo) -->
+       <!--
       <div v-if="activeTab === 'pgn'" class="space-y-2">
         <span class="text-[11px] font-medium text-neutral-400 block">Incolla qui il testo PGN del file o della partita:</span>
         <textarea 
@@ -89,6 +90,8 @@
           Elabora e Costruisci Albero
         </button>
       </div>
+      -->
+      <PgnImportPanel v-if="activeTab === 'pgn'" />
     </div>
 
     <!-- Pulsanti Azione Libreria/Testo -->
@@ -115,6 +118,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useChessTreeStore } from '../../stores/chessTreeStore'
+import PgnImportPanel from './PgnImportPanel.vue'
 
 const props = defineProps<{
   currentFen: string
@@ -126,12 +130,12 @@ const emit = defineEmits<{
   (e: 'insertDiagram'): void
   (e: 'deleteBranch'): void
   (e: 'updateFen', newFen: string): void
-  (e: 'importPgn', pgnData: string): void
+  //(e: 'importPgn', pgnData: string): void
 }>()
 
 const treeStore = useChessTreeStore()
 const activeTab = ref<'fen' | 'pgn'>('fen')
-const pgnInput = ref('')
+//const pgnInput = ref('')
 const copied = ref(false)
 
 
@@ -152,11 +156,11 @@ const handleFenChange = (event: Event) => {
     emit('updateFen', target.value.trim())
   }
 }
-
+/*
 const handlePgnSubmit = () => {
   if (pgnInput.value.trim()) {
     emit('importPgn', pgnInput.value.trim())
     pgnInput.value = '' // Svuota la textarea ad importazione avviata
   }
-}
+}*/
 </script>

@@ -10,6 +10,7 @@ export interface ChessMoveNode {
   color: 'w' | 'b';
   parentId: string | null;
   comment: string | null;
+  nags?: number[];        // simboli di annotazione PGN (1 = !, 2 = ?, ...)
   children: ChessMoveNode[];
 }
 
@@ -354,6 +355,7 @@ export const useChessTreeStore = defineStore('chessTree', {
     /**
      * Importa un intero testo PGN costruendo l'albero delle mosse corrispondente
      */
+    /*
     importPgn(pgnString: string) {
       if (!this.currentTree) return false;
 
@@ -381,6 +383,7 @@ export const useChessTreeStore = defineStore('chessTree', {
         return false;
       }
     },
+    */
     /**
    * Spezza un albero di mosse in due albero distinti a partire da un determinato nodo.
    * I nodi successivi a nodeId diventano la radice del nuovo albero.

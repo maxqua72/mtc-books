@@ -3,7 +3,7 @@
     <div class="flex gap-2">
       <button v-for="b in navButtons" :key="b.icon"
         @click="b.action" :disabled="b.disabled" :title="b.title" :aria-label="b.title"
-        class="flex-1 h-11 flex items-center justify-center rounded-md bg-neutral-900 text-white text-base transition
+        class="flex-1 h-8 flex items-center justify-center rounded-md bg-neutral-900 text-white text-base transition
                hover:bg-neutral-700 active:scale-95
                focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2
                disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed disabled:active:scale-100">

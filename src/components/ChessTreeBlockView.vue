@@ -1,6 +1,7 @@
 <template>
-  <node-view-wrapper class="chess-tree-block-container" :class="{ 'is-active-tree': isActive }" @mousedown="onMouseDown"
+  <node-view-wrapper class="chess-tree-block-container" :class="{ 'is-active-tree': isActive,  'is-pgn-target': !!pgnBadge }" @mousedown="onMouseDown"
     @click="activateTree">
+    <div v-if="pgnBadge" class="pgn-target-badge" contenteditable="false">{{ pgnBadge }}</div>
     <!-- Header comandi stile Gmail: compare in posizione assoluta solo all'hover del blocco -->
     <div class="block-header">
       <span class="game-title">📊 {{ currentTree?.title || 'Analisi Scacchi' }}</span>
@@ -25,6 +26,7 @@
 import { nodeViewProps, NodeViewWrapper } from '@tiptap/vue-3'
 import { computed } from 'vue'
 import { useChessTreeStore } from '../stores/chessTreeStore'
+import { usePgnImportStore } from '../stores/pgnImportStore'
 import ChessMoveRenderer from './ChessMoveRenderer.vue'
 
 defineOptions({
@@ -33,6 +35,12 @@ defineOptions({
 
 const props = defineProps(nodeViewProps)
 const treeStore = useChessTreeStore()
+const pgnStore = usePgnImportStore()
+
+const pgnBadge = computed(() => {
+  const badge = pgnStore.targetBadge
+  return badge && badge.treeId === props.node.attrs.treeId ? badge.text : null
+})
 
 const currentTree = computed(() => {
   return treeStore.trees.find(t => t.id === props.node.attrs.treeId)
@@ -178,6 +186,23 @@ const deleteBlock = () => {
   padding: 8px;
   border: 1px dashed #cbd5e1;
   border-radius: 4px;
+}
+
+.chess-tree-block-container.is-pgn-target {
+  outline: 2px dashed #3b82f6;
+  outline-offset: 3px;
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.pgn-target-badge {
+  display: inline-block;
+  margin: 0 0 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font: 600 11px ui-sans-serif, system-ui, sans-serif;
+  user-select: none;
 }
 
 /* REGOLA PER LA STAMPA / ESPORTAZIONE PDF:

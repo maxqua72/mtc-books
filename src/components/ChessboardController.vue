@@ -18,7 +18,7 @@
     <!-- Componente Console -->
     <ChessboardConsole :current-fen="treeStore.activeFen" :last-move="lastMoveNotation" @reset="resetBoard"
       @insert-diagram="insertDiagramIntoText" @delete-branch="deleteActiveBranch" @update-fen="handleManualFenUpdate"
-      @import-pgn="handlePgnImport" />
+       />
   </div>
 </template>
 
@@ -227,6 +227,7 @@ const handleManualFenUpdate = (newFen: string) => {
 }
 
 // Gestione dedicata all'importazione del PGN
+/*
 const handlePgnImport = (pgnString: string) => {
   try {
     const testChess = new Chess()
@@ -246,5 +247,5 @@ const handlePgnImport = (pgnString: string) => {
     console.error("[BoardController] Impossibile elaborare il PGN:", error)
     alert("Il testo inserito non contiene una catena di mosse PGN valida.")
   }
-}
+}*/
 </script>

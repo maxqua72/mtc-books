@@ -17,6 +17,7 @@
           <span class="move-prefix">{{ getMovePrefix(nodes[0]) }}</span>
           <!-- <span class="move-san">{{ nodes[0].san }}</span> -->
           <span class="move-san" v-html="convertToChessFont(nodes[0].san)"></span>
+          <span v-if="nagText(nodes[0])" class="move-nag">{{ nagText(nodes[0]) }}</span>
         </span>
 
         <!-- 2. Commento della mossa corrente -->
@@ -289,6 +290,19 @@ const convertToChessFont = (san: string): string => {
   } else {
     return san
   }
+}
+
+// Simboli PGN più comuni. Usiamo caratteri sicuri nel PDF (niente glifi rari)
+const QUALITY_NAGS: Record<number, string> = { 1: '!', 2: '?', 3: '!!', 4: '??', 5: '!?', 6: '?!' }
+const EVAL_NAGS: Record<number, string> = {
+  10: '=', 13: '∞', 14: '+=', 15: '=+', 16: '+/-', 17: '-/+', 18: '+-', 19: '-+'
+}
+
+const nagText = (node: ChessMoveNode) => {
+  const nags = node.nags ?? []
+  const quality = nags.map(n => QUALITY_NAGS[n]).find(Boolean) ?? ''
+  const evaluation = nags.map(n => EVAL_NAGS[n]).find(Boolean) ?? ''
+  return quality + (evaluation ? (quality ? ' ' : '') + evaluation : '')
 }
 </script>
 

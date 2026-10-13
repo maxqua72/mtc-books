@@ -17,6 +17,7 @@
     "@tiptap/vue-3": "^3.27.1",
     "chess.js": "^1.4.0",
     "chessground": "^9.2.1",
+    "chessops": "^0.15.1",
     "dexie": "^4.4.6",
     "html2pdf.js": "^0.14.0",
     "jszip": "^3.10.1",

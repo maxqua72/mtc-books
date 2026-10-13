@@ -443,7 +443,7 @@ const boardString = computed(() => {
   margin-right: 10px;
 
   font-family: ui-sans-serif, system-ui, sans-serif;
-  font-size: 1rem;
+  font-size: calc(var(--diagram-size) * 0.8);
   font-weight: 700;
   color: white;
   background-color: black;
