@@ -16,22 +16,24 @@
         >
           <span class="move-prefix">{{ getMovePrefix(nodes[0]) }}</span>
           <!-- <span class="move-san">{{ nodes[0].san }}</span> -->
-          <span class="move-san" v-html="convertToChessFont(nodes[0].san)"></span>
+          <!-- <span class="move-san" v-html="convertToChessFont(nodes[0].san)"></span> -->
+          <span class="move-san"><span v-if="sanParts(nodes[0].san).glyph" :class="sanParts(nodes[0].san).cls">{{ sanParts(nodes[0].san).glyph }}</span>{{ sanParts(nodes[0].san).rest }}</span>
           <span v-if="nagText(nodes[0])" class="move-nag">{{ nagText(nodes[0]) }}</span>
         </span>
 
         <!-- 2. Commento della mossa corrente -->
         <div v-if="nodes[0].comment || isNodeActive(nodes[0].id)" class="move-comment-box"
           :class="isVariantContext ? 'comment-inline' : 'comment-block'" @click.stop="activateThisTree(nodes[0].id)">
-          <span 
+          <span
             :ref="(el) => { if (el) commentRefs[nodes[0].id] = el as HTMLElement }"
-            contenteditable="true" 
-            class="comment-editable-text" 
-            v-once 
-            v-html="nodes[0].comment || ''"
-            data-placeholder="Inserisci commento..." 
-            @blur="onCommentBlur(nodes[0].id, $event)" 
+            contenteditable="true"
+            class="comment-editable-text"
+            v-once
+            v-html="safeComment(nodes[0].comment)"
+            data-placeholder="Inserisci commento..."
+            @blur="onCommentBlur(nodes[0].id, $event)"
             @keydown.enter="handleEnter"
+            @paste="handlePaste"
             @keydown.stop
           ></span>
         </div>
@@ -71,6 +73,7 @@
 import { useChessTreeStore } from '../stores/chessTreeStore'
 import type { ChessMoveNode } from '../stores/chessTreeStore'
 import { computed, reactive, ref, watch, nextTick } from 'vue'
+import { sanitizeCommentHtml } from '../utils/sanitize'
 
 interface Props {
   nodes: ChessMoveNode[]
@@ -90,6 +93,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 const treeStore = useChessTreeStore()
 const commentRefs = reactive<Record<string, HTMLElement>>({})
+const safeComment = (comment: string | null) => sanitizeCommentHtml(comment)
+
 
 const myTree = computed(() => {
   return treeStore.trees.find(t => t.id === props.treeId)
@@ -170,16 +175,18 @@ const handleMoveKeydown = (nodeId: string, event: KeyboardEvent) => {
 
 const onCommentBlur = (nodeId: string, event: FocusEvent) => {
   const target = event.target as HTMLElement
-  const currentHtml = target.innerHTML
-
   const targetNode = treeStore.findNodeById(myTree.value?.rootNodes || [], nodeId)
-  if (targetNode) {
-    if (currentHtml === '' || currentHtml === '<br>' || target.innerText.trim() === '') {
-      targetNode.comment = null
-    } else {
-      targetNode.comment = currentHtml
-    }
-  }
+  if (!targetNode) return
+
+  // Si salva sempre la versione sanificata, mai l'innerHTML grezzo
+  const clean = target.innerText.trim() === '' ? '' : sanitizeCommentHtml(target.innerHTML)
+  targetNode.comment = clean || null
+}
+
+// Incolla solo testo semplice: niente HTML esterno nel commento
+const handlePaste = (event: ClipboardEvent) => {
+  event.preventDefault()
+  document.execCommand('insertText', false, event.clipboardData?.getData('text/plain') ?? '')
 }
 
 const handleEnter = (event: KeyboardEvent) => {
@@ -218,78 +225,24 @@ const getMovePrefix = (node: ChessMoveNode): string => {
   return ''
 }
 
-
-
-
-const convertToMerida = (san: string): string => {
-  if (!san) return ''
-  
-  // Mappa dei pezzi sul font Merida (adatta i caratteri se la tua versione differisce)
-  const meridaMap: Record<string, string> = {
-    'N': 't', // Cavallo
-    'B': 'l', // Alfiere
-    'R': 'r', // Torre
-    'Q': 'd', // Donna
-    'K': 'k'  // Re
+const FIGURINES: Record<string, { cls: string; map: Record<string, string> }> = {
+  cases: {
+    cls: 'chess-cases-figurine',
+    map: { K: 'k', Q: 'q', R: 'r', B: 'b', N: 'n' }
+  },
+  goodcompanions: {
+    cls: 'tgc-figurine',
+    map: { K: '0', Q: 'G', R: 'W', B: 'm', N: '©' }
   }
-
-  const firstChar = san.charAt(0)
-  if (meridaMap[firstChar]) {
-    // Sostituiamo la lettera del pezzo e lasciamo il resto della mossa invariato
-    return `<span class="figurine-font">${meridaMap[firstChar]}</span>${san.slice(1)}`
-  }
-  
-  return san
 }
 
-const convertToChessCases = (san: string): string => {
- if (!san) return ''
-  
-  // Mappa le maiuscole del SAN nelle minuscole pulite del font
-  const ccMap: Record<string, string> = {
-    'K': 'k', // Re trasparente
-    'Q': 'q', // Donna trasparente
-    'R': 'r', // Torre trasparente
-    'B': 'b', // Alfiere trasparente
-    'N': 'n'  // Cavallo trasparente
-  }
-
-  const firstChar = san.charAt(0)
-  if (ccMap[firstChar]) {
-    return `<span class="chess-cases-figurine">${ccMap[firstChar]}</span>${san.slice(1)}`
-  }
-  
-  return san
-}
-
-const convertToGoodCompanions = (san: string): string => {
-  if (!san) return ''
-  
-  // Mappa le maiuscole del SAN nelle minuscole pulite del font
-  const tgcMap: Record<string, string> = {
-    'K': '0', // Re trasparente
-    'Q': 'G', // Donna trasparente
-    'R': 'W', // Torre trasparente
-    'B': 'm', // Alfiere trasparente
-    'N': '©'  // Cavallo trasparente
-  }
-
-  const firstChar = san.charAt(0)
-  if (tgcMap[firstChar]) {
-    return `<span class="tgc-figurine">${tgcMap[firstChar]}</span>${san.slice(1)}`
-  }
-  
-  return san
-}
-
-const convertToChessFont = (san: string): string => {
-  if(props.figurineType === 'cases') {
-    return convertToChessCases(san)
-  } else if (props.figurineType === 'goodcompanions') {
-    return convertToGoodCompanions(san)
-  } else {
-    return san
-  }
+// Restituisce testo, mai HTML: l'escape lo fa l'interpolazione di Vue
+const sanParts = (san: string) => {
+  const cfg = Object.hasOwn(FIGURINES, props.figurineType) ? FIGURINES[props.figurineType] : null
+  const glyph = cfg?.map[san.charAt(0)] ?? null
+  return glyph && cfg
+    ? { glyph, cls: cfg.cls, rest: san.slice(1) }
+    : { glyph: null, cls: '', rest: san }
 }
 
 // Simboli PGN più comuni. Usiamo caratteri sicuri nel PDF (niente glifi rari)
@@ -380,12 +333,6 @@ const nagText = (node: ChessMoveNode) => {
   color: #111827;
 }
 
-:deep(.figurine-font) {
-  font-family: 'Chess Cases', sans-serif; /* Usa il nome esatto con cui è registrato il tuo font */
-  font-size: 1.2em; /* Regola la dimensione per allinearla bene al testo delle coordinate */
-  line-height: 1;
-  margin-right: 1px;
-}
 
 :deep(.chess-cases-figurine) {
   font-family: 'Chess Cases', sans-serif;

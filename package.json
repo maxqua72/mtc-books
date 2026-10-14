@@ -19,6 +19,7 @@
     "chessground": "^9.2.1",
     "chessops": "^0.15.1",
     "dexie": "^4.4.6",
+    "dompurify": "^3.4.17",
     "jszip": "^3.10.1",
     "pinia": "^3.0.4",
     "vue": "^3.5.39"

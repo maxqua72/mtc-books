@@ -4,9 +4,11 @@ import JSZip from 'jszip'
 import { db, putAsset, getAsset } from '../db'
 import {
     type BookCover, createEmptyCover, normalizeCover, coverToHtml,
-    blobToDataUrl, getPageSizeMm, newCoverId
+    blobToDataUrl, getPageSizeMm, newCoverId, escapeHtml
 } from '../utils/cover'
+import { sanitizeTrees, sanitizeSectionIndex } from '../utils/sanitize'
 import { useChessTreeStore, type ChessTree } from './chessTreeStore'
+
 
 // 1. DEFINIZIONE DELLE INTERFACCE
 export type SectionType = 'cover' | 'index' | 'chapter'
@@ -231,8 +233,11 @@ export const useChessBookStore = defineStore('chessBook', () => {
             if (ch.id === activeSectionId.value) {
                 chHtml = activeSectionHtml.value
             } else {
-                const cached = zippedSectionsCache.value[ch.id]
-                chHtml = cached ? JSON.parse(cached).html : ''
+                try {
+                    chHtml = JSON.parse(zippedSectionsCache.value[ch.id] || '{}').html || ''
+                } catch {
+                    chHtml = ''
+                }
             }
 
             const doc = parser.parseFromString(chHtml, 'text/html')
@@ -241,7 +246,8 @@ export const useChessBookStore = defineStore('chessBook', () => {
 
             trackedHeaders.forEach((el) => {
                 const level = el.getAttribute('data-toc-level')
-                const text = el.textContent?.trim() || 'Titolo senza testo'
+                //const text = el.textContent?.trim() || 'Titolo senza testo'
+                const text = escapeHtml(el.textContent?.trim() || 'Titolo senza testo') // textContent è testo già decodificato: "&lt;img&gt;" torna "<img>", quindi va riescapato
                 let numbering = ''
                 let paddingLeft = '0px'
                 let fontSize = '1rem'
@@ -387,7 +393,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
             try {
                 const parsed = JSON.parse(cachedData)
                 nextHtml = parsed.html || ''
-                nextTrees = parsed.trees || []
+                nextTrees = sanitizeTrees(parsed.trees)
                 nextCover = parsed.cover ?? null
             } catch (e) {
                 console.error('Errore nel parsing della sezione:', e)
@@ -464,7 +470,8 @@ export const useChessBookStore = defineStore('chessBook', () => {
             diagramSpacing: bookData.diagramSpacing !== undefined ? Number(bookData.diagramSpacing) : 5,
             variationSpacing: bookData.variationSpacing !== undefined ? Number(bookData.variationSpacing) : 4
         }
-        sectionIndex.value = bookData.sectionIndex
+        //sectionIndex.value = bookData.sectionIndex
+        sectionIndex.value = sanitizeSectionIndex(bookData.sectionIndex)
 
         // 3. Inizializziamo la cache congelata leggendo i puntatori ai file delle sezioni, 
         // ma SENZA parsarli in oggetti HTML/DOM complessi.
@@ -481,7 +488,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
             }
         }
 
-                // 3b. Immagini della copertina: dallo zip a IndexedDB
+        // 3b. Immagini della copertina: dallo zip a IndexedDB
         const assetsFolder = zip.folder('assets')
         if (assetsFolder) {
             const entries: { id: string; file: JSZip.JSZipObject; type: string }[] = []
@@ -623,7 +630,8 @@ export const useChessBookStore = defineStore('chessBook', () => {
 
             // 1. Ripristina metadati e indice capitoli
             metadata.value = { ...defaultMetadata(), ...savedState.metadata }
-            sectionIndex.value = savedState.sectionIndex
+            //sectionIndex.value = savedState.sectionIndex
+            sectionIndex.value = sanitizeSectionIndex(savedState.sectionIndex)
 
             // 2. Recupera le sezioni salvate da Dexie
             const allSections = await db.sections.toArray()
