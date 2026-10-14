@@ -49,8 +49,6 @@ export const useChessBookStore = defineStore('chessBook', () => {
     const activeFen = ref('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
     const globalDiagramSize = ref(28)
     const insertSignal = ref(0)
-    const exportSignal = ref(0)
-    const exportFullBookSignal = ref(0)
 
     // --- NUOVI SEGNALI PER ESPORTAZIONE SERVER (PLAYWRIGHT) ---
     const exportServerChapterSignal = ref(0)  // Esportazione Capitolo (Server)
@@ -354,14 +352,6 @@ export const useChessBookStore = defineStore('chessBook', () => {
 
     function triggerInsertDiagram() {
         insertSignal.value++
-    }
-
-    function triggerPdfExport() {
-        exportSignal.value++
-    }
-
-    function triggerFullBookPdfExport() {
-        exportFullBookSignal.value++
     }
 
     // --- NUOVE FUNZIONI TRIGGER PER ESPORTAZIONE SERVER ---
@@ -691,15 +681,11 @@ export const useChessBookStore = defineStore('chessBook', () => {
         activeFen,
         globalDiagramSize,
         insertSignal,
-        exportSignal,
-        exportFullBookSignal,
         // Nuovi segnali per Server
         exportServerChapterSignal,
         exportServerFullBookSignal,
         updateActiveFen,
         triggerInsertDiagram,
-        triggerPdfExport,
-        triggerFullBookPdfExport,
         // Nuovi trigger Server
         triggerServerChapterPdfExport,
         triggerServerFullBookPdfExport,
