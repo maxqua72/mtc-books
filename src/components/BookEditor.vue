@@ -378,12 +378,18 @@ watch(editor, (ed) => {
 }, { immediate: true })
 
 // Se l'utente sta visualizzando l'indice e l'indice cambia (es. aggiunge capitoli), aggiorna lo schermo
-watch(() => store.generatedTocHtml, (newTocHtml) => {
+/*watch(() => store.generatedTocHtml, (newTocHtml) => {
     const currentSection = store.sectionIndex.find(s => s.id === store.activeSectionId)
     if (currentSection?.type === 'index' && editor.value) {
         editor.value.commands.setContent(newTocHtml)
     }
-})
+})*/
+watch(
+    () => store.activeSectionInfo?.type === 'index' ? store.generatedTocHtml : null,
+    (toc) => {
+        if (toc && editor.value) editor.value.commands.setContent(toc, { emitUpdate: false })
+    }
+)
 
 // Sincronizza l'HTML prima del salvataggio definitivo su file
 const syncEditorContent = () => {

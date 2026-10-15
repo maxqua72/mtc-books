@@ -204,90 +204,6 @@ export const useChessBookStore = defineStore('chessBook', () => {
         return currentIndex !== -1 ? currentIndex + 1 : 1
     })
 
-    /**
-    * Genera dinamicamente la struttura HTML dell'indice basandosi sui capitoli presenti
-    */
-    const generatedTocHtml = computed(() => {
-        const chapters = sectionIndex.value.filter(s => s.type === 'chapter')
-
-        if (chapters.length === 0) {
-            return `
-  <div class="toc-container">
-    <h2>Indice Generale</h2>
-    <p style="color: #a3a3a3; font-style: italic;">Nessun capitolo inserito nel libro.</p>
-  </div>
-`
-        }
-
-        const parser = new DOMParser()
-        let htmlResult = `<div class="toc-container"><h2 style="font-family: Lora, Georgia, serif; font-size: 2rem; margin-bottom: 1.5rem;">Indice Generale</h2><ul style="list-style: none; padding: 0; margin: 0; font-family: Lora,Georgia, serif;">`
-
-        let mainCounter = 0
-
-        for (const ch of chapters) {
-            mainCounter++ // Incrementa a ogni capitolo per rispecchiare l'ordine della barra laterale
-            let subCounter = 0 // Resetta i sotto-capitoli per questo specifico capitolo
-
-            // Recupera l'HTML corrente dello store (se attivo nell'editor) o della cache compressa
-            let chHtml = ''
-            if (ch.id === activeSectionId.value) {
-                chHtml = activeSectionHtml.value
-            } else {
-                try {
-                    chHtml = JSON.parse(zippedSectionsCache.value[ch.id] || '{}').html || ''
-                } catch {
-                    chHtml = ''
-                }
-            }
-
-            const doc = parser.parseFromString(chHtml, 'text/html')
-            // Peschiamo solo i nodi esplicitamente marcati dall'attributo inserito dalla toolbar
-            const trackedHeaders = doc.querySelectorAll('[data-toc-level]')
-
-            trackedHeaders.forEach((el) => {
-                const level = el.getAttribute('data-toc-level')
-                //const text = el.textContent?.trim() || 'Titolo senza testo'
-                const text = escapeHtml(el.textContent?.trim() || 'Titolo senza testo') // textContent è testo già decodificato: "&lt;img&gt;" torna "<img>", quindi va riescapato
-                let numbering = ''
-                let paddingLeft = '0px'
-                let fontSize = '1rem'
-                let fontWeight = 'bold'
-
-                if (level === '1') {
-                    numbering = `${mainCounter}. `
-                    paddingLeft = '0px'
-                    fontSize = '1.1rem'
-                } else if (level === '2') {
-                    subCounter++
-                    numbering = `${mainCounter}.${subCounter} `
-                    paddingLeft = '20px'
-                    fontSize = '0.95rem'
-                    fontWeight = 'normal'
-                }
-
-                htmlResult += `
-    <li style="display: flex; justify-content: space-between; margin-bottom: 8px; padding-left: ${paddingLeft}; font-size: ${fontSize}; font-weight: ${fontWeight}; border-bottom: 1px dotted #e5e7eb;">
-      <span style="background: #fff; padding-right: 4px;">${numbering}${text}</span>
-      <span style="background: #fff; padding-left: 4px; color: #737373;">...</span>
-    </li>
-  `
-            })
-        }
-
-        htmlResult += `</ul></div>`
-        return htmlResult
-    })
-
-
-    // ==========================================================
-    // RIFERIMENTI AI DIAGRAMMI
-    // ==========================================================
-    interface DiagramLabel { label: string; caption: string; sectionId: string }
-    interface SectionScan {
-        diagrams: { id: string | null; caption: string }[]
-        refTargets: string[]
-    }
-
     // Fuori dalla reattività: un capitolo si rianalizza solo se la sua sorgente è cambiata
     const sectionScanCache = new Map<string, { source: string; scan: SectionScan }>()
 
@@ -308,11 +224,87 @@ export const useChessBookStore = defineStore('chessBook', () => {
             })),
             refTargets: Array.from(doc.querySelectorAll('[data-type="diagram-ref"]'))
                 .map(el => el.getAttribute('data-target-id') || '')
-                .filter(Boolean)
+                .filter(Boolean),
+            headings: Array.from(doc.querySelectorAll('[data-toc-level]'))
+                .map(el => ({
+                    level: el.getAttribute('data-toc-level') ?? '',
+                    text: el.textContent?.trim() ?? ''
+                }))
+                .filter(h => h.level === '1' || h.level === '2'),
         }
         sectionScanCache.set(sectionId, { source, scan })
         return scan
     }
+
+    /**
+    * Genera dinamicamente la struttura HTML dell'indice basandosi sui capitoli presenti
+    */
+    const generatedTocHtml = computed(() => {
+        const chapters = sectionIndex.value.filter(s => s.type === 'chapter')
+
+        if (chapters.length === 0) {
+            return `
+  <div class="toc-container">
+    <h2>Indice Generale</h2>
+    <p style="color: #a3a3a3; font-style: italic;">Nessun capitolo inserito nel libro.</p>
+  </div>
+`
+        }
+
+        let html = `<div class="toc-container"><h2 style="font-family: Lora, Georgia, serif; font-size: 2rem; margin-bottom: 1.5rem;">Indice Generale</h2><ul style="list-style: none; padding: 0; margin: 0; font-family: Lora,Georgia, serif;">`
+
+        chapters.forEach((ch, i) => {
+            const mainCounter = i + 1
+            let subCounter = 0
+
+            const scan = ch.id === activeSectionId.value
+                ? scanSection(ch.id, activeSectionHtml.value, false)
+                : scanSection(ch.id, zippedSectionsCache.value[ch.id] || '', true)
+
+            for (const h of scan.headings) {
+                // textContent è testo già decodificato: va riescapato
+                const text = escapeHtml(h.text || 'Titolo senza testo')
+                let numbering: string
+                let paddingLeft: string
+                let fontSize: string
+                let fontWeight = 'bold'
+
+                if (h.level === '1') {
+                    numbering = `${mainCounter}. `
+                    paddingLeft = '0px'
+                    fontSize = '1.1rem'
+                } else {
+                    subCounter++
+                    numbering = `${mainCounter}.${subCounter} `
+                    paddingLeft = '20px'
+                    fontSize = '0.95rem'
+                    fontWeight = 'normal'
+                }
+
+                html += `
+    <li style="display: flex; justify-content: space-between; margin-bottom: 8px; padding-left: ${paddingLeft}; font-size: ${fontSize}; font-weight: ${fontWeight}; border-bottom: 1px dotted #e5e7eb;">
+      <span style="background: #fff; padding-right: 4px;">${numbering}${text}</span>
+      <span style="background: #fff; padding-left: 4px; color: #737373;">...</span>
+    </li>
+  `
+            }
+        })
+
+        return html + `</ul></div>`
+    })
+
+
+    // ==========================================================
+    // RIFERIMENTI AI DIAGRAMMI
+    // ==========================================================
+    interface DiagramLabel { label: string; caption: string; sectionId: string }
+    interface SectionScan {
+        diagrams: { id: string | null; caption: string }[]
+        refTargets: string[]
+        headings: { level: string; text: string }[]
+    }
+
+
 
     const diagramData = computed(() => {
         const labels = new Map<string, DiagramLabel>()

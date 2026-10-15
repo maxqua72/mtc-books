@@ -2,7 +2,10 @@ import { Node, mergeAttributes } from '@tiptap/core'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { VueNodeViewRenderer } from '@tiptap/vue-3'
 import { fenToBoardString } from '../utils/chessFormatter.ts'
+import { isValidFen } from '../utils/sanitize'
 import ChessDiagramNode from '../components/ChessDiagramNode.vue'
+
+const STANDARD_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -26,11 +29,21 @@ export const ChessDiagram = Node.create({
       // Identificativo stabile: serve ai riferimenti nel testo
       id: {
         default: null,
-        parseHTML: element => element.getAttribute('data-id'),
+        // Un id non valido diventa null e il plugin ne genera uno nuovo
+        parseHTML: element => {
+          const value = element.getAttribute('data-id')
+          return value && /^[\w-]{1,80}$/.test(value) ? value : null
+        },
         renderHTML: attributes => (attributes.id ? { 'data-id': attributes.id } : {}),
       },
       fen: {
-        default: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+        default: STANDARD_FEN,
+        parseHTML: element => {
+          const fen = element.getAttribute('fen')
+          if (isValidFen(fen)) return fen
+          console.warn('[ChessDiagram] FEN non valido nel documento, uso la posizione iniziale:', fen)
+          return STANDARD_FEN
+        },
       },
       size: {
         default: null, // Se è null, userà la dimensione globale dello store
@@ -67,16 +80,16 @@ export const ChessDiagram = Node.create({
   renderHTML({ HTMLAttributes }) {
     const fen = HTMLAttributes.fen || ''
     const boardText = fenToBoardString(fen)
-    
+
     // Determina a chi spetta la mossa ('white' o 'black')
     const fenParts = fen.trim().split(/\s+/)
     const turnClass = fenParts[1] === 'b' ? 'black' : 'white'
 
     return [
       'div',
-      mergeAttributes(HTMLAttributes, { 
+      mergeAttributes(HTMLAttributes, {
         'data-type': 'chess-diagram',
-        class: 'chess-diagram-container avoid-break' 
+        class: 'chess-diagram-container avoid-break'
       }),
       [
         'div',
@@ -85,7 +98,7 @@ export const ChessDiagram = Node.create({
           'div',
           { class: 'board-wrapper' },
           [
-            'div', 
+            'div',
             { class: 'diagram-number-badge', title: 'Numero diagramma' },
             ['div', { class: 'badge-text' }] // Verrà popolato o stilizzato via CSS
           ],
@@ -108,6 +121,7 @@ export const ChessDiagram = Node.create({
   addCommands() {
     return {
       insertChessDiagram: (options) => ({ chain }) => {
+        if (!isValidFen(options.fen)) return false
         return chain()
           .insertContent({
             type: this.name,

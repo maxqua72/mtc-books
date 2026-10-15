@@ -1,7 +1,8 @@
 // utils/chessFormatter.ts
+import { isValidFen } from './sanitize'
 
 export function fenToBoardString(fen: string): string {
-  if (!fen) return ''
+  if (!isValidFen(fen)) return ''
   
   const fenRows = fen.split(' ')[0].split('/')
   const keymap: Record<string, { light: string; dark: string }> = {

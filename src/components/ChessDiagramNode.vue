@@ -114,6 +114,7 @@ import { ref, computed, nextTick } from 'vue'
 import { nodeViewProps, NodeViewWrapper, NodeViewContent } from '@tiptap/vue-3'
 import { useChessBookStore } from '../stores/chessBookStore'
 import { normalizeSizeLevel, diagramFontPx, type DiagramSizeLevel } from '../utils/diagramSizes'
+import { fenToBoardString } from '../utils/chessFormatter'
 
 const store = useChessBookStore()
 const props = defineProps(nodeViewProps)
@@ -173,6 +174,7 @@ const align = computed<'left' | 'center' | 'right'>(() => {
 })
 const setAlign = (value: 'left' | 'center' | 'right') => props.updateAttributes({ align: value })
 
+/*
 // Usa il getter centralizzato dallo store per il numero del capitolo
 const chapterNumber = computed(() => store.currentChapterNumber)
 // Calcola il numero progressivo del diagramma all'interno del capitolo
@@ -193,6 +195,7 @@ const diagramIndex = computed(() => {
 
   return currentIndex
 })
+  
 
 const diagramNumber = computed(() => `${chapterNumber.value}.${diagramIndex.value}`)
 
@@ -202,6 +205,13 @@ const diagramNumber = computed(() => `${chapterNumber.value}.${diagramIndex.valu
 const isDarkSquare = (row: number, col: number) => {
   return (row + col) % 2 === 1
 }
+  */
+
+const diagramNumber = computed(() =>
+  store.diagramLabels.get(props.node.attrs.id)?.label ?? ''
+)
+
+
 
 // Analizza il secondo parametro della FEN per determinare a chi spetta la mossa ('w' o 'b')
 const activeColor = computed(() => {
@@ -210,6 +220,7 @@ const activeColor = computed(() => {
   return fenParts[1] === 'b' ? 'black' : 'white'
 })
 
+/*
 const boardString = computed(() => {
   const fenRows = props.node.attrs.fen.split(' ')[0].split('/')
 
@@ -221,6 +232,8 @@ const boardString = computed(() => {
     'Q': { light: 'q', dark: 'Q' }, 'q': { light: 'w', dark: 'W' },
     'K': { light: 'k', dark: 'K' }, 'k': { light: 'l', dark: 'L' }
   }
+
+  
 
   // 1. Cornice Superiore fissa
   let output = '1222222223\n'
@@ -262,7 +275,8 @@ const boardString = computed(() => {
   output += `7${bottomCoords}9`
 
   return output
-})
+}) */
+const boardString = computed(() => fenToBoardString(props.node.attrs.fen))
 </script>
 
 <style scoped>
