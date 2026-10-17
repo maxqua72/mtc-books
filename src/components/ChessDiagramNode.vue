@@ -1,5 +1,5 @@
 <template>
-  <node-view-wrapper class="chess-diagram-container avoid-break" :data-align="align">
+  <node-view-wrapper class="chess-diagram-container avoid-break" :data-align="align" :style="containerStyle">
     <div class="diagram-card" 
     :style="{ '--diagram-size': currentSizePx + 'px' }">
 
@@ -211,7 +211,17 @@ const diagramNumber = computed(() =>
   store.diagramLabels.get(props.node.attrs.id)?.label ?? ''
 )
 
-
+// Spazio a sinistra della scacchiera per badge e pallino (che sono position:absolute).
+// Serve solo con il diagramma a margine: il box float deve includerli,
+// altrimenti escono dal foglio (sinistra) o finiscono sotto il testo (destra).
+const containerStyle = computed(() => {
+  if (align.value === 'center') return {}
+  const chars = Math.max(diagramNumber.value.length, 4)       // "12.34" nel caso peggiore
+  const badgeFontPx = currentSizePx.value * 0.8               // come font-size del badge
+  const badgeWidthPx = badgeFontPx * 0.6 * chars + 12         // ~0.6em a carattere + padding 2×6px
+  const gutterPx = Math.ceil(badgeWidthPx + 10)               // + margin-right del badge
+  return { paddingLeft: gutterPx + 'px' }
+})
 
 // Analizza il secondo parametro della FEN per determinare a chi spetta la mossa ('w' o 'b')
 const activeColor = computed(() => {
