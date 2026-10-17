@@ -1,5 +1,5 @@
 <template>
-  <div class="w-[402px] space-y-2">
+  <div class="w-[402px]">
     <div class="flex gap-2">
       <button v-for="b in navButtons" :key="b.icon"
         @click="b.action" :disabled="b.disabled" :title="b.title" :aria-label="b.title"
@@ -8,15 +8,6 @@
                focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2
                disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed disabled:active:scale-100">
         <i :class="['fa-solid', b.icon]"></i>
-      </button>
-    </div>
-
-    <!-- Compare solo se la scacchiera mostra una posizione fuori dall'albero -->
-    <div v-if="isDetached"
-      class="flex items-center justify-between text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-      <span>Posizione libera: non è nell'albero.</span>
-      <button @click="treeStore.setActiveNode(treeStore.activeNodeId)" class="font-semibold underline">
-        Torna al nodo
       </button>
     </div>
   </div>
@@ -31,7 +22,7 @@ const treeStore = useChessTreeStore()
 const siblings = computed(() => treeStore.currentSiblings)
 const siblingIndex = computed(() => siblings.value.findIndex(n => n.id === treeStore.activeNodeId))
 
-// Senza albero attivo tutte queste condizioni portano i pulsanti allo stato "disattivato"
+// In modalità libera (nessun albero) tutte queste condizioni disattivano i pulsanti
 const atStart = computed(() => treeStore.activeNodeId === null)
 const atEnd = computed(() => treeStore.currentChildren.length === 0)
 const hasPrevVariant = computed(() => siblingIndex.value > 0)
@@ -47,12 +38,4 @@ const navButtons = computed(() => [
   { icon: 'fa-chevron-down', title: 'Variante successiva (↓)', action: () => treeStore.goToSibling(1), disabled: !hasNextVariant.value },
   { icon: 'fa-forward-step', title: 'Fine della linea (Fine)', action: () => treeStore.goToEnd(), disabled: atEnd.value },
 ])
-
-// La scacchiera mostra una posizione che non coincide con quella del nodo attivo
-const isDetached = computed(() => {
-  const tree = treeStore.currentTree
-  if (!tree) return false
-  const expected = treeStore.currentNode ? treeStore.currentNode.fen : tree.startingFen
-  return treeStore.activeFen !== expected
-})
 </script>

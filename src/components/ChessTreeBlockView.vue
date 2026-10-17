@@ -4,16 +4,21 @@
     <div v-if="pgnBadge" class="pgn-target-badge" contenteditable="false">{{ pgnBadge }}</div>
     <!-- Header comandi stile Gmail: compare in posizione assoluta solo all'hover del blocco -->
     <div class="block-header">
-      <span class="game-title">📊 {{ currentTree?.title || 'Analisi Scacchi' }}</span>
-      <button @click.stop="deleteBlock" class="delete-btn" title="Elimina intero blocco partita">
+      <span class="game-title">📊 {{ currentTree?.title || 'Albero di mosse' }}</span>
+      <button @click.stop="deleteBlock" class="delete-btn" title="Elimina il blocco albero">
         ✕
       </button>
     </div>
 
     <div class="block-content">
-      <!-- Se l'albero è vuoto, mostra un placeholder -->
-      <div v-if="!currentTree || currentTree.rootNodes.length === 0" class="empty-tree-placeholder">
-        Muovi i pezzi sulla scacchiera per iniziare a registrare la partita in questo blocco...
+      <!-- Blocco senza albero nello store: non attivabile, nessun albero vuoto creato di nascosto -->
+      <div v-if="!currentTree" class="empty-tree-placeholder is-orphan">
+        Albero non trovato. Elimina questo blocco oppure prova ad annullare l'ultima operazione.
+      </div>
+
+      <!-- Albero vuoto: placeholder -->
+      <div v-else-if="currentTree.rootNodes.length === 0" class="empty-tree-placeholder">
+        Muovi i pezzi sulla scacchiera per iniziare a registrare le mosse in questo albero...
       </div>
 
       <!-- Altrimenti avvia il ciclo ricorsivo di notazione -->
@@ -46,14 +51,11 @@ const currentTree = computed(() => {
   return treeStore.trees.find(t => t.id === props.node.attrs.treeId)
 })
 
+// Il click riattiva sempre l'albero e riallinea la scacchiera, anche se era già quello attivo
 const activateTree = () => {
   const id = props.node.attrs.treeId
-  if (!id) return
-  treeStore.ensureTree(id)
-  if (treeStore.activeTreeId !== id) {
-    treeStore.activeTreeId = id
-    treeStore.setActiveNode(currentTree.value?.activeNodeId || null)
-  }
+  if (!id || !currentTree.value) return
+  treeStore.activateTree(id)
 }
 
 const isActive = computed(() => treeStore.activeTreeId === props.node.attrs.treeId)
@@ -73,13 +75,10 @@ const onMouseDown = (event: MouseEvent) => {
   props.editor.commands.blur()    // niente focus nel testo: nessun paragrafo evidenziato
 }
 
+// L'albero resta nello store (diventa orfano e viene ripulito al salvataggio): così Ctrl+Z ripristina anche i dati
 const deleteBlock = () => {
-  if (props.node.attrs.treeId) {
-    if (confirm("Vuoi rimuovere interamente questa partita e tutta la sua notazione dal documento?")) {
-      const index = treeStore.trees.findIndex(t => t.id === props.node.attrs.treeId)
-      if (index !== -1) treeStore.trees.splice(index, 1)
-      props.deleteNode()
-    }
+  if (confirm("Vuoi rimuovere questo albero di mosse e tutta la sua notazione dal documento?")) {
+    props.deleteNode()
   }
 }
 </script>
@@ -203,6 +202,12 @@ const deleteBlock = () => {
   color: #1d4ed8;
   font: 600 11px ui-sans-serif, system-ui, sans-serif;
   user-select: none;
+}
+
+.empty-tree-placeholder.is-orphan {
+  color: #b91c1c;
+  border-color: #fca5a5;
+  background-color: #fef2f2;
 }
 
 /* REGOLA PER LA STAMPA / ESPORTAZIONE PDF:

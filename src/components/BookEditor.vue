@@ -82,6 +82,7 @@ import { CustomHeading } from '../extensions/CustomHeading' // Aggiusta il perco
 import { ChessTreeBlock } from '../extensions/ChessTreeBlock' // <-- Nuova Estensione Blocco Ibrido
 import { ProtectChessNodes } from '../extensions/ProtectChessNodes'
 import { PgnInsertMarker } from '../extensions/PgnInsertMarker'
+import type { Node as PMNode } from '@tiptap/pm/model'
 
 import { DiagramRef } from '../extensions/DiagramRef'
 import EditorToolbar from './EditorToolbar.vue'
@@ -193,7 +194,7 @@ watch(() => store.metadata.pageFormat, () => {
 })
 
 // Gestisce il clic nello spazio vuoto della pagina A4 (sotto l'ultimo paragrafo)
-const handlePageClick = (event: MouseEvent) => {
+const handlePageClick = () => {
     if (!editor.value) return
 
     // Porta il focus in fondo al documento se il clic è avvenuto direttamente nel container della pagina
@@ -264,55 +265,34 @@ const editor = useEditor({
         attributes: {
             class: 'book-text-engine focus:outline-none max-w-none',
         },
+        // Click nel testo fuori da alberi e diagrammi: si torna in modalità libera
+        handleClick(_view, _pos, event) {
+            const target = event.target as HTMLElement | null
+            if (target && !target.closest('.chess-tree-block-container, .chess-diagram-container')) {
+                treeStore.deactivateTree()
+            }
+            return false
+        },
     },
     // Aggiorna lo store locale durante la digitazione per l'auto-save temporaneo
     onUpdate({ editor }) {
         if (isInsertingFromEngine.value) return
         store.activeSectionHtml = editor.getHTML()
-        //purgeOrphanTrees()
+    },
+    // Se l'albero attivo non è più nel documento (cancellazione, undo, cambio capitolo) si torna in modalità libera
+    onTransaction({ editor, transaction }) {
+        if (transaction.docChanged && treeStore.activeTreeId &&
+            !treeIdsInDoc(editor.state.doc).includes(treeStore.activeTreeId)) {
+            treeStore.deactivateTree()
+        }
     }
 })
 
-// Comando per creare una nuova istanza di albero mossa e incollarne il relativo tag nel testo
+// Toolbar "Albero di mosse": nuovo albero in fondo al capitolo, che parte dalla posizione corrente della scacchiera
 const insertNewChessTreeBlock = () => {
-    if (!editor.value) return
-
-    // 1. Genera l'ID unico per l'albero scacchi
-    /*
-    const uniqueTreeId = `tree_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-
-    // 2. Crea l'albero nello store di Pinia
-    treeStore.trees.push({
-        id: uniqueTreeId,
-        title: `Albero #${treeStore.trees.length + 1}`,
-        startingFen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-        rootNodes: [] as any[],
-        activeNodeId: null
-    })
-
-    // Imposta questo nuovo blocco come attivo nello store
-    treeStore.activeTreeId = uniqueTreeId
-    */
-    const newTree = treeStore.createNewTree(`Albero #${treeStore.trees.length + 1}`)
-    const uniqueTreeId = newTree.id
-    treeStore.activeNodeId = null
-
-    // 3. Sposta il cursore alla fine del documento e inserisci il blocco scacchi
-    editor.value.chain()
-        // Sposta il cursore alla fine di tutto per evitare QUALSIASI sovrascrittura
-        .focus('end')
-        .insertContent([
-            {
-                type: 'chessTreeBlock',
-                attrs: { treeId: uniqueTreeId }
-            },
-            {
-                type: 'paragraph' // Crea una riga vuota sotto per permettere all'utente di continuare a scrivere
-            }
-        ])
-        .run()
-
-    store.activeSectionHtml = editor.value.getHTML()
+    if (!editor.value || store.activeSectionInfo?.type !== 'chapter') return
+    const tree = treeStore.buildTree(`Albero #${treeStore.trees.length + 1}`)
+    pgnStore.addTrees([tree], 'end')
 }
 
 // 2. FONDAMENTALE: Reagisci al ripristino da IndexedDB e al cambio sezione
@@ -516,100 +496,51 @@ watch(() => store.insertSignal, () => {
     store.activeSectionHtml = editor.value.getHTML()
 })*/
 
+// Inserisci Diagramma: la posizione è sempre treeStore.activeFen; dove va nel documento dipende dalla modalità
 watch(() => store.insertSignal, () => {
-    if (!editor.value) return
+    const ed = editor.value
+    if (!ed || store.activeSectionInfo?.type !== 'chapter') return
 
     try {
-        const currentTreeId = treeStore.activeTreeId
-        const activeNodeId = treeStore.activeNodeId
+        const diagramFen = treeStore.activeFen
+        const tree = treeStore.currentTree
+        const block = tree ? findTreeBlock(tree.id) : null
 
-        // 🟢 CASO A: Se una mossa dentro un Tree è selezionata
-        if (currentTreeId && activeNodeId) {
-
-            // 1. Troviamo l'albero corrente nello store
-            const currentTree = treeStore.trees.find(t => t.id === currentTreeId)
-
-            // 2. Chiamiamo il getter passando le rootNodes dell'albero trovato
-            const activeNode = currentTree
-                ? treeStore.findNodeById(currentTree.rootNodes, activeNodeId)
-                : null
-
-            // 3. Verifichiamo in sicurezza se ha mosse successive
-            const hasNextMoves = Boolean(activeNode?.children && activeNode.children.length > 0)
-
-            const diagramFen = treeStore.activeFen
-
-            // 4. Troviamo la posizione del blocco chessTreeBlock corrente
-            let insertPos = -1
-            editor.value.state.doc.descendants((node, pos) => {
-                if (node.type.name === 'chessTreeBlock' && node.attrs.treeId === currentTreeId) {
-                    insertPos = pos + node.nodeSize
-                }
-            })
-
-            if (insertPos !== -1) {
-                if (hasNextMoves) {
-                    // CASO A.1: Mossa INTERMEDIA -> Spezza l'albero e inserisci al centro
-                    const newTreeId = treeStore.splitTree(currentTreeId, activeNodeId)
-                    if (!newTreeId) return
-
-                    editor.value
-                        .chain()
-                        .focus()
-                        .insertContentAt(insertPos, [
-                            { type: 'chessDiagram', attrs: { fen: diagramFen } },
-                            { type: 'chessTreeBlock', attrs: { treeId: newTreeId } },
-                            { type: 'paragraph' }
-                        ])
-                        .run()
-                } else {
-                    // CASO A.2: ULTIMA mossa -> Inserisci il Diagramma SOTTO senza spezzare
-                    editor.value
-                        .chain()
-                        .focus()
-                        .insertContentAt(insertPos, [
-                            { type: 'chessDiagram', attrs: { fen: diagramFen } },
-                            { type: 'paragraph' }
-                        ])
-                        .run()
-                }
-
-                store.activeSectionHtml = editor.value.getHTML()
-            }
+        // Modalità libera: al cursore, senza toccare alberi
+        if (!tree || !block) {
+            ed.chain().focus().insertChessDiagram({ fen: diagramFen }).insertContent({ type: 'paragraph' }).run()
             return
         }
 
-        // 🔵 CASO B: Nessun tree selezionato -> Inserimento alla posizione corrente del cursore
-        editor.value
-            .chain()
-            .focus()
-            .insertChessDiagram({ fen: store.activeFen })
-            .insertContent({ type: 'paragraph' })
-            .run()
+        const diagram = { type: 'chessDiagram', attrs: { fen: diagramFen } }
+        const paragraph = { type: 'paragraph' }
+        const afterBlock = block.pos + block.size
+        const node = treeStore.currentNode
 
-        store.activeSectionHtml = editor.value.getHTML()
+        // Posizione iniziale di un albero con mosse: il diagramma precede il blocco
+        if (tree.rootNodes.length > 0 && !node) {
+            ed.chain().focus().insertContentAt(block.pos, [diagram]).run()
+            return
+        }
 
+        // Mossa in linea principale con mosse successive: si spezza l'albero in due
+        if (node && node.children.length > 0 && treeStore.isNodeInMainline(tree.rootNodes, node.id)) {
+            const newTreeId = treeStore.splitTree(tree.id, node.id)
+            if (newTreeId) {
+                ed.chain().focus().insertContentAt(afterBlock, [
+                    diagram,
+                    { type: 'chessTreeBlock', attrs: { treeId: newTreeId } },
+                    paragraph
+                ]).run()
+                return
+            }
+        }
+
+        // Albero vuoto, ultima mossa o mossa in una variante: dopo il blocco, albero intatto
+        ed.chain().focus().insertContentAt(afterBlock, [diagram, paragraph]).run()
     } catch (error) {
         console.error('Errore durante l\'inserimento del diagramma:', error)
     }
-})
-
-// Rileva quando viene registrata una nuova mossa sulla scacchiera.
-// Poiché le mosse ora vivono solo nel ChessTreeBlock tramite Pinia,
-// non dobbiamo più inserire nodi fisici (chessMove/chessVariant) nel documento di Tiptap.
-watch(() => treeStore.lastRecordedMoveSignal, (moveSignal) => {
-    if (!moveSignal) return
-
-    // Ci limitiamo a consumare e azzerare il segnale dello store.
-    // L'albero delle mosse nel ChessTreeBlock si aggiornerà da solo reattivamente
-    // grazie al rendering di ChessMoveRenderer.vue.
-    treeStore.lastRecordedMoveSignal = null
-})
-
-// Consuma semplicemente il segnale di eliminazione mossa senza toccare il testo di Tiptap
-watch(() => treeStore.lastDeletedMoveId, (idToDelete) => {
-    if (!idToDelete) return
-    treeStore.lastDeletedMoveId = null
 })
 
 // Ascolta il segnale per l'esportazione capitolo via Server
@@ -1070,22 +1001,14 @@ const getActiveTreeIds = (): string[] => {
     return activeIds
 }
 
-/**
- * Esegue la pulizia automatica degli alberi orfani
- */
-const purgeOrphanTrees = () => {
-    const activeIds = getActiveTreeIds()
-    treeStore.cleanOrphanTrees(activeIds)
+/** treeId dei blocchi albero presenti in un documento ProseMirror */
+const treeIdsInDoc = (doc: PMNode): string[] => {
+    const ids: string[] = []
+    doc.descendants((node) => {
+        if (node.type.name === 'chessTreeBlock' && node.attrs.treeId) ids.push(node.attrs.treeId)
+    })
+    return ids
 }
-
-// -------------------------------------------------------------
-// PUNTI DI AGGANCIO (Dove chiamare purgeOrphanTrees):
-// -------------------------------------------------------------
-
-// 1. Prima di salvare il capitolo/libro sul database
-// onBeforeUnmount(() => {
-//  purgeOrphanTrees()
-//})
 
 const findTreeBlock = (treeId: string): { pos: number; size: number } | null => {
     const ed = editor.value
@@ -1140,7 +1063,7 @@ pgnStore.registerPlacementApi({ resolve: resolveInsertPos, describe: describePla
 const syncPgnMarker = () => {
     const ed = editor.value
     if (!ed) return
-    const pos = pgnStore.isOpen && pgnStore.mode === 'new-block'
+    const pos = pgnStore.isOpen && pgnStore.mode === 'new-tree'
         ? resolveInsertPos(pgnStore.placement)
         : null
     ed.commands.setPgnInsertMarker(pos)
@@ -1172,23 +1095,24 @@ const revealTreeBlock = (treeId: string) => {
     setTimeout(() => dom.classList.remove('diagram-flash'), 1600)
 }
 
-// Richieste dal pannello di importazione: inserisce il blocco (se serve) e lo porta in vista
+// Richieste di inserimento: tutti i blocchi in una sola transazione (un solo Ctrl+Z annulla tutto)
 watch(() => pgnStore.request, async (req) => {
     const ed = editor.value
     if (!req || !ed) return
 
-    if (req.placement) {
-        const pos = resolveInsertPos(req.placement) ?? ed.state.doc.content.size
-        const atEnd = pos >= ed.state.doc.content.size
+    if (req.insert) {
+        const size = ed.state.doc.content.size
+        const pos = req.pos ?? size
+        const atEnd = pos >= size
         ed.chain().insertContentAt(pos, [
-            { type: 'chessTreeBlock', attrs: { treeId: req.treeId } },
+            ...req.treeIds.map(id => ({ type: 'chessTreeBlock', attrs: { treeId: id } })),
             // in fondo al documento serve un paragrafo per poter continuare a scrivere
             ...(atEnd ? [{ type: 'paragraph' }] : [])
         ]).run()
     }
 
     await nextTick()
-    revealTreeBlock(req.treeId)
+    revealTreeBlock(req.treeIds[0])
 })
 
 </script>

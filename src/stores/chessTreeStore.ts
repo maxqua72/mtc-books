@@ -1,77 +1,78 @@
-import { defineStore } from 'pinia';
-import { Chess } from 'chess.js';
-import { db } from '../db'
+import { defineStore } from 'pinia'
+import { Chess } from 'chess.js'
+import { STANDARD_FEN, isLegalFen, normalizeFen } from '../utils/fen'
 
 export interface ChessMoveNode {
-  id: string;
-  san: string;
-  fen: string;
-  moveNumber: number;
-  color: 'w' | 'b';
-  parentId: string | null;
-  comment: string | null;
-  nags?: number[];        // simboli di annotazione PGN (1 = !, 2 = ?, ...)
-  children: ChessMoveNode[];
+  id: string
+  san: string
+  fen: string
+  moveNumber: number
+  color: 'w' | 'b'
+  parentId: string | null
+  comment: string | null
+  nags?: number[]          // simboli di annotazione PGN (1 = !, 2 = ?, ...)
+  children: ChessMoveNode[]
 }
 
 export interface ChessTree {
-  id: string;
-  title: string;
-  startingFen: string;
-  rootNodes: ChessMoveNode[];
-  activeNodeId: string | null;
-  parentTreeId?: string | null;   // ID dell'albero padre da cui è nato lo split
-  splitAtNodeId?: string | null;  // ID del nodo al quale è stato eseguito il taglio
+  id: string
+  title: string
+  startingFen: string
+  rootNodes: ChessMoveNode[]
+  activeNodeId: string | null
+  header?: Record<string, string>   // tag PGN della partita di origine (solo alberi importati)
+  parentTreeId?: string | null
+  splitAtNodeId?: string | null
 }
 
-// Interfaccia per il segnale reattivo destinato a Tiptap
-export interface MoveSignalPayload {
-  id: string;
-  san: string;
-  color: 'w' | 'b';
-  moveNumber: number;
-  isVariant?: boolean; // Facoltativo: indica se la mossa è una variante o meno
+export type FenResult = 'ok' | 'invalid' | 'locked'
+
+const newId = (prefix: string) =>
+  `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+
+const findNode = (nodes: ChessMoveNode[] | undefined, id: string): ChessMoveNode | null => {
+  const stack = [...(nodes ?? [])]
+  while (stack.length) {
+    const n = stack.pop()!
+    if (n.id === id) return n
+    if (n.children?.length) stack.push(...n.children)
+  }
+  return null
 }
 
-
+/**
+ * Modello: la scacchiera è in modalità LIBERA (activeTreeId === null: non scrive mai)
+ * oppure in modalità ALBERO (activeTreeId valorizzato: la posizione deriva dal nodo attivo,
+ * o da startingFen se non c'è nodo, e ogni mossa nuova viene registrata).
+ */
 export const useChessTreeStore = defineStore('chessTree', {
   state: () => ({
     trees: [] as ChessTree[],
     activeTreeId: null as string | null,
     activeNodeId: null as string | null,
-    activeFen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-    isRecordingMoves: true,
-    // Nuovo segnale reattivo per notificare l'editor senza passargli l'istanza
-    lastRecordedMoveSignal: null as MoveSignalPayload | null,
-    lastDeletedMoveId: null as string | null,
+    activeFen: STANDARD_FEN,
   }),
 
   getters: {
     currentTree(): ChessTree | undefined {
-      return this.trees.find(t => t.id === this.activeTreeId);
+      return this.trees.find(t => t.id === this.activeTreeId)
     },
 
-    /**
-     * Trova ricorsivamente un nodo specifico all'interno di un albero
-     */
-    findNodeById: () => (nodes: ChessMoveNode[], id: string): ChessMoveNode | null => {
-      if (!nodes || !Array.isArray(nodes)) return null; // Guard clause sui nodi di partenza
-
-      for (const node of nodes) {
-        if (node.id === id) return node;
-
-        // USIAMO ?.length: se node.children è undefined non va in crash
-        if (node.children?.length > 0) {
-          const found = useChessTreeStore().findNodeById(node.children, id);
-          if (found) return found;
-        }
-      }
-      return null;
+    /** Albero attivo senza mosse: la posizione iniziale è ancora modificabile */
+    isCurrentTreeEmpty(): boolean {
+      return !!this.currentTree && this.currentTree.rootNodes.length === 0
     },
+
+    /** Albero attivo con mosse: la posizione iniziale è fissa */
+    isFenLocked(): boolean {
+      return !!this.currentTree && this.currentTree.rootNodes.length > 0
+    },
+
+    findNodeById: () => findNode,
 
     currentNode(): ChessMoveNode | null {
-      if (!this.activeNodeId || !this.currentTree) return null;
-      return this.findNodeById(this.currentTree.rootNodes, this.activeNodeId);
+      if (!this.activeNodeId || !this.currentTree) return null
+      return findNode(this.currentTree.rootNodes, this.activeNodeId)
     },
 
     /** Prosecuzioni dalla posizione attiva: [0] = linea principale, le altre = varianti */
@@ -87,82 +88,92 @@ export const useChessTreeStore = defineStore('chessTree', {
       const node = this.currentNode
       if (!tree || !node) return []
       if (node.parentId === null) return tree.rootNodes
-      return this.findNodeById(tree.rootNodes, node.parentId)?.children ?? []
+      return findNode(tree.rootNodes, node.parentId)?.children ?? []
     },
   },
 
   actions: {
-
-
-    /**
-     * Ripristina tutti gli alberi di varianti salvati da Dexie/IndexedDB
-     */
-    /*
-    async restoreFromIndexedDB(): Promise<boolean> {
-      try {
-        const savedTrees = await db.trees.toArray()
-        if (!savedTrees || savedTrees.length === 0) return false
-
-        this.trees = savedTrees.map(item => item.data)
-        if (this.trees.length > 0) {
-          this.activeTreeId = this.trees[0].id
-          this.setActiveNode(this.trees[0].activeNodeId || null)
-        }
-        return true
-      } catch (error) {
-        console.error('[ChessTreeStore] Errore durante il ripristino da Dexie:', error)
-        return false
-      }
-    },*/
-
-    /**
-     * Inizializza un nuovo albero (Partita o Posizione di studio separata)
-     */
-    createNewTree(title = 'Nuova Analisi', customFen?: string) {
-      const defaultFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-      const startingFen = customFen || defaultFen;
-
-      const newTree: ChessTree = {
-        id: `tree-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    /** Crea (senza inserirlo nello store né attivarlo) un albero che parte da `fen` */
+    buildTree(title: string, fen?: string): ChessTree {
+      const from = fen ?? this.activeFen   // il default va nel corpo: nei parametri `this` non è tipizzato
+      return {
+        id: newId('tree'),
         title,
-        startingFen,
+        startingFen: isLegalFen(from) ? normalizeFen(from) : STANDARD_FEN,
         rootNodes: [],
-        activeNodeId: null
-      };
+        activeNodeId: null,
+      }
+    },
 
-      this.trees.push(newTree);
-      this.activeTreeId = newTree.id;
-      this.activeNodeId = null;
-      this.activeFen = startingFen;
+    /** Modalità albero: la scacchiera si porta sul nodo attivo dell'albero */
+    activateTree(treeId: string): boolean {
+      const tree = this.trees.find(t => t.id === treeId)
+      if (!tree) return false
+      this.activeTreeId = treeId
+      const saved = tree.activeNodeId
+      this.setActiveNode(saved && findNode(tree.rootNodes, saved) ? saved : null)
+      return true
+    },
 
-      return newTree;
+    /** Modalità libera: la posizione sulla scacchiera resta dov'è */
+    deactivateTree() {
+      this.activeTreeId = null
+      this.activeNodeId = null
+    },
+
+    /** Attiva l'albero e seleziona una sua mossa (click su una mossa nel documento) */
+    selectNode(treeId: string, nodeId: string) {
+      if (!this.trees.some(t => t.id === treeId)) return
+      this.activeTreeId = treeId
+      this.setActiveNode(nodeId)
+    },
+
+    /** Naviga a un nodo dell'albero attivo (null = posizione iniziale). In modalità libera non fa nulla. */
+    setActiveNode(nodeId: string | null) {
+      const tree = this.currentTree
+      if (!tree) {
+        this.activeNodeId = null
+        return
+      }
+      const node = nodeId ? findNode(tree.rootNodes, nodeId) : null
+      tree.activeNodeId = node ? node.id : null
+      this.activeNodeId = tree.activeNodeId
+      this.activeFen = node ? node.fen : tree.startingFen
     },
 
     /**
-     * Naviga verso un nodo specifico impostando FEN e ID attivi
+     * Imposta la posizione della scacchiera da un FEN:
+     * - modalità libera: posizione libera
+     * - albero vuoto: posizione iniziale dell'albero
+     * - albero con mosse: rifiutato ('locked')
      */
-    setActiveNode(nodeId: string | null) {
-      this.activeNodeId = nodeId
-
-      // Salva lo stato anche dentro l'albero corrente
-      const current = this.trees.find(t => t.id === this.activeTreeId)
-      if (current) {
-        current.activeNodeId = nodeId
+    setBoardFen(fen: string): FenResult {
+      if (!isLegalFen(fen)) return 'invalid'
+      const normalized = normalizeFen(fen)
+      const tree = this.currentTree
+      if (!tree) {
+        this.activeFen = normalized
+        return 'ok'
       }
-
-      // Aggiorna il FEN sulla scacchiera
-      if (nodeId === null) {
-        this.activeFen = current?.startingFen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-      } else {
-        const node = this.findNodeById(current?.rootNodes || [], nodeId)
-        if (node) {
-          this.activeFen = node.fen
-        }
-      }
-
+      if (tree.rootNodes.length > 0) return 'locked'
+      tree.startingFen = normalized
+      tree.activeNodeId = null
+      this.activeNodeId = null
+      this.activeFen = normalized
+      return 'ok'
     },
 
-        /** Cerca tra le prosecuzioni del nodo attivo una mossa con questa notazione */
+    /** Libera o albero vuoto: posizione standard. Albero con mosse: nessun effetto (c'è "Inizio"). */
+    resetPosition() {
+      const tree = this.currentTree
+      if (!tree) {
+        this.activeFen = STANDARD_FEN
+        return
+      }
+      if (tree.rootNodes.length === 0) this.setBoardFen(STANDARD_FEN)
+    },
+
+    /** Cerca tra le prosecuzioni del nodo attivo una mossa con questa notazione */
     findChildBySan(san: string): ChessMoveNode | null {
       return this.currentChildren.find(n => n.san === san) ?? null
     },
@@ -198,316 +209,147 @@ export const useChessTreeStore = defineStore('chessTree', {
     },
 
     /**
-     * Aggiunge una mossa eseguita sulla scacchiera all'albero corrente
-     * Gestisce automaticamente la creazione di varianti se si riparte da un nodo intermedio
+     * Registra una mossa nell'albero attivo. Colore, numero e FEN si ricavano SEMPRE dal padre
+     * (o da startingFen): non si può creare un nodo incoerente. SAN illegale => null.
+     * Se la mossa esiste già tra i figli si naviga al nodo esistente.
      */
-    addMove(san: string, fen: string) {
-      if (!this.currentTree) return null;
+    addMove(san: string): { node: ChessMoveNode; isNew: boolean } | null {
+      const tree = this.currentTree
+      if (!tree) return null
 
-      // Inizializziamo chess.js sul FEN precedente per estrarre info su colore e numero mossa
-      const chess = new Chess(this.activeFen);
-      const color = chess.turn(); // 'w' o 'b'
-      const moveNumber = chess.moveNumber();
+      const parent = this.currentNode
+      if (this.activeNodeId && !parent) return null
 
-      // Determiniamo la lista di nodi in cui cercare/inserire la mossa
-      let siblingNodes: ChessMoveNode[];
-      if (this.activeNodeId === null) {
-        siblingNodes = this.currentTree.rootNodes;
-      } else {
-        const parentNode = this.currentNode;
-        if (!parentNode) return null;
-        siblingNodes = parentNode.children;
+      const chess = new Chess(parent ? parent.fen : tree.startingFen)
+      const color = chess.turn()
+      const moveNumber = chess.moveNumber()
+
+      let played: ReturnType<Chess['move']>
+      try {
+        played = chess.move(san)
+      } catch {
+        return null
       }
 
-      // 1. Controlla se la mossa esiste già tra i fratelli (l'utente sta ripercorrendo una linea)
-      const existingNode = siblingNodes.find(n => n.san === san);
-      if (existingNode) {
-        this.setActiveNode(existingNode.id)
-        return { node: existingNode, isNew: false };
+      const siblings = parent ? parent.children : tree.rootNodes
+      const existing = siblings.find(n => n.san === played.san)
+      if (existing) {
+        this.setActiveNode(existing.id)
+        return { node: existing, isNew: false }
       }
 
-      // 2. Crea un nuovo nodo per la mossa
-      const newNode: ChessMoveNode = {
-        id: `move-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        san,
-        fen,
+      const node: ChessMoveNode = {
+        id: newId('move'),
+        san: played.san,
+        fen: chess.fen(),
         moveNumber,
         color,
-        parentId: this.activeNodeId,
+        parentId: parent ? parent.id : null,
         comment: null,
-        children: []
-      };
-
-      // 3. Inserisci il nodo nell'albero
-      siblingNodes.push(newNode);
-
-      // 4. Aggiorna lo stato di navigazione
-      this.setActiveNode(newNode.id)
-
-      // Modifica: Genera il segnale per l'editor se la scrittura live è attiva
-      if (this.isRecordingMoves) {
-        // È una variante se ci sono già altre mosse alternative registrate nello stesso punto (fratelli)
-        const isVariantMove = siblingNodes.length > 1;
-
-        this.lastRecordedMoveSignal = {
-          id: newNode.id,
-          san: newNode.san,
-          color: newNode.color,
-          moveNumber: newNode.moveNumber,
-          isVariant: isVariantMove // <-- Riconosciuto nativamente dall'interfaccia MoveSignalPayload
-        };
+        children: [],
       }
-
-      return { node: newNode, isNew: true };
+      siblings.push(node)
+      this.setActiveNode(node.id)
+      return { node, isNew: true }
     },
 
-    /**
-     * Elimina una variante o una mossa specifica (Pruning dell'albero)
-     */
-    deleteBranch(nodeId: string) {
-      if (!this.currentTree) return false;
+    /** Elimina una mossa con tutto il suo sottoalbero e riposiziona l'albero sul padre */
+    deleteBranch(nodeId: string): boolean {
+      const tree = this.currentTree
+      if (!tree) return false
 
-      this.lastDeletedMoveId = nodeId;
+      const target = findNode(tree.rootNodes, nodeId)
+      if (!target) return false
+      const siblings = target.parentId
+        ? findNode(tree.rootNodes, target.parentId)?.children
+        : tree.rootNodes
+      if (!siblings) return false
+      const index = siblings.findIndex(n => n.id === nodeId)
+      if (index === -1) return false
 
-      const removeNodeRecursive = (nodes: ChessMoveNode[]): boolean => {
-        const index = nodes.findIndex(n => n.id === nodeId);
-        if (index !== -1) {
-          const parentId = nodes[index].parentId;
-          nodes.splice(index, 1);
-          if (this.activeNodeId === nodeId || this.isNodeDescendantOf(this.activeNodeId, nodeId)) {
-            this.setActiveNode(parentId);
-          }
-          return true;
-        }
+      // Va valutato PRIMA di staccare il ramo, altrimenti il nodo attivo non si ritrova più
+      const activeWasInside =
+        this.activeNodeId === nodeId || this.isNodeDescendantOf(this.activeNodeId, nodeId)
 
-        for (const node of nodes) {
-          if (node.children.length > 0) {
-            if (removeNodeRecursive(node.children)) return true;
-          }
-        }
-        return false;
-      };
-
-      const success = removeNodeRecursive(this.currentTree.rootNodes)
-
-      return success
+      siblings.splice(index, 1)
+      if (activeWasInside) this.setActiveNode(target.parentId)
+      return true
     },
 
-    /**
-     * Utility per verificare se un nodo è discendente di un altro
-     */
     isNodeDescendantOf(childId: string | null, parentId: string): boolean {
-      if (!childId || !this.currentTree) return false;
-      let current = this.findNodeById(this.currentTree.rootNodes, childId);
-
+      if (!childId || !this.currentTree) return false
+      let current = findNode(this.currentTree.rootNodes, childId)
       while (current && current.parentId !== null) {
-        if (current.parentId === parentId) return true;
-        current = this.findNodeById(this.currentTree.rootNodes, current.parentId);
+        if (current.parentId === parentId) return true
+        current = findNode(this.currentTree.rootNodes, current.parentId)
       }
-      return false;
+      return false
     },
 
+    /** Carica gli alberi di un capitolo: nessun albero attivo, posizione della scacchiera invariata */
     setChapterTrees(newTrees: ChessTree[] = []) {
-      this.resetStore()
       this.trees = [...newTrees]
-
-      // Se è presente almeno un albero, imposta come attivo il primo
-      if (this.trees.length > 0) {
-        this.activeTreeId = this.trees[0].id
-        this.setActiveNode(this.trees[0].activeNodeId ?? null)   // imposta anche activeFen
-      }
+      this.activeTreeId = null
+      this.activeNodeId = null
     },
 
-    /**
-     * Reset completo dello store
-     */
     resetStore() {
-      this.trees = [];
-      this.activeTreeId = null;
-      this.activeNodeId = null;
-      this.activeFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-      //this.isRecordingMoves = false;
-      this.lastRecordedMoveSignal = null;
+      this.trees = []
+      this.activeTreeId = null
+      this.activeNodeId = null
+      this.activeFen = STANDARD_FEN
     },
 
-    ensureTree(treeId: string) {
-      if (this.trees.some(t => t.id === treeId)) return
-      this.trees.push({
-        id: treeId,
-        title: `Albero #${this.trees.length + 1}`,
-        startingFen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-        rootNodes: [],
-        activeNodeId: null
-      })
-    },
-
-    /**
-     * Aggiorna il commento di una mossa specifica
-     */
     updateNodeComment(nodeId: string, comment: string | null) {
-      if (!this.currentTree) return;
-      const node = this.findNodeById(this.currentTree.rootNodes, nodeId);
-      if (node) {
-        node.comment = comment === '' ? null : comment;
-      }
+      if (!this.currentTree) return
+      const node = findNode(this.currentTree.rootNodes, nodeId)
+      if (node) node.comment = comment === '' ? null : comment
     },
 
-    /**
-     * Importa un intero testo PGN costruendo l'albero delle mosse corrispondente
-     */
-    /*
-    importPgn(pgnString: string) {
-      if (!this.currentTree) return false;
-
-      const chess = new Chess();
-      try {
-        // Carica il PGN nell'istanza temporanea di chess.js
-        chess.loadPgn(pgnString);
-
-        // Estrae la cronologia completa in modalità verbosa (include FEN e notazione SAN)
-        const history = chess.history({ verbose: true });
-
-        // Resetta la navigazione all'inizio dell'albero corrente per iniziare l'importazione
-        this.setActiveNode(null);
-
-        // Cicla sequenzialmente tutte le mosse estratte dal PGN
-        for (const move of history) {
-          // Usiamo la logica nativa di addMove. 
-          // Se la mossa esiste già sposta solo il cursore, altrimenti crea il nodo.
-          this.addMove(move.san, move.after);
-        }
-
-        return true;
-      } catch (error) {
-        console.error("[ChessTreeStore] Errore durante il parsing del PGN:", error);
-        return false;
-      }
-    },
-    */
-    /**
-   * Spezza un albero di mosse in due albero distinti a partire da un determinato nodo.
-   * I nodi successivi a nodeId diventano la radice del nuovo albero.
-   */
-    /*
-      splitTree(treeId: string, nodeId: string): string | null {
-        const sourceTree = this.trees.find(t => t.id === treeId);
-        if (!sourceTree) return null;
-  
-        // Se lo split avviene alla radice (nessun nodo selezionato), non c'è nulla da separare
-        const splitNode = this.findNodeById(sourceTree.rootNodes, nodeId);
-        if (!splitNode || splitNode.children.length === 0) return null;
-  
-        // Estraiamo i nodi figli che diventeranno i nodi radice del nuovo albero
-        const detachedChildren = [...splitNode.children];
-  
-        // Tronchiamo i figli dal nodo di origine
-        splitNode.children = [];
-  
-        // Creiamo il nuovo albero per il secondo blocco
-        const newTreeId = `tree-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  
-        // Aggiorniamo i parentId dei nodi che diventano root per il nuovo albero
-        detachedChildren.forEach(child => {
-          child.parentId = null;
-        });
-  
-        const newTree: ChessTree = {
-          id: newTreeId,
-          title: `${sourceTree.title} (Parte 2)`,
-          startingFen: splitNode.fen,
-          rootNodes: detachedChildren,
-          activeNodeId: null,
-          parentTreeId: sourceTree.id,
-          splitAtNodeId: nodeId
-        };
-  
-        this.trees.push(newTree);
-        return newTreeId;
-      }
-        */
-    /**
-   * Verifica se un nodo appartiene alla linea principale (mainline).
-   */
+    /** Il nodo appartiene alla linea principale? (children[0] è sempre la mainline) */
     isNodeInMainline(rootNodes: ChessMoveNode[], targetNodeId: string): boolean {
-      if (!rootNodes || rootNodes.length === 0) return false
-
-      let current: ChessMoveNode | undefined = rootNodes[0]
-
+      let current: ChessMoveNode | undefined = rootNodes?.[0]
       while (current) {
-        if (current.id === targetNodeId) {
-          return true
-        }
-        // Nel modello dati scacchistico, children[0] è sempre la mainline
-        current = current.children && current.children.length > 0 ? current.children[0] : undefined
+        if (current.id === targetNodeId) return true
+        current = current.children?.length ? current.children[0] : undefined
       }
-
       return false
     },
 
     /**
-     * Spezza l'albero delle mosse nel punto indicato (solo su mainline).
-     * Separa le mosse successive in una nuova istanza di ChessTree.
+     * Spezza l'albero nel punto indicato (solo su mainline): le mosse successive diventano
+     * un nuovo albero che parte dalla FEN del nodo.
      */
     splitTree(treeId: string, nodeId: string): string | null {
       const sourceTree = this.trees.find(t => t.id === treeId)
       if (!sourceTree) return null
+      if (!this.isNodeInMainline(sourceTree.rootNodes, nodeId)) return null
 
-      // 1. VERIFICA DI SICUREZZA: Lo split è consentito solo sulla mainline
-      const isMainline = this.isNodeInMainline(sourceTree.rootNodes, nodeId)
-      if (!isMainline) {
-        console.warn("Lo split dell'albero è consentito solo sulle mosse della variante principale.")
-        return null
-      }
-
-      const splitNode = this.findNodeById(sourceTree.rootNodes, nodeId)
-      // Se il nodo non esiste o non ha mosse successive, non c'è nulla da spezzare
+      const splitNode = findNode(sourceTree.rootNodes, nodeId)
       if (!splitNode || splitNode.children.length === 0) return null
 
-      // 2. Estraiamo i nodi figli (la continuazione della mainline + varianti collegate)
       const detachedChildren = [...splitNode.children]
-
-      // Tronchiamo la rami successivi dal nodo sorgente
       splitNode.children = []
-
-      // 3. Creiamo il nuovo albero per il secondo blocco
-      const newTreeId = `tree_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-
-      // I nodi staccati diventano nodi radice (root) del nuovo albero
-      detachedChildren.forEach(child => {
-        child.parentId = null
-      })
+      detachedChildren.forEach(child => { child.parentId = null })
 
       const newTree: ChessTree = {
-        id: newTreeId,
+        id: newId('tree'),
         title: `${sourceTree.title} (Cont.)`,
-        // Il nuovo albero parte dal FEN esatto della mossa di taglio
         startingFen: splitNode.fen,
         rootNodes: detachedChildren,
         activeNodeId: null,
         parentTreeId: sourceTree.id,
-        splitAtNodeId: nodeId
+        splitAtNodeId: nodeId,
       }
-
       this.trees.push(newTree)
-      return newTreeId
+      return newTree.id
     },
 
-    /**
-     * Rimuove dallo store tutti gli alberi che non sono presenti nel documento Tiptap
-     */
+    /** Rimuove gli alberi non presenti nel capitolo (chiamata al salvataggio) */
     cleanOrphanTrees(activeTreeIds: string[]) {
-      const activeSet = new Set(activeTreeIds)
-
-      // Filtra gli alberi mantenendo solo quelli con ID presente nell'array attivo
-      const initialCount = this.trees.length
-      this.trees = this.trees.filter(tree => activeSet.has(tree.id))
-
-      const removedCount = initialCount - this.trees.length
-      if (removedCount > 0) {
-        console.log(`[chessTreeStore] Rimosse ${removedCount} partite orfane dallo store.`)
-      }
-    }
-
-
-  }
-});
+      const keep = new Set(activeTreeIds)
+      this.trees = this.trees.filter(t => keep.has(t.id))
+      if (this.activeTreeId && !keep.has(this.activeTreeId)) this.deactivateTree()
+    },
+  },
+})

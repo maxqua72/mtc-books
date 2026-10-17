@@ -1,5 +1,6 @@
 <template>
-  <div class="chessboard-outer flex items-center justify-center bg-neutral-900 shadow-xl rounded-sm">
+  <div class="chessboard-outer flex items-center justify-center bg-neutral-900 shadow-xl rounded-sm"
+    :class="{ linked }">
     <!-- Div bersaglio di Chessground centrato al pixel -->
     <div 
       ref="boardElement" 
@@ -9,7 +10,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { Chessground } from 'chessground'
 import type { Api } from 'chessground/api'
 import type { Key } from 'chessground/types'
@@ -18,6 +19,7 @@ const props = defineProps<{
   fen: string
   turnColor: 'white' | 'black'
   dests: Map<Key, Key[]>
+  linked?: boolean   // modalità albero: bordo azzurro
 }>()
 
 const emit = defineEmits<{
@@ -132,6 +134,9 @@ defineExpose({ redraw: remeasure, resync })
 }
 :deep(cg-container) {
     outline: 2px solid black;
+}
+.chessboard-outer.linked :deep(cg-container) {
+    outline-color: #3b82f6;
 }
 
 </style>

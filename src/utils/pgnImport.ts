@@ -2,8 +2,10 @@ import { Chess } from 'chess.js'
 import { parsePgn, parseComment } from 'chessops/pgn'
 import type { Game, PgnNodeData, ChildNode } from 'chessops/pgn'
 import type { ChessMoveNode, ChessTree } from '../stores/chessTreeStore'
+import { STANDARD_FEN } from './fen'
 
-const STANDARD_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+export { normalizeFen, samePosition } from './fen'
+
 const MAX_NODES = 20000
 const MAX_DEPTH = 2000
 const MAX_WARNINGS = 50
@@ -14,6 +16,7 @@ export interface PgnGameInfo {
   title: string
   result: string
   startFen: string
+  header: Record<string, string>   // tag PGN della partita
   problem?: string           // se presente, la partita non è importabile
   game: Game<PgnNodeData>
 }
@@ -35,13 +38,6 @@ const escapeHtml = (s: string) =>
 export const nodeLabel = (n: ChessMoveNode) =>
   `${n.moveNumber}${n.color === 'w' ? '.' : '...'} ${n.san}`
 
-export const normalizeFen = (fen: string) => {
-  try { return new Chess(fen).fen() } catch { return fen }
-}
-
-/** Stessa posizione (pezzi, turno, arrocchi, en passant), ignorando i contatori delle mosse */
-export const samePosition = (a: string, b: string) =>
-  normalizeFen(a).split(' ').slice(0, 4).join(' ') === normalizeFen(b).split(' ').slice(0, 4).join(' ')
 
 // ---------------------------------------------------------------------------
 // Lettura del testo PGN
@@ -54,7 +50,7 @@ function toInfo(game: Game<PgnNodeData>, index: number): PgnGameInfo {
   const black = clean(header('Black'))
   const event = clean(header('Event'))
   const players = white || black ? `${white || '?'} – ${black || '?'}` : ''
-  const title = [players, event].filter(Boolean).join(', ') || `Partita ${index + 1}`
+  const title = [players, event].filter(Boolean).join(', ') || `Albero ${index + 1}`
 
   let problem: string | undefined
   const variant = header('Variant').toLowerCase()
@@ -72,10 +68,15 @@ function toInfo(game: Game<PgnNodeData>, index: number): PgnGameInfo {
     }
   }
 
-  return { index, title, result: clean(header('Result')), startFen, problem, game }
+  const tags: Record<string, string> = {}
+  for (const [k, v] of game.headers) {
+    if (v.trim() !== '') tags[k] = v.slice(0, 500)
+  }
+
+  return { index, title, result: clean(header('Result')), startFen, header: tags, problem, game }
 }
 
-export function parsePgnText(text: string): { games: PgnGameInfo[]; error?: string } {
+export function parsePgnText(text: string): { games: PgnGameInfo[]; empty?: number; error?: string } {
   if (text.length > MAX_TEXT_LENGTH) {
     return { games: [], error: 'Il testo è troppo grande (massimo 5 MB).' }
   }
@@ -88,12 +89,13 @@ export function parsePgnText(text: string): { games: PgnGameInfo[]; error?: stri
   }
 
   const infos: PgnGameInfo[] = []
+  let empty = 0
   for (const game of games) {
-    if (game.moves.children.length === 0) continue   // scarta le partite senza mosse
+    if (game.moves.children.length === 0) { empty++; continue }   // partite senza mosse: contate, non importate
     infos.push(toInfo(game, infos.length))
   }
   if (infos.length === 0) return { games: [], error: 'Nessuna mossa trovata nel testo.' }
-  return { games: infos }
+  return { games: infos, empty }
 }
 
 // ---------------------------------------------------------------------------
@@ -204,7 +206,8 @@ export function buildTreeFromGame(info: PgnGameInfo): { tree: ChessTree; stats: 
     title: info.title,
     startingFen: info.startFen,
     rootNodes,
-    activeNodeId: null
+    activeNodeId: null,
+    ...(Object.keys(info.header).length ? { header: info.header } : {})
   }
   return { tree, stats: ctx.stats }
 }

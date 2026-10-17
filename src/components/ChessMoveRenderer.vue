@@ -124,18 +124,12 @@ const selectMove = (nodeId: string) => {
     selection.removeAllRanges()
   }
 
-  if (treeStore.activeTreeId !== props.treeId) {
-    treeStore.activeTreeId = props.treeId
-  }
-  treeStore.setActiveNode(nodeId)
+  treeStore.selectNode(props.treeId, nodeId)
 }
 
 const activateThisTree = (nodeId: string) => {
-  if (treeStore.activeTreeId !== props.treeId) {
-    treeStore.activeTreeId = props.treeId
-  }
-  if (treeStore.activeNodeId !== nodeId) {
-    treeStore.setActiveNode(nodeId)
+  if (treeStore.activeTreeId !== props.treeId || treeStore.activeNodeId !== nodeId) {
+    treeStore.selectNode(props.treeId, nodeId)
   }
 }
 

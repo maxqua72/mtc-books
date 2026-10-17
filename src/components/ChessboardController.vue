@@ -1,29 +1,22 @@
 <template>
   <div class="w-[400px] flex flex-col items-center gap-6"
     @mouseenter="isPointerOver = true" @mouseleave="isPointerOver = false">
-    <p v-if="treeStore.isRecordingMoves && !treeStore.currentTree"
-      class="text-xs text-amber-600 text-center">
-      Nessuna partita selezionata: le mosse non vengono registrate.
-      Clicca un blocco partita nel testo oppure creane uno nuovo.
-    </p>
 
-    <!-- Componente Scacchiera Grafica -->
     <!-- Scacchiera con i comandi di navigazione subito sotto -->
     <div class="flex flex-col items-center gap-3">
-      <ChessboardView ref="chessboardRef" :fen="treeStore.activeFen" :turn-color="currentTurnColor" :dests="playableDests"
-        @move="handlePhysicsMove" />
+      <ChessboardView ref="chessboardRef" :fen="treeStore.activeFen" :turn-color="currentTurnColor"
+        :dests="playableDests" :linked="!!treeStore.currentTree" @move="handlePhysicsMove" />
       <ChessboardNavigation />
     </div>
 
-    <!-- Componente Console -->
     <ChessboardConsole :current-fen="treeStore.activeFen" :last-move="lastMoveNotation" @reset="resetBoard"
       @insert-diagram="insertDiagramIntoText" @delete-branch="deleteActiveBranch" @update-fen="handleManualFenUpdate"
-       />
+      @new-tree="newTreeHere" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { Chess } from 'chess.js'
 import type { Key } from 'chessground/types'
 
@@ -33,13 +26,14 @@ import ChessboardNavigation from './chessboard/ChessboardNavigation.vue'
 
 import { useChessBookStore } from '../stores/chessBookStore'
 import { useChessTreeStore, type ChessMoveNode } from '../stores/chessTreeStore'
+import { usePgnImportStore } from '../stores/pgnImportStore'
 
 const chess = new Chess()
 const bookStore = useChessBookStore()
 const treeStore = useChessTreeStore()
+const pgnStore = usePgnImportStore()
 
 const lastMoveNotation = ref<string>('Nessuna')
-
 const chessboardRef = ref()
 
 const formatNodeLabel = (node: ChessMoveNode) =>
@@ -47,13 +41,13 @@ const formatNodeLabel = (node: ChessMoveNode) =>
 
 // ---------------------------------------------------------------------------
 // Tastiera: navigazione nell'albero (attiva solo con il mouse sopra scacchiera/console)
+// In modalità libera le azioni dello store non hanno effetto.
 // ---------------------------------------------------------------------------
 const isPointerOver = ref(false)
 
 const onKeydown = (e: KeyboardEvent) => {
   if (!isPointerOver.value || e.ctrlKey || e.metaKey || e.altKey) return
 
-  // Non interferire con la scrittura (editor, commenti, campi FEN/PGN)
   const target = e.target as HTMLElement | null
   if (target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return
 
@@ -66,49 +60,33 @@ const onKeydown = (e: KeyboardEvent) => {
     case 'End':        treeStore.goToEnd(); break
     default: return
   }
-  e.preventDefault()
+  if (treeStore.currentTree) e.preventDefault()   // in modalità libera lo scroll resta libero
 }
 
-// Sincronizza chess.js con lo store all'avvio e registra la tastiera
 onMounted(() => {
   chess.load(treeStore.activeFen)
   window.addEventListener('keydown', onKeydown)
-
-  setTimeout(() => {
-    chessboardRef.value?.redraw()
-  }, 100)
+  setTimeout(() => chessboardRef.value?.redraw(), 100)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown)
 })
 
-// Calcola il turno basandosi esplicitamente sul FEN attivo dello store
 const currentTurnColor = computed(() => {
-  // Se non c'è ancora un FEN, default bianco
-  if (!treeStore.activeFen) return 'white'
-
-  // Il FEN ha i turni indicati dopo il primo spazio (es: "rnb... w KQkq -")
-  const tokens = treeStore.activeFen.split(' ')
-  if (tokens.length > 1) {
-    return tokens[1] === 'w' ? 'white' : 'black'
-  }
-
-  // Fallback sull'istanza chess locale
+  const tokens = (treeStore.activeFen || '').split(' ')
+  if (tokens.length > 1) return tokens[1] === 'w' ? 'white' : 'black'
   return chess.turn() === 'w' ? 'white' : 'black'
 })
 
-// Riconfigura le mosse legali per Chessground ancorandole alla reattività del FEN dello store
+// Mosse legali per Chessground, ancorate alla reattività del FEN dello store
 const playableDests = computed(() => {
-  // Forza la dipendenza reattiva sul FEN dello store
   const currentFen = treeStore.activeFen
-
-  // Sincronizziamo al volo l'istanza locale prima del calcolo per evitare lag di watcher
   if (currentFen && chess.fen() !== currentFen) {
     try {
       chess.load(currentFen)
     } catch (e) {
-      console.error("[BoardController] Errore sincronizzazione computed FEN:", e)
+      console.error('[BoardController] Errore sincronizzazione FEN:', e)
     }
   }
 
@@ -120,43 +98,28 @@ const playableDests = computed(() => {
   return dests
 })
 
-// Quando l'utente esegue una mossa fisica sulla scacchiera
+// Mossa fisica dell'utente:
+// - modalità albero: registrata (o navigazione al nodo esistente se la mossa c'è già)
+// - modalità libera: cambia solo la posizione, non si scrive in nessun albero
 const handlePhysicsMove = (orig: Key, dest: Key) => {
   try {
-    // 1. Convalida ed esegui la mossa localmente per ricavare la stringa SAN
     const moveData = chess.move({ from: orig, to: dest, promotion: 'q' })
-    const newFen = chess.fen()
 
-    // 2. La mossa esiste già tra le prosecuzioni del nodo attivo (linea principale o variante):
-    //    si naviga fin lì, anche con la registrazione spenta
-    const existing = treeStore.findChildBySan(moveData.san)
-    if (existing) {
-      treeStore.setActiveNode(existing.id)
-      lastMoveNotation.value = formatNodeLabel(existing)
+    if (treeStore.currentTree) {
+      const result = treeStore.addMove(moveData.san)
+      if (!result) {
+        chess.load(treeStore.activeFen)
+        chessboardRef.value?.resync()
+        return
+      }
+      lastMoveNotation.value = formatNodeLabel(result.node)
       return
     }
 
-    // 3. Mossa nuova: si registra solo con registrazione accesa e un albero attivo.
-    //    Altrimenti la scacchiera funziona in modalità libera (aggiorna solo la posizione)
-    const canRecord = treeStore.isRecordingMoves && !!treeStore.currentTree
-    if (!canRecord) {
-      treeStore.activeFen = newFen
-      lastMoveNotation.value = moveData.san
-      return
-    }
-
-    // 4. Registra la mossa nell'albero dello store dedicato
-    const result = treeStore.addMove(moveData.san, newFen)
-    if (!result) {
-      chess.load(treeStore.activeFen)     // riallinea chess.js allo store
-      chessboardRef.value?.resync()       // riporta il pezzo dov'era
-      return
-    }
-    lastMoveNotation.value = formatNodeLabel(result.node)
-
+    treeStore.setBoardFen(chess.fen())
+    lastMoveNotation.value = moveData.san
   } catch (error) {
-    console.warn("[BoardController] Mossa illegale tentata su chess.js:", error)
-    // Riallinea chess.js allo store e riporta il pezzo sulla scacchiera dov'era
+    console.warn('[BoardController] Mossa illegale tentata su chess.js:', error)
     chess.load(treeStore.activeFen)
     chessboardRef.value?.resync()
   }
@@ -167,85 +130,45 @@ watch(() => treeStore.activeFen, (newFen) => {
   if (chess.fen() !== newFen) {
     try {
       chess.load(newFen)
-      // Dopo load() la cronologia di chess.js è vuota: l'etichetta si ricava dal nodo attivo
       lastMoveNotation.value = treeStore.currentNode
         ? formatNodeLabel(treeStore.currentNode)
         : 'Nessuna'
     } catch (e) {
-      console.error("[BoardController] Errore nel caricamento del FEN dello store:", e)
+      console.error('[BoardController] Errore nel caricamento del FEN dello store:', e)
     }
   }
 }, { immediate: true })
 
-// Riallinea la scacchiera quando riattivi la registrazione, altrimenti la posizione
-// libera resta e le nuove mosse si agganciano al nodo sbagliato
-watch(() => treeStore.isRecordingMoves, (on) => {
-  if (on) treeStore.setActiveNode(treeStore.activeNodeId)
-})
-
 const resetBoard = () => {
-  chess.reset()
+  treeStore.resetPosition()
   lastMoveNotation.value = 'Nessuna'
-  treeStore.setActiveNode(null)
 }
 
-// Inserisce il diagramma statico nell'editor (Metodo originale mantenuto)
+// Diagramma statico nell'editor: la posizione è sempre treeStore.activeFen
 const insertDiagramIntoText = () => {
   bookStore.updateActiveFen(treeStore.activeFen)
   bookStore.triggerInsertDiagram()
 }
 
-// Rimuove la variante selezionata sia dall'albero che dal documento di testo
 const deleteActiveBranch = () => {
-  if (!treeStore.activeNodeId) return
-
-  // Avvia la cancellazione nell'albero. Lo store emetterà il segnale per il testo.
-  treeStore.deleteBranch(treeStore.activeNodeId)
+  if (treeStore.activeNodeId) treeStore.deleteBranch(treeStore.activeNodeId)
 }
 
+// FEN incollato: posizione libera, oppure posizione iniziale di un albero vuoto
 const handleManualFenUpdate = (newFen: string) => {
-  try {
-    // Validiamo il FEN caricandolo temporaneamente nell'istanza chess.js
-    chess.load(newFen)
-
-    // Se il FEN è valido, aggiorniamo il FEN attivo nello store di Pinia
-    treeStore.activeFen = chess.fen()
-
-    // Aggiorniamo la notazione dell'ultima mossa dato che la catena precedente si interrompe/cambia
-    lastMoveNotation.value = 'FEN Incollato'
-  } catch (error) {
-    console.error("[BoardController] Il FEN inserito non è valido:", error)
-    alert("Il FEN inserito non è valido. Verifica la stringa e riprova.")
-
-    // Forza il ripristino del FEN attuale nello store per ripulire l'input grafico errato
-    const current = treeStore.activeFen
-    treeStore.activeFen = ''
-    nextTick(() => {
-      treeStore.activeFen = current
-    })
+  const result = treeStore.setBoardFen(newFen)
+  if (result === 'invalid') {
+    alert('Il FEN inserito non è valido. Verifica la stringa e riprova.')
+  } else if (result === 'locked') {
+    alert('La posizione iniziale di questo albero è già fissata: per partire da un’altra posizione crea un nuovo albero.')
+  } else {
+    lastMoveNotation.value = 'Nessuna'
   }
 }
 
-// Gestione dedicata all'importazione del PGN
-/*
-const handlePgnImport = (pgnString: string) => {
-  try {
-    const testChess = new Chess()
-    testChess.loadPgn(pgnString)
-
-    if (testChess.history().length === 0) {
-      throw new Error("PGN vuoto o privo di mosse leggibili")
-    }
-
-    const success = treeStore.importPgn(pgnString)
-    if (success) {
-      lastMoveNotation.value = 'PGN Importato'
-    } else {
-      throw new Error("Errore durante l'inserimento sequenziale nell'albero")
-    }
-  } catch (error) {
-    console.error("[BoardController] Impossibile elaborare il PGN:", error)
-    alert("Il testo inserito non contiene una catena di mosse PGN valida.")
-  }
-}*/
+// Nuovo albero che parte dalla posizione corrente (anche da una mossa di un altro albero)
+const newTreeHere = () => {
+  const tree = treeStore.buildTree(`Albero #${treeStore.trees.length + 1}`)
+  pgnStore.addTrees([tree], pgnStore.canPlace('after-active') ? 'after-active' : 'cursor')
+}
 </script>

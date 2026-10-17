@@ -21,11 +21,6 @@ export interface SectionIndexItem {
     title: string
 }
 
-interface SectionData {
-    id: string
-    html: string
-    trees: ChessTree[] // <--- I tree di QUESTA specifica sezione
-}
 
 export interface BookMetadata {
     version: string

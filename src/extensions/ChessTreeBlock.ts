@@ -47,7 +47,7 @@ export const ChessTreeBlock = Node.create({
     ]
   },
 
-  renderHTML({ node, HTMLAttributes }) {
+  renderHTML({ HTMLAttributes }) {
   return [
     'div',
     mergeAttributes(HTMLAttributes, {
