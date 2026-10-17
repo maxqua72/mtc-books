@@ -21,6 +21,7 @@ export interface ChessTree {
   rootNodes: ChessMoveNode[]
   activeNodeId: string | null
   header?: Record<string, string>   // tag PGN della partita di origine (solo alberi importati)
+  showHeader?: boolean              // mostra l'intestazione nel documento
   parentTreeId?: string | null
   splitAtNodeId?: string | null
 }
@@ -298,6 +299,11 @@ export const useChessTreeStore = defineStore('chessTree', {
       this.activeTreeId = null
       this.activeNodeId = null
       this.activeFen = STANDARD_FEN
+    },
+
+    setShowHeader(treeId: string, value: boolean) {
+      const tree = this.trees.find(t => t.id === treeId)
+      if (tree) tree.showHeader = value
     },
 
     updateNodeComment(nodeId: string, comment: string | null) {

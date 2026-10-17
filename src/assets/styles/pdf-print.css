@@ -463,3 +463,35 @@ body {
 .cover-page { overflow: hidden !important; break-inside: avoid; }
 .cover-text { margin: 0 !important; }
 .cover-image { max-width: none !important; }
+
+/* ==========================================================================
+   INTESTAZIONE DELL'ALBERO (tag PGN: giocatori, evento, apertura)
+   ========================================================================== */
+.tree-pgn-header {
+  margin: 0 0 2mm 0 !important;
+  padding: 0 0 1.5mm 0 !important;
+  border-bottom: 0.3mm solid #171717 !important;
+  font-family: Lora, Georgia, Cambria, serif !important;
+  break-inside: avoid !important;
+  break-after: avoid !important;
+}
+
+.tree-pgn-header .tph-main {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: baseline !important;
+  gap: 4mm !important;
+  font-size: 11pt !important;
+  font-weight: bold !important;
+  color: #171717 !important;
+}
+
+.tree-pgn-header .tph-result { white-space: nowrap !important; }
+
+.tree-pgn-header .tph-event,
+.tree-pgn-header .tph-opening {
+  font-size: 9.5pt !important;
+  color: #525252 !important;
+}
+
+.tree-pgn-header .tph-opening { font-style: italic !important; }

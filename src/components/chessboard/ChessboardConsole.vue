@@ -9,6 +9,11 @@
           {{ tree ? `Albero: ${tree.title}` : 'Posizione libera' }}
         </div>
         <div class="text-[11px]" :class="tree ? 'text-blue-700' : 'text-neutral-500'">{{ statusSubtitle }}</div>
+        <label v-if="tree && hasHeader"
+          class="mt-1.5 flex items-center gap-1.5 text-[11px] text-blue-800 cursor-pointer select-none">
+          <input type="checkbox" :checked="!!tree.showHeader" @change="onToggleHeader" />
+          Mostra intestazione nel documento
+        </label>
       </div>
       <button v-if="tree" @click="treeStore.deactivateTree()"
         class="shrink-0 text-[11px] font-semibold text-blue-800 underline underline-offset-2 hover:text-blue-950"
@@ -90,6 +95,7 @@ import { ref, computed, nextTick } from 'vue'
 import { useChessTreeStore } from '../../stores/chessTreeStore'
 import { useChessBookStore } from '../../stores/chessBookStore'
 import PgnImportPanel from './PgnImportPanel.vue'
+import { hasDisplayableHeader } from '../../utils/pgnHeader'
 
 const props = defineProps<{
   currentFen: string
@@ -114,6 +120,12 @@ const fenLocked = computed(() => treeStore.isFenLocked)
 const showReset = computed(() => !tree.value || treeStore.isCurrentTreeEmpty)
 // Diagrammi e alberi si inseriscono solo in un capitolo (copertina e indice non hanno testo)
 const inChapter = computed(() => bookStore.activeSectionInfo?.type === 'chapter')
+
+// L'interruttore compare solo se l'albero ha tag PGN da mostrare
+const hasHeader = computed(() => !!tree.value && hasDisplayableHeader(tree.value.header))
+const onToggleHeader = (event: Event) => {
+  if (tree.value) treeStore.setShowHeader(tree.value.id, (event.target as HTMLInputElement).checked)
+}
 
 const statusSubtitle = computed(() => {
   if (!tree.value) return 'Le mosse non vengono registrate'

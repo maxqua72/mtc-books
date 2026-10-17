@@ -6,6 +6,7 @@ import {
   type PgnGameInfo
 } from '../utils/pgnImport'
 import { samePosition } from '../utils/fen'
+import { shouldShowHeaderByDefault } from '../utils/pgnHeader'
 
 export type PgnPlacement = 'after-active' | 'cursor' | 'end'
 export type PgnImportMode = 'new-tree' | 'into-active'
@@ -132,7 +133,10 @@ export const usePgnImportStore = defineStore('pgnImport', () => {
 
     if (empty) {
       if (treeStore.setBoardFen(targetFen) !== 'ok') return fail('Posizione iniziale del PGN non valida.')
-      if (!tree.header && Object.keys(game.header).length) tree.header = { ...game.header }
+      if (!tree.header && Object.keys(game.header).length) {
+        tree.header = { ...game.header }
+        tree.showHeader = shouldShowHeaderByDefault(game.header)
+      }
     }
 
     const siblings = parent ? parent.children : tree.rootNodes

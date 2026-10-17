@@ -9,9 +9,15 @@
       <div class="space-y-1.5">
         <div class="flex items-center justify-between">
           <span class="text-[11px] font-medium text-neutral-500">1. Incolla il PGN o carica un file</span>
-          <button class="text-[11px] font-semibold text-neutral-700 underline" @click="fileInput?.click()">
-            Carica file…
-          </button>
+          <div class="flex items-center gap-3">
+            <button v-if="text" class="text-[11px] font-semibold text-neutral-500 underline" @click="clearSource(false)"
+              title="Svuota il PGN incollato e l'elenco delle partite">
+              Pulisci
+            </button>
+            <button class="text-[11px] font-semibold text-neutral-700 underline" @click="fileInput?.click()">
+              Carica file…
+            </button>
+          </div>
           <input ref="fileInput" type="file" accept=".pgn,.txt,text/plain" class="hidden" @change="onFile" />
         </div>
         <textarea v-model="text" rows="4" placeholder='1. e4 e5 2. Nf3 (2. f4 exf4) 2... Nc6 {commento}'
@@ -107,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useChessTreeStore } from '../../stores/chessTreeStore'
 import { useChessBookStore } from '../../stores/chessBookStore'
 import { usePgnImportStore } from '../../stores/pgnImportStore'
@@ -136,16 +142,44 @@ const selectedIdx = ref<number[]>([])
 const result = ref<{ ok: boolean; message: string } | null>(null)
 
 let timer: number | undefined
+// Dopo un'importazione riuscita il pannello si svuota ma l'esito deve restare visibile:
+// durante lo svuotamento i watcher non lo azzerano
+let keepResult = false
+
 watch(text, (value) => {
   fileError.value = ''
-  result.value = null
+  if (!keepResult) result.value = null
   window.clearTimeout(timer)
+  if (!value.trim()) {
+    parsed.value = { games: [] }
+    selectedIdx.value = []
+    return
+  }
   timer = window.setTimeout(() => {
-    parsed.value = value.trim() ? parsePgnText(value) : { games: [] }
+    parsed.value = parsePgnText(value)
     selectedIdx.value = parsed.value.games.filter(g => !g.problem).map(g => g.index)
   }, 300)
 })
-watch(selectedIdx, () => { result.value = null })
+watch(selectedIdx, () => { if (!keepResult) result.value = null })
+
+/** Svuota testo, elenco e selezione. `keep`: conserva l'esito dell'ultima operazione. */
+const clearSource = (keep: boolean) => {
+  window.clearTimeout(timer)
+  keepResult = keep
+  text.value = ''
+  fileError.value = ''
+  parsed.value = { games: [] }
+  selectedIdx.value = []
+  if (!keep) result.value = null
+  nextTick(() => { keepResult = false })   // i watcher sono già passati
+}
+
+// L'esito resta finché non ci si sposta su un altro albero: il primo albero attivato
+// dall'importazione stessa non conta
+let importedTreeId: string | null = null
+watch(() => treeStore.activeTreeId, (id) => {
+  if (result.value && id !== importedTreeId) result.value = null
+})
 
 const onFile = async (e: Event) => {
   const input = e.target as HTMLInputElement
@@ -234,5 +268,8 @@ const doImport = () => {
   if (pgn.mode === 'new-tree' && n > CONFIRM_THRESHOLD &&
     !confirm(`Stai per creare ${n} alberi di mosse nel capitolo: l’editor potrebbe rallentare. Continuare?`)) return
   result.value = pgn.runImport(selectedGames.value, parsed.value.empty ?? 0)
+  importedTreeId = treeStore.activeTreeId
+  // Riuscita: il PGN non serve più. Fallita: resta tutto, così si corregge senza reincollare.
+  if (result.value.ok) clearSource(true)
 }
 </script>

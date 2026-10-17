@@ -3,6 +3,7 @@ import { parsePgn, parseComment } from 'chessops/pgn'
 import type { Game, PgnNodeData, ChildNode } from 'chessops/pgn'
 import type { ChessMoveNode, ChessTree } from '../stores/chessTreeStore'
 import { STANDARD_FEN } from './fen'
+import { shouldShowHeaderByDefault } from './pgnHeader'
 
 export { normalizeFen, samePosition } from './fen'
 
@@ -207,7 +208,9 @@ export function buildTreeFromGame(info: PgnGameInfo): { tree: ChessTree; stats: 
     startingFen: info.startFen,
     rootNodes,
     activeNodeId: null,
-    ...(Object.keys(info.header).length ? { header: info.header } : {})
+    ...(Object.keys(info.header).length
+      ? { header: info.header, showHeader: shouldShowHeaderByDefault(info.header) }
+      : {})
   }
   return { tree, stats: ctx.stats }
 }

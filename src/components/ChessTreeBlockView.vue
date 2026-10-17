@@ -10,6 +10,15 @@
       </button>
     </div>
 
+    <div v-if="headerView" class="tree-pgn-header" contenteditable="false">
+      <div v-if="headerView.players || headerView.result" class="tph-main">
+        <span class="tph-players">{{ headerView.players }}</span>
+        <span v-if="headerView.result" class="tph-result">{{ headerView.result }}</span>
+      </div>
+      <div v-if="headerView.event" class="tph-event">{{ headerView.event }}</div>
+      <div v-if="headerView.opening" class="tph-opening">{{ headerView.opening }}</div>
+    </div>
+
     <div class="block-content">
       <!-- Blocco senza albero nello store: non attivabile, nessun albero vuoto creato di nascosto -->
       <div v-if="!currentTree" class="empty-tree-placeholder is-orphan">
@@ -33,6 +42,7 @@ import { computed } from 'vue'
 import { useChessTreeStore } from '../stores/chessTreeStore'
 import { usePgnImportStore } from '../stores/pgnImportStore'
 import ChessMoveRenderer from './ChessMoveRenderer.vue'
+import { getHeaderView } from '../utils/pgnHeader'
 
 defineOptions({
   name: 'ChessTreeBlockView'
@@ -59,6 +69,12 @@ const activateTree = () => {
 }
 
 const isActive = computed(() => treeStore.activeTreeId === props.node.attrs.treeId)
+
+// Intestazione ricavata dai tag PGN (solo se l'albero la ha e l'interruttore è acceso)
+const headerView = computed(() => {
+  const tree = currentTree.value
+  return tree?.showHeader ? getHeaderView(tree.header) : null
+})
 
 const onMouseDown = (event: MouseEvent) => {
   const wrapper = event.currentTarget as HTMLElement
@@ -209,6 +225,27 @@ const deleteBlock = () => {
   border-color: #fca5a5;
   background-color: #fef2f2;
 }
+
+/* Intestazione ricavata dai tag PGN (le stesse classi hanno le regole di stampa in pdf-print.css) */
+.tree-pgn-header {
+  margin: 0 0 6px;
+  padding: 0 0 4px;
+  border-bottom: 1px solid #d4d4d4;
+  font-family: Lora, Georgia, Cambria, serif;
+  user-select: none;
+}
+.tph-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-weight: 700;
+  font-size: 11pt;
+  color: #171717;
+}
+.tph-result { white-space: nowrap; }
+.tph-event { font-size: 9.5pt; color: #525252; }
+.tph-opening { font-size: 9.5pt; font-style: italic; color: #525252; }
 
 /* REGOLA PER LA STAMPA / ESPORTAZIONE PDF:
    Annulla completamente i margini negativi, i padding e nasconde l'interfaccia dell'hover */

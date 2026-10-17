@@ -156,7 +156,7 @@ export function sanitizeTrees(raw: unknown): ChessTree[] {
       id: t.id,
       title: (typeof t.title === 'string' ? t.title : '').slice(0, 200) || 'Albero',
       startingFen,
-      ...(header ? { header } : {}),
+      ...(header ? { header, showHeader: t.showHeader === true } : {}),
       rootNodes,
       activeNodeId: ctx.ids.has(t.activeNodeId) ? t.activeNodeId : null,
       parentTreeId: safeOptId(t.parentTreeId),
