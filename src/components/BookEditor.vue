@@ -23,7 +23,7 @@
         <!-- Inserimento della Toolbar Modulare -->
         <EditorToolbar v-if="editor" v-show="!isCoverActive" :editor="editor" :zoom="currentZoomOption"
             @update:zoom="handleZoomChange" @insert-tree-block="insertNewChessTreeBlock"
-            @split-tree-block="handleSplitTreeBlock" />
+            @split-tree-block="handleSplitTreeBlock" @paste-tree-block="pasteTreeBlock" />
 
         <!-- Copertina: una pagina fissa, non un documento di testo -->
         <CoverEditor v-if="isCoverActive && store.coverModel" v-model="coverProxy" class="flex-1 min-h-0"
@@ -92,6 +92,7 @@ import Focus from '@tiptap/extension-focus'
 import { TextStyle, Color } from '@tiptap/extension-text-style'
 import { usePdfStore, type ExportSection } from '../stores/pdfStore'
 import { usePgnImportStore, type PgnPlacement } from '../stores/pgnImportStore'
+import { isTreeClipMarker } from '../utils/treeClipboard'
 
 
 import pdfPrintStyles from '../assets/styles/pdf-print.css?raw'
@@ -266,6 +267,14 @@ const editor = useEditor({
             class: 'book-text-engine focus:outline-none max-w-none',
         },
         // Click nel testo fuori da alberi e diagrammi: si torna in modalità libera
+        // Ctrl+V dopo "Copia" o "Taglia" su un albero: incolla un nuovo blocco al cursore
+        handlePaste(_view, event) {
+            if (treeStore.clipboard && isTreeClipMarker(event.clipboardData?.getData('text/plain') ?? '')) {
+                pasteTreeBlock()
+                return true
+            }
+            return false
+        },
         handleClick(_view, _pos, event) {
             const target = event.target as HTMLElement | null
             if (target && !target.closest('.chess-tree-block-container, .chess-diagram-container')) {
@@ -293,6 +302,14 @@ const insertNewChessTreeBlock = () => {
     if (!editor.value || store.activeSectionInfo?.type !== 'chapter') return
     const tree = treeStore.buildTree(`Albero #${treeStore.trees.length + 1}`)
     pgnStore.addTrees([tree], 'end')
+}
+
+// Incolla l'albero copiato o tagliato (anche da un altro capitolo): nuovo albero indipendente, nel punto del cursore
+const pasteTreeBlock = () => {
+    if (!editor.value || store.activeSectionInfo?.type !== 'chapter') return
+    const tree = treeStore.cloneTreeFromClipboard()
+    if (!tree) return
+    pgnStore.addTrees([tree], 'cursor')
 }
 
 // 2. FONDAMENTALE: Reagisci al ripristino da IndexedDB e al cambio sezione

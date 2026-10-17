@@ -44,6 +44,28 @@ const findNode = (nodes: ChessMoveNode[] | undefined, id: string): ChessMoveNode
 // Tetto di nodi della cronologia temporanea: oltre, riparte dalla posizione corrente
 const SCRATCH_MAX_NODES = 2000
 
+// Copia profonda dei nodi con id nuovi (e parentId coerenti): due alberi non condividono mai nulla
+const cloneNodes = (nodes: ChessMoveNode[], parentId: string | null): ChessMoveNode[] =>
+  nodes.map(n => {
+    const id = newId('move')
+    return {
+      ...n,
+      id,
+      parentId,
+      ...(n.nags ? { nags: [...n.nags] } : {}),
+      children: cloneNodes(n.children, id),
+    }
+  })
+
+const cloneTree = (src: ChessTree, title: string): ChessTree => ({
+  id: newId('tree'),
+  title,
+  startingFen: src.startingFen,
+  rootNodes: cloneNodes(src.rootNodes, null),
+  activeNodeId: null,
+  ...(src.header ? { header: { ...src.header }, showHeader: src.showHeader === true } : {}),
+})
+
 const countNodes = (nodes: ChessMoveNode[]): number => {
   let total = 0
   const stack = [...nodes]
@@ -71,6 +93,9 @@ export const useChessTreeStore = defineStore('chessTree', {
     activeNodeId: null as string | null,
     activeFen: STANDARD_FEN,
     scratch: null as ChessTree | null,   // cronologia temporanea della modalità libera (mai salvata)
+    // Albero copiato o tagliato (istantanea): serve a incollarlo nello stesso capitolo o in un altro.
+    // Non fa parte del documento e non viene salvato.
+    clipboard: null as { mode: 'copy' | 'cut'; tree: ChessTree } | null,
   }),
 
   getters: {
@@ -130,6 +155,31 @@ export const useChessTreeStore = defineStore('chessTree', {
         rootNodes: [],
         activeNodeId: null,
       }
+    },
+
+    /** Memorizza un'istantanea dell'albero negli appunti interni. Il taglio rimuove il blocco dal chiamante. */
+    copyTree(treeId: string, mode: 'copy' | 'cut'): boolean {
+      const src = this.trees.find(t => t.id === treeId)
+      if (!src) return false
+      this.clipboard = { mode, tree: JSON.parse(JSON.stringify(src)) as ChessTree }
+      return true
+    },
+
+    /** Nuovo albero (id nuovi, non ancora nello store) a partire dagli appunti interni */
+    cloneTreeFromClipboard(): ChessTree | null {
+      const clip = this.clipboard
+      if (!clip) return null
+      const title = clip.mode === 'copy' ? `${clip.tree.title} (copia)` : clip.tree.title
+      return cloneTree(clip.tree, title)
+    },
+
+    /** Duplica un albero già nello store (blocco duplicato da un incolla nativo). Restituisce il nuovo id. */
+    duplicateTree(treeId: string): string | null {
+      const src = this.trees.find(t => t.id === treeId)
+      if (!src) return null
+      const copy = cloneTree(src, `${src.title} (copia)`)
+      this.trees.push(copy)
+      return copy.id
     },
 
     /** Nuova cronologia temporanea che parte da `fen` (modalità libera) */

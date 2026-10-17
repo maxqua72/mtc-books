@@ -5,6 +5,14 @@
     <!-- Header comandi stile Gmail: compare in posizione assoluta solo all'hover del blocco -->
     <div class="block-header">
       <span class="game-title">📊 {{ currentTree?.title || 'Albero di mosse' }}</span>
+      <button v-if="currentTree" @click.stop="copyBlock" class="action-btn"
+        :title="copied ? 'Copiato' : 'Copia l\'albero (poi Ctrl+V o «Incolla albero»)'">
+        <i :class="['fa-solid', copied ? 'fa-check' : 'fa-copy']"></i>
+      </button>
+      <button v-if="currentTree" @click.stop="cutBlock" class="action-btn"
+        title="Taglia l'albero (poi Ctrl+V o «Incolla albero»)">
+        <i class="fa-solid fa-scissors"></i>
+      </button>
       <button @click.stop="deleteBlock" class="delete-btn" title="Elimina il blocco albero">
         ✕
       </button>
@@ -38,11 +46,12 @@
 
 <script setup lang="ts">
 import { nodeViewProps, NodeViewWrapper } from '@tiptap/vue-3'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useChessTreeStore } from '../stores/chessTreeStore'
 import { usePgnImportStore } from '../stores/pgnImportStore'
 import ChessMoveRenderer from './ChessMoveRenderer.vue'
 import { getHeaderView } from '../utils/pgnHeader'
+import { writeTreeClipMarker } from '../utils/treeClipboard'
 
 defineOptions({
   name: 'ChessTreeBlockView'
@@ -89,6 +98,25 @@ const onMouseDown = (event: MouseEvent) => {
 
   event.preventDefault()          // il browser non sposta il cursore nel paragrafo vicino
   props.editor.commands.blur()    // niente focus nel testo: nessun paragrafo evidenziato
+}
+
+// Copia: istantanea dell'albero negli appunti interni; il blocco resta dov'è
+const copied = ref(false)
+const copyBlock = () => {
+  const id = props.node.attrs.treeId
+  if (!id || !treeStore.copyTree(id, 'copy')) return
+  void writeTreeClipMarker()
+  copied.value = true
+  setTimeout(() => { copied.value = false }, 1500)
+}
+
+// Taglia: istantanea + rimozione del blocco. L'albero resta nello store (come per l'eliminazione),
+// quindi Ctrl+Z ripristina il blocco con i suoi dati.
+const cutBlock = () => {
+  const id = props.node.attrs.treeId
+  if (!id || !treeStore.copyTree(id, 'cut')) return
+  void writeTreeClipMarker()
+  props.deleteNode()
 }
 
 // L'albero resta nello store (diventa orfano e viene ripulito al salvataggio): così Ctrl+Z ripristina anche i dati
@@ -186,6 +214,22 @@ const deleteBlock = () => {
 
 .delete-btn:hover {
   background-color: #fee2e2;
+}
+
+.action-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.action-btn:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
 }
 
 .block-content {

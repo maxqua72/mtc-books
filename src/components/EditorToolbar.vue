@@ -75,6 +75,13 @@
             <span>✂️</span> Dividi Blocco
         </button>
 
+        <!-- Incolla un albero copiato o tagliato (anche da un altro capitolo) -->
+        <button @mousedown.prevent @click="$emit('pasteTreeBlock')" :disabled="!treeStore.clipboard"
+            class="p-1.5 rounded text-xs font-medium text-neutral-600 hover:bg-neutral-200 transition flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            :title="treeStore.clipboard ? `Incolla l'albero «${treeStore.clipboard.tree.title}» nel punto del cursore` : 'Copia o taglia prima un albero di mosse'">
+            <span>📋</span> Incolla albero
+        </button>
+
         <!-- Riferimento a un diagramma -->
         <div class="relative">
             <button @mousedown.prevent @click="showRefMenu = !showRefMenu"
@@ -128,6 +135,7 @@ const props = defineProps<{
 defineEmits<{
     (e: 'insertTreeBlock'): void
     (e: 'splitTreeBlock'): void
+    (e: 'pasteTreeBlock'): void
     (e: 'update:zoom', zoom: string): void
 }>()
 
