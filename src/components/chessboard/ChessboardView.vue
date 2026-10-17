@@ -135,8 +135,18 @@ defineExpose({ redraw: remeasure, resync })
 :deep(cg-container) {
     outline: 2px solid black;
 }
+/*
 .chessboard-outer.linked :deep(cg-container) {
     outline-color: #3b82f6;
+}*/
+
+/* Tema della scacchiera: verde in modalità libera, marrone in modalità albero */
+.chessboard-outer :deep(cg-board) {
+  background-image: url('../../assets/themes/cb-theme-green.svg');
+  background-size: cover;
+}
+.chessboard-outer.linked :deep(cg-board) {
+  background-image: url('../../assets/themes/cb-theme-brown.svg');
 }
 
 </style>
