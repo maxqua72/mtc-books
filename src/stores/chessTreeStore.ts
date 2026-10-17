@@ -96,6 +96,7 @@ export const useChessTreeStore = defineStore('chessTree', {
     // Albero copiato o tagliato (istantanea): serve a incollarlo nello stesso capitolo o in un altro.
     // Non fa parte del documento e non viene salvato.
     clipboard: null as { mode: 'copy' | 'cut'; tree: ChessTree } | null,
+    boardFlipped: false,   // scacchiera (e diagrammi inseriti) con il Nero in basso
   }),
 
   getters: {
@@ -145,6 +146,10 @@ export const useChessTreeStore = defineStore('chessTree', {
   },
 
   actions: {
+    toggleBoardFlip() {
+      this.boardFlipped = !this.boardFlipped
+    },
+    
     /** Crea (senza inserirlo nello store né attivarlo) un albero che parte da `fen` */
     buildTree(title: string, fen?: string): ChessTree {
       const from = fen ?? this.activeFen   // il default va nel corpo: nei parametri `this` non è tipizzato

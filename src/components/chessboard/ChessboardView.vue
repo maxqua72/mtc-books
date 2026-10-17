@@ -18,6 +18,7 @@ import type { Key } from 'chessground/types'
 const props = defineProps<{
   fen: string
   turnColor: 'white' | 'black'
+  orientation?: 'white' | 'black'
   dests: Map<Key, Key[]>
   linked?: boolean   // modalità albero: bordo azzurro
 }>()
@@ -70,10 +71,11 @@ onMounted(() => {
   cgApi = Chessground(boardElement.value, {
     fen: props.fen,
     coordinates: true,
+    orientation: props.orientation ?? 'white',
     movable: { 
       color: props.turnColor, 
       free: false,
-      dests: props.dests
+      dests: props.dests,
     },
     events: { 
       move: (orig, dest) => emit('move', orig, dest) 
@@ -82,6 +84,8 @@ onMounted(() => {
 
   // Solo per i test dalla console del browser
   if (import.meta.env.DEV) (window as any).cgApi = cgApi
+
+  watch(() => props.orientation, (o) => cgApi?.set({ orientation: o ?? 'white' }))
 
   resizeObserver = new ResizeObserver(remeasure)
   resizeObserver.observe(boardElement.value)

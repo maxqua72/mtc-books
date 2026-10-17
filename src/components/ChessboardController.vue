@@ -5,7 +5,8 @@
     <!-- Scacchiera con i comandi di navigazione subito sotto -->
     <div class="flex flex-col items-center gap-3">
       <ChessboardView ref="chessboardRef" :fen="treeStore.activeFen" :turn-color="currentTurnColor"
-        :dests="playableDests" :linked="!!treeStore.currentTree" @move="handlePhysicsMove" />
+        :dests="playableDests" :linked="!!treeStore.currentTree"
+        :orientation="treeStore.boardFlipped ? 'black' : 'white'" @move="handlePhysicsMove" />
       <ChessboardNavigation />
     </div>
 

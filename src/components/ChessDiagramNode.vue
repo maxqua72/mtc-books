@@ -286,7 +286,7 @@ const boardString = computed(() => {
 
   return output
 }) */
-const boardString = computed(() => fenToBoardString(props.node.attrs.fen))
+const boardString = computed(() => fenToBoardString(props.node.attrs.fen, !!props.node.attrs.flipped))
 </script>
 
 <style scoped>

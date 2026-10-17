@@ -10,7 +10,7 @@ const STANDARD_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     chessDiagram: {
-      insertChessDiagram: (attributes: { fen: string }) => ReturnType
+      insertChessDiagram: (attributes: { fen: string; flipped?: boolean }) => ReturnType
     }
   }
 }
@@ -56,6 +56,11 @@ export const ChessDiagram = Node.create({
         },
         renderHTML: attributes => ({ 'data-align': attributes.align || 'center' }),
       },
+      flipped: {
+        default: false,
+        parseHTML: element => element.getAttribute('data-flipped') === 'true',
+        renderHTML: attributes => (attributes.flipped ? { 'data-flipped': 'true' } : {}),
+      },
       captionEditable: {
         default: true, // Di default la didascalia è attiva/editabile
       }
@@ -77,9 +82,9 @@ export const ChessDiagram = Node.create({
    * Genera l'HTML statico per Tiptap (usato durante .getHTML() e l'esportazione PDF).
    * Costruisce la scacchiera testuale in formato font direttamente dentro la struttura HTML.
    */
-  renderHTML({ HTMLAttributes }) {
+   renderHTML({ node, HTMLAttributes }) {
     const fen = HTMLAttributes.fen || ''
-    const boardText = fenToBoardString(fen)
+    const boardText = fenToBoardString(fen, !!node.attrs.flipped)
 
     // Determina a chi spetta la mossa ('white' o 'black')
     const fenParts = fen.trim().split(/\s+/)
@@ -125,7 +130,7 @@ export const ChessDiagram = Node.create({
         return chain()
           .insertContent({
             type: this.name,
-            attrs: { fen: options.fen },
+            attrs: { fen: options.fen, flipped: !!options.flipped },
             content: [{ type: 'text', text: 'Posizione dopo la mossa.' }]
           })
           .run()

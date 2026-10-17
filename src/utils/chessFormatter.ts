@@ -1,10 +1,9 @@
 // utils/chessFormatter.ts
 import { isValidFen } from './sanitize'
 
-export function fenToBoardString(fen: string): string {
+export function fenToBoardString(fen: string, flipped = false): string {
   if (!isValidFen(fen)) return ''
-  
-  const fenRows = fen.split(' ')[0].split('/')
+
   const keymap: Record<string, { light: string; dark: string }> = {
     'P': { light: 'p', dark: 'P' }, 'p': { light: 'o', dark: 'O' },
     'N': { light: 'n', dark: 'N' }, 'n': { light: 'm', dark: 'M' },
@@ -16,32 +15,35 @@ export function fenToBoardString(fen: string): string {
 
   const isDarkSquare = (row: number, col: number) => (row + col) % 2 === 1
 
-  let output = '1222222223\n'
-  const leftBorderCodes = [199, 198, 197, 196, 195, 194, 193, 192]
-
-  fenRows.forEach((fenRow: string, rowIndex: number) => {
-    let rowText = String.fromCharCode(leftBorderCodes[rowIndex])
-    let colIndex = 0
-
-    for (const char of fenRow) {
-      if (isNaN(Number(char))) {
-        const dark = isDarkSquare(rowIndex, colIndex)
-        rowText += dark ? keymap[char].dark : keymap[char].light
-        colIndex++
-      } else {
-        const emptyCount = Number(char)
-        for (let i = 0; i < emptyCount; i++) {
-          const dark = isDarkSquare(rowIndex, colIndex)
-          rowText += dark ? '+' : ' '
-          colIndex++
-        }
-      }
+  // Ogni traversa diventa 8 celle ('' = vuota), dall'alto in basso come nel FEN
+  let ranks: string[][] = fen.split(' ')[0].split('/').map(row => {
+    const cells: string[] = []
+    for (const ch of row) {
+      if (isNaN(Number(ch))) cells.push(ch)
+      else for (let i = 0; i < Number(ch); i++) cells.push('')
     }
+    return cells
+  })
+
+  let leftBorderCodes = [199, 198, 197, 196, 195, 194, 193, 192]
+  let bottomCoords = 'ÈÉÊËÌÍÎÏ'
+
+  if (flipped) {
+    ranks = ranks.reverse().map(r => r.reverse())
+    leftBorderCodes = leftBorderCodes.reverse()
+    bottomCoords = [...bottomCoords].reverse().join('')
+  }
+
+  let output = '1222222223\n'
+  ranks.forEach((cells, rowIndex) => {
+    let rowText = String.fromCharCode(leftBorderCodes[rowIndex])
+    cells.forEach((cell, colIndex) => {
+      const dark = isDarkSquare(rowIndex, colIndex)
+      rowText += cell ? (dark ? keymap[cell].dark : keymap[cell].light) : (dark ? '+' : ' ')
+    })
     output += rowText + '5\n'
   })
 
-  const bottomCoords = 'ÈÉÊËÌÍÎÏ'
   output += `7${bottomCoords}9`
-
   return output
 }
