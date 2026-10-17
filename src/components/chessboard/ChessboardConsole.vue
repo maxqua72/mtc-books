@@ -76,7 +76,7 @@
         Inserisci Diagramma
       </button>
 
-      <button v-if="treeStore.activeNodeId" @click="emit('deleteBranch')"
+      <button v-if="tree && treeStore.activeNodeId" @click="emit('deleteBranch')"
         class="py-2 px-3 bg-red-50 hover:bg-red-100 text-red-600 rounded text-xs transition uppercase font-bold border border-red-200"
         title="Elimina la mossa selezionata e tutto ciò che la segue">
         Elimina Variante
@@ -128,7 +128,7 @@ const onToggleHeader = (event: Event) => {
 }
 
 const statusSubtitle = computed(() => {
-  if (!tree.value) return 'Le mosse non vengono registrate'
+  if (!tree.value) return 'Mosse temporanee, non salvate nel documento'
   const node = treeStore.currentNode
   return node
     ? `dopo ${node.moveNumber}${node.color === 'w' ? '.' : '...'} ${node.san}`

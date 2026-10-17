@@ -41,7 +41,7 @@ const formatNodeLabel = (node: ChessMoveNode) =>
 
 // ---------------------------------------------------------------------------
 // Tastiera: navigazione nell'albero (attiva solo con il mouse sopra scacchiera/console)
-// In modalità libera le azioni dello store non hanno effetto.
+// Senza albero né cronologia temporanea le azioni dello store non hanno effetto.
 // ---------------------------------------------------------------------------
 const isPointerOver = ref(false)
 
@@ -60,7 +60,7 @@ const onKeydown = (e: KeyboardEvent) => {
     case 'End':        treeStore.goToEnd(); break
     default: return
   }
-  if (treeStore.currentTree) e.preventDefault()   // in modalità libera lo scroll resta libero
+  if (treeStore.workingTree) e.preventDefault()   // senza nulla da navigare lo scroll resta libero
 }
 
 onMounted(() => {
@@ -99,25 +99,19 @@ const playableDests = computed(() => {
 })
 
 // Mossa fisica dell'utente:
-// - modalità albero: registrata (o navigazione al nodo esistente se la mossa c'è già)
-// - modalità libera: cambia solo la posizione, non si scrive in nessun albero
+// - modalità albero: registrata nell'albero (o navigazione al nodo esistente se la mossa c'è già)
+// - modalità libera: registrata nella cronologia temporanea, che non viene mai salvata
 const handlePhysicsMove = (orig: Key, dest: Key) => {
   try {
     const moveData = chess.move({ from: orig, to: dest, promotion: 'q' })
 
-    if (treeStore.currentTree) {
-      const result = treeStore.addMove(moveData.san)
-      if (!result) {
-        chess.load(treeStore.activeFen)
-        chessboardRef.value?.resync()
-        return
-      }
-      lastMoveNotation.value = formatNodeLabel(result.node)
+    const result = treeStore.addMove(moveData.san)
+    if (!result) {
+      chess.load(treeStore.activeFen)
+      chessboardRef.value?.resync()
       return
     }
-
-    treeStore.setBoardFen(chess.fen())
-    lastMoveNotation.value = moveData.san
+    lastMoveNotation.value = formatNodeLabel(result.node)
   } catch (error) {
     console.warn('[BoardController] Mossa illegale tentata su chess.js:', error)
     chess.load(treeStore.activeFen)

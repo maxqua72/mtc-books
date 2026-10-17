@@ -41,10 +41,28 @@ const findNode = (nodes: ChessMoveNode[] | undefined, id: string): ChessMoveNode
   return null
 }
 
+// Tetto di nodi della cronologia temporanea: oltre, riparte dalla posizione corrente
+const SCRATCH_MAX_NODES = 2000
+
+const countNodes = (nodes: ChessMoveNode[]): number => {
+  let total = 0
+  const stack = [...nodes]
+  while (stack.length) {
+    const n = stack.pop()!
+    total++
+    if (n.children?.length) stack.push(...n.children)
+  }
+  return total
+}
+
 /**
- * Modello: la scacchiera è in modalità LIBERA (activeTreeId === null: non scrive mai)
- * oppure in modalità ALBERO (activeTreeId valorizzato: la posizione deriva dal nodo attivo,
- * o da startingFen se non c'è nodo, e ogni mossa nuova viene registrata).
+ * Modello: la scacchiera è in modalità LIBERA (activeTreeId === null) oppure in modalità ALBERO
+ * (activeTreeId valorizzato: la posizione deriva dal nodo attivo, o da startingFen se non c'è nodo).
+ *
+ * In modalità libera le mosse finiscono in un albero TEMPORANEO (`scratch`): serve solo a navigare
+ * con i pulsanti mentre si raggiunge una posizione. Non entra mai in `trees`, quindi non viene
+ * salvato (IndexedDB, .mtcbook) né esportato. Si azzera entrando in un albero del documento,
+ * scollegando, incollando un FEN, resettando o cambiando capitolo.
  */
 export const useChessTreeStore = defineStore('chessTree', {
   state: () => ({
@@ -52,11 +70,17 @@ export const useChessTreeStore = defineStore('chessTree', {
     activeTreeId: null as string | null,
     activeNodeId: null as string | null,
     activeFen: STANDARD_FEN,
+    scratch: null as ChessTree | null,   // cronologia temporanea della modalità libera (mai salvata)
   }),
 
   getters: {
     currentTree(): ChessTree | undefined {
       return this.trees.find(t => t.id === this.activeTreeId)
+    },
+
+    /** Albero su cui lavorano navigazione e registrazione: quello attivo, oppure la cronologia temporanea */
+    workingTree(): ChessTree | undefined {
+      return this.currentTree ?? this.scratch ?? undefined
     },
 
     /** Albero attivo senza mosse: la posizione iniziale è ancora modificabile */
@@ -72,20 +96,22 @@ export const useChessTreeStore = defineStore('chessTree', {
     findNodeById: () => findNode,
 
     currentNode(): ChessMoveNode | null {
-      if (!this.activeNodeId || !this.currentTree) return null
-      return findNode(this.currentTree.rootNodes, this.activeNodeId)
+      const tree = this.workingTree
+      if (!this.activeNodeId || !tree) return null
+      return findNode(tree.rootNodes, this.activeNodeId)
     },
 
     /** Prosecuzioni dalla posizione attiva: [0] = linea principale, le altre = varianti */
     currentChildren(): ChessMoveNode[] {
-      if (!this.currentTree) return []
-      if (this.activeNodeId === null) return this.currentTree.rootNodes
+      const tree = this.workingTree
+      if (!tree) return []
+      if (this.activeNodeId === null) return tree.rootNodes
       return this.currentNode?.children ?? []
     },
 
     /** Mosse alternative alla stessa altezza del nodo attivo (incluso il nodo stesso) */
     currentSiblings(): ChessMoveNode[] {
-      const tree = this.currentTree
+      const tree = this.workingTree
       const node = this.currentNode
       if (!tree || !node) return []
       if (node.parentId === null) return tree.rootNodes
@@ -106,32 +132,42 @@ export const useChessTreeStore = defineStore('chessTree', {
       }
     },
 
+    /** Nuova cronologia temporanea che parte da `fen` (modalità libera) */
+    startScratch(fen: string) {
+      this.scratch = this.buildTree('Cronologia temporanea', fen)
+      this.activeNodeId = null
+    },
+
     /** Modalità albero: la scacchiera si porta sul nodo attivo dell'albero */
     activateTree(treeId: string): boolean {
       const tree = this.trees.find(t => t.id === treeId)
       if (!tree) return false
+      this.scratch = null
       this.activeTreeId = treeId
       const saved = tree.activeNodeId
       this.setActiveNode(saved && findNode(tree.rootNodes, saved) ? saved : null)
       return true
     },
 
-    /** Modalità libera: la posizione sulla scacchiera resta dov'è */
+    /** Modalità libera: la posizione sulla scacchiera resta dov'è, la cronologia temporanea riparte da qui */
     deactivateTree() {
+      if (this.activeTreeId === null) return   // già libera: la cronologia temporanea non si tocca
       this.activeTreeId = null
       this.activeNodeId = null
+      this.scratch = null
     },
 
     /** Attiva l'albero e seleziona una sua mossa (click su una mossa nel documento) */
     selectNode(treeId: string, nodeId: string) {
       if (!this.trees.some(t => t.id === treeId)) return
+      this.scratch = null
       this.activeTreeId = treeId
       this.setActiveNode(nodeId)
     },
 
-    /** Naviga a un nodo dell'albero attivo (null = posizione iniziale). In modalità libera non fa nulla. */
+    /** Naviga a un nodo dell'albero di lavoro (null = posizione iniziale). Senza albero né cronologia non fa nulla. */
     setActiveNode(nodeId: string | null) {
-      const tree = this.currentTree
+      const tree = this.workingTree
       if (!tree) {
         this.activeNodeId = null
         return
@@ -153,6 +189,8 @@ export const useChessTreeStore = defineStore('chessTree', {
       const normalized = normalizeFen(fen)
       const tree = this.currentTree
       if (!tree) {
+        this.scratch = null          // nuovo punto di partenza: la cronologia temporanea si azzera
+        this.activeNodeId = null
         this.activeFen = normalized
         return 'ok'
       }
@@ -168,6 +206,8 @@ export const useChessTreeStore = defineStore('chessTree', {
     resetPosition() {
       const tree = this.currentTree
       if (!tree) {
+        this.scratch = null
+        this.activeNodeId = null
         this.activeFen = STANDARD_FEN
         return
       }
@@ -215,7 +255,14 @@ export const useChessTreeStore = defineStore('chessTree', {
      * Se la mossa esiste già tra i figli si naviga al nodo esistente.
      */
     addMove(san: string): { node: ChessMoveNode; isNew: boolean } | null {
-      const tree = this.currentTree
+      // Modalità libera: le mosse vanno nella cronologia temporanea (creata alla prima mossa,
+      // e ricreata dalla posizione corrente se supera il tetto di nodi)
+      if (!this.currentTree &&
+          (!this.scratch || countNodes(this.scratch.rootNodes) >= SCRATCH_MAX_NODES)) {
+        this.startScratch(this.activeFen)
+      }
+
+      const tree = this.workingTree
       if (!tree) return null
 
       const parent = this.currentNode
@@ -292,12 +339,14 @@ export const useChessTreeStore = defineStore('chessTree', {
       this.trees = [...newTrees]
       this.activeTreeId = null
       this.activeNodeId = null
+      this.scratch = null
     },
 
     resetStore() {
       this.trees = []
       this.activeTreeId = null
       this.activeNodeId = null
+      this.scratch = null
       this.activeFen = STANDARD_FEN
     },
 
