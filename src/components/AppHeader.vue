@@ -2,9 +2,11 @@
   <header class="h-14 bg-white border-b border-neutral-200 px-6 flex items-center justify-between shadow-sm shrink-0">
     <!-- Brand / Logo -->
     <div class="flex items-center gap-3">
+      <!-- 
       <div class="w-7 h-7 bg-black rounded flex items-center justify-center text-white font-serif font-black text-sm">
         M
-      </div>
+      </div>  -->
+      <img :src="logo" alt="MTC Book" class="w-auto h-10 object-contain" />
       <span class="text-md font-black text-neutral-950 tracking-tight uppercase">MTC Book</span>
       <span class="text-xs bg-neutral-100 text-neutral-500 px-2 py-0.5 rounded font-mono border border-neutral-200">
         v1.0.0
@@ -140,6 +142,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useChessBookStore } from '../stores/chessBookStore'
+import logo from '../assets/mtcbooks-logo.png'
 
 type ExportMode = 'chapter-server' | 'book-server'
 
