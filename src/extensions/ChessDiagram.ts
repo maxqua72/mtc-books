@@ -3,6 +3,7 @@ import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { VueNodeViewRenderer } from '@tiptap/vue-3'
 import { fenToBoardString } from '../utils/chessFormatter.ts'
 import { isValidFen } from '../utils/sanitize'
+import { cleanShapes, type BoardShape } from '../utils/shapes'
 import ChessDiagramNode from '../components/ChessDiagramNode.vue'
 
 const STANDARD_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
@@ -10,7 +11,7 @@ const STANDARD_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     chessDiagram: {
-      insertChessDiagram: (attributes: { fen: string; flipped?: boolean }) => ReturnType
+      insertChessDiagram: (attributes: { fen: string; flipped?: boolean; shapes?: BoardShape[] }) => ReturnType
     }
   }
 }
@@ -60,6 +61,22 @@ export const ChessDiagram = Node.create({
         default: false,
         parseHTML: element => element.getAttribute('data-flipped') === 'true',
         renderHTML: attributes => (attributes.flipped ? { 'data-flipped': 'true' } : {}),
+      },
+      // Frecce e marcatori (istantanea presa dalla scacchiera all'inserimento)
+      shapes: {
+        default: null,
+        parseHTML: element => {
+          try {
+            const list = cleanShapes(JSON.parse(element.getAttribute('data-shapes') || '[]'))
+            return list.length ? list : null
+          } catch {
+            return null
+          }
+        },
+        renderHTML: attributes =>
+          Array.isArray(attributes.shapes) && attributes.shapes.length
+            ? { 'data-shapes': JSON.stringify(attributes.shapes) }
+            : {},
       },
       captionEditable: {
         default: true, // Di default la didascalia è attiva/editabile
@@ -127,10 +144,11 @@ export const ChessDiagram = Node.create({
     return {
       insertChessDiagram: (options) => ({ chain }) => {
         if (!isValidFen(options.fen)) return false
+        const shapes = cleanShapes(options.shapes)
         return chain()
           .insertContent({
             type: this.name,
-            attrs: { fen: options.fen, flipped: !!options.flipped },
+            attrs: { fen: options.fen, flipped: !!options.flipped, shapes: shapes.length ? shapes : null },
             content: [{ type: 'text', text: 'Posizione dopo la mossa.' }]
           })
           .run()

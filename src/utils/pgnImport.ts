@@ -1,9 +1,11 @@
 import { Chess } from 'chess.js'
 import { parsePgn, parseComment } from 'chessops/pgn'
+import { makeSquare } from 'chessops/util'
 import type { Game, PgnNodeData, ChildNode } from 'chessops/pgn'
 import type { ChessMoveNode, ChessTree } from '../stores/chessTreeStore'
 import { STANDARD_FEN } from './fen'
 import { shouldShowHeaderByDefault } from './pgnHeader'
+import { cleanShapes, normalizeBrush, type BoardShape } from './shapes'
 
 export { normalizeFen, samePosition } from './fen'
 
@@ -122,6 +124,16 @@ const commentsToHtml = (strings?: string[]): string =>
     .map(t => escapeHtml(t).replace(/\s*\n\s*/g, ' '))
     .join(' ')
 
+// Frecce e cerchi dei commenti ([%cal Ge2e4] / [%csl Rd5]): i colori si riducono ai due dell'app
+const commentsToShapes = (strings?: string[]): BoardShape[] =>
+  (strings ?? []).flatMap(c =>
+    parseComment(c).shapes.map(s => ({
+      orig: makeSquare(s.from),
+      ...(s.from !== s.to ? { dest: makeSquare(s.to) } : {}),
+      brush: normalizeBrush(s.color)
+    }))
+  )
+
 function buildNodes(
   parentFen: string,
   parentId: string | null,
@@ -159,6 +171,10 @@ function buildNodes(
       commentsToHtml(child.data.comments)
     )
     const nags = (child.data.nags ?? []).filter(n => Number.isInteger(n))
+    const shapes = cleanShapes([
+      ...commentsToShapes(child.data.startingComments),
+      ...commentsToShapes(child.data.comments)
+    ])
 
     const node: ChessMoveNode = {
       id: randomId('move'),
@@ -171,6 +187,7 @@ function buildNodes(
       children: []
     }
     if (nags.length) node.nags = nags
+    if (shapes.length) node.shapes = shapes
 
     ctx.stats.moves++
     if (i > 0) ctx.stats.variations++
@@ -244,6 +261,7 @@ export function mergeNodes(target: ChessMoveNode[], incoming: ChessMoveNode[]): 
       continue
     }
     if (!existing.comment && inc.comment) existing.comment = inc.comment
+    if (!existing.shapes && inc.shapes) existing.shapes = inc.shapes
     if (inc.nags?.length) existing.nags = [...new Set([...(existing.nags ?? []), ...inc.nags])]
     inc.children.forEach(c => { c.parentId = existing.id })
     added += mergeNodes(existing.children, inc.children)

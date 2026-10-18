@@ -6,13 +6,14 @@
     <div class="flex flex-col items-center gap-3">
       <ChessboardView ref="chessboardRef" :fen="treeStore.activeFen" :turn-color="currentTurnColor"
         :dests="playableDests" :linked="!!treeStore.currentTree"
-        :orientation="treeStore.boardFlipped ? 'black' : 'white'" @move="handlePhysicsMove" />
+        :orientation="treeStore.boardFlipped ? 'black' : 'white'" :shapes="nodeShapes"
+        @move="handlePhysicsMove" @shapes="onShapes" />
       <ChessboardNavigation />
     </div>
 
     <ChessboardConsole :current-fen="treeStore.activeFen" :last-move="lastMoveNotation" @reset="resetBoard"
       @insert-diagram="insertDiagramIntoText" @delete-branch="deleteActiveBranch" @update-fen="handleManualFenUpdate"
-      @new-tree="newTreeHere" />
+      @new-tree="newTreeHere" @clear-shapes="clearShapes" />
   </div>
 </template>
 
@@ -28,6 +29,7 @@ import ChessboardNavigation from './chessboard/ChessboardNavigation.vue'
 import { useChessBookStore } from '../stores/chessBookStore'
 import { useChessTreeStore, type ChessMoveNode } from '../stores/chessTreeStore'
 import { usePgnImportStore } from '../stores/pgnImportStore'
+import type { BoardShape } from '../utils/shapes'
 
 const chess = new Chess()
 const bookStore = useChessBookStore()
@@ -139,9 +141,20 @@ const resetBoard = () => {
   lastMoveNotation.value = 'Nessuna'
 }
 
+// Frecce e marcatori: si salvano sulla mossa attiva (in modalità libera sono temporanei come la cronologia).
+// L'array vuoto è una costante, così la scacchiera non vede un "cambiamento" a ogni ricalcolo.
+const NO_SHAPES: BoardShape[] = []
+const nodeShapes = computed(() => treeStore.currentNode?.shapes ?? NO_SHAPES)
+const onShapes = (shapes: BoardShape[]) => treeStore.setNodeShapes(shapes)
+const clearShapes = () => {
+  treeStore.setNodeShapes([])
+  chessboardRef.value?.clearShapes()
+}
+
 // Diagramma statico nell'editor: la posizione è sempre treeStore.activeFen
 const insertDiagramIntoText = () => {
   bookStore.updateActiveFen(treeStore.activeFen)
+  bookStore.updateActiveShapes(chessboardRef.value?.getShapes() ?? [])
   bookStore.triggerInsertDiagram()
 }
 

@@ -4,7 +4,7 @@
     :style="{ '--diagram-size': currentSizePx + 'px' }">
 
       <!-- Spostiamo il menu dentro il wrapper per ancorarlo al testo reale -->
-      <div class="board-wrapper" contenteditable="false">
+      <div class="board-wrapper" contenteditable="false" style="position: relative">
 
         <!-- NUOVO: Etichetta Numero Diagramma (es. 1.1, 1.2) -->
         <div v-if="diagramNumber"
@@ -21,7 +21,7 @@
 
         <!-- Action Bar in stile Gmail a comparsa (in alto a destra del bordo scacchiera) -->
         <div class="diagram-actions-menu">
-          <!-- Bottone Dimensione Piccola -->
+          <!-- Riga 1: dimensione -->
           <button @click="setSizeLevel('small')" :class="{ active: sizeLevel === 'small' }"
             title="Dimensione piccola" class="action-btn">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -29,8 +29,6 @@
               <rect x="6" y="6" width="12" height="12" rx="1" />
             </svg>
           </button>
-
-          <!-- Bottone Dimensione Media -->
           <button @click="setSizeLevel('medium')" :class="{ active: sizeLevel === 'medium' }"
             title="Dimensione media" class="action-btn">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -38,8 +36,6 @@
               <rect x="4" y="4" width="16" height="16" rx="2" />
             </svg>
           </button>
-
-          <!-- Bottone Dimensione Grande -->
           <button @click="setSizeLevel('large')" :class="{ active: sizeLevel === 'large' }"
             title="Dimensione grande" class="action-btn">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -50,6 +46,7 @@
 
           <div class="action-divider"></div>
 
+          <!-- Riga 2: allineamento -->
           <button @click="setAlign('left')" :class="{ active: align === 'left' }"
             title="A sinistra: il testo scorre accanto" class="action-btn">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -77,7 +74,8 @@
 
           <div class="action-divider"></div>
 
-          <button @click="toggleOrFocusCaption" :class="{ active: isCaptionEditable }" title="Modifica didascalia"
+          <!-- Riga 3: didascalia, inversione, scacchiera -->
+          <button @click="toggleOrFocusCaption" :class="{ active: isCaptionEditable }" title="Modifica didascalia (Invio per confermare)"
             class="action-btn">
             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -85,8 +83,23 @@
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
           </button>
+          <button @click="toggleFlip" :class="{ active: flipped }"
+            title="Inverti il diagramma (Nero in basso)" class="action-btn">
+            <i class="fa-solid fa-arrows-rotate" style="font-size: 13px"></i>
+          </button>
+          <button @click="loadOnBoard" title="Carica la posizione sulla scacchiera" class="action-btn">
+            <i class="fa-solid fa-chess-board" style="font-size: 13px"></i>
+          </button>
 
-          <!-- Tasto di eliminazione (Icona Cestino) -->
+          <div class="action-divider"></div>
+
+          <!-- Riga 4: paragrafi attorno al blocco, eliminazione -->
+          <button @click="insertParagraph('before')" title="Inserisci un paragrafo sopra" class="action-btn">
+            <span style="font-size: 11px; font-weight: 700">¶↑</span>
+          </button>
+          <button @click="insertParagraph('after')" title="Inserisci un paragrafo sotto" class="action-btn">
+            <span style="font-size: 11px; font-weight: 700">¶↓</span>
+          </button>
           <button @click="deleteNode" class="action-btn delete-btn-icon" title="Elimina diagramma">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2">
@@ -96,6 +109,19 @@
         </div>
 
         <pre class="chess-pure-text">{{ boardString }}</pre>
+
+        <!-- Frecce e marcatori: il font Merida non li ha, quindi un SVG sopra la scacchiera (griglia 10x10:
+             bordo sinistro + 8 colonne + bordo destro; riga delle coordinate + 8 traverse + riga in basso).
+             Stili inline: nel PDF non arrivano gli stili scoped di questo componente. -->
+        <svg v-if="shapeItems.length" viewBox="0 0 10 10" preserveAspectRatio="none" aria-hidden="true"
+          :style="shapesSvgStyle">
+          <template v-for="(s, i) in shapeItems" :key="i">
+            <circle v-if="s.kind === 'circle'" :cx="s.cx" :cy="s.cy" r="0.42" fill="none" :stroke="s.color"
+              stroke-width="0.09" opacity="0.9" />
+            <polygon v-else :points="s.points" :fill="s.color" stroke="#ffffff" stroke-width="0.03"
+              stroke-linejoin="round" opacity="0.85" />
+          </template>
+        </svg>
       </div>
 
       <!-- Didascalia del diagramma -->
@@ -104,6 +130,7 @@
         :class="{ 'is-editing': isCaptionEditable }"
         :contenteditable="isCaptionEditable"
         @blur="disableCaptionEditing"
+        @keydown.enter="onCaptionEnter"
         placeholder="Diagramma X: inserisci didascalia..." />
     </div>
   </node-view-wrapper>
@@ -113,7 +140,10 @@
 import { ref, computed, nextTick } from 'vue'
 import { nodeViewProps, NodeViewWrapper, NodeViewContent } from '@tiptap/vue-3'
 import { useChessBookStore } from '../stores/chessBookStore'
-import { normalizeSizeLevel, diagramFontPx, type DiagramSizeLevel } from '../utils/diagramSizes'
+import { normalizeSizeLevel, diagramFontPx, MERIDA_ADVANCE_EM, type DiagramSizeLevel } from '../utils/diagramSizes'
+import { useChessTreeStore } from '../stores/chessTreeStore'
+import { isLegalFen } from '../utils/fen'
+import { cleanShapes, SHAPE_INK } from '../utils/shapes'
 import { fenToBoardString } from '../utils/chessFormatter'
 
 const store = useChessBookStore()
@@ -130,6 +160,16 @@ const isCaptionEditable = computed(() => {
 // 3. Quando l'utente clicca fuori dalla didascalia (blur), disattiviamo l'editing
 const disableCaptionEditing = () => {
   props.updateAttributes({ captionEditable: false })
+}
+
+// Invio nella didascalia = conferma. L'evento si ferma qui, prima di ProseMirror: altrimenti
+// lo split di blocco di default creerebbe un nuovo paragrafo. Maiusc+Invio (a capo) resta com'è.
+const onCaptionEnter = (event: KeyboardEvent) => {
+  if (event.isComposing || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return
+  event.preventDefault()
+  event.stopPropagation()
+  ;(event.currentTarget as HTMLElement | null)?.blur()
+  disableCaptionEditing()
 }
 
 // Funzione per attivare e mettere a fuoco la didascalia
@@ -159,6 +199,75 @@ const toggleOrFocusCaption = async () => {
     }
   }
 }
+
+// --- Inversione, caricamento sulla scacchiera, paragrafi attorno al blocco ---
+const treeStore = useChessTreeStore()
+const flipped = computed(() => !!props.node.attrs.flipped)
+const toggleFlip = () => props.updateAttributes({ flipped: !flipped.value })
+
+// Porta posizione e orientamento del diagramma sulla scacchiera, in modalità libera (nessun albero collegato)
+const loadOnBoard = () => {
+  const fen = props.node.attrs.fen as string
+  if (!isLegalFen(fen)) {
+    alert('La posizione di questo diagramma non è una posizione legale: impossibile caricarla.')
+    return
+  }
+  treeStore.deactivateTree()
+  treeStore.setBoardFen(fen)
+  treeStore.boardFlipped = flipped.value
+}
+
+const insertParagraph = (where: 'before' | 'after') => {
+  const pos = props.getPos()
+  if (typeof pos !== 'number') return
+  const at = where === 'before' ? pos : pos + props.node.nodeSize
+  props.editor.chain().insertContentAt(at, { type: 'paragraph' }).setTextSelection(at + 1).focus().run()
+}
+
+// --- Frecce e marcatori (SVG sopra il testo) ---
+// Unità = una casella. La casella (colonna c, traversa r dall'alto) ha il centro in (c + 1.5, r + 1.5)
+// perché la griglia ha un bordo a sinistra e una riga di bordo in alto. Con la scacchiera invertita si specchia.
+interface ShapeItem { kind: 'circle' | 'arrow'; color: string; cx: number; cy: number; points: string }
+
+const cellCenter = (square: string) => {
+  const file = square.charCodeAt(0) - 97
+  const rank = Number(square[1])
+  const col = flipped.value ? 7 - file : file
+  const row = flipped.value ? rank - 1 : 8 - rank
+  return { x: col + 1.5, y: row + 1.5 }
+}
+
+const arrowPoints = (from: { x: number; y: number }, to: { x: number; y: number }): string => {
+  const dx = to.x - from.x
+  const dy = to.y - from.y
+  const len = Math.hypot(dx, dy)
+  const ux = dx / len, uy = dy / len
+  const nx = -uy, ny = ux
+  const bodyHalf = 0.07, headHalf = 0.2, headLen = 0.38
+  const start = { x: from.x + ux * 0.25, y: from.y + uy * 0.25 }
+  const tip = { x: to.x - ux * 0.12, y: to.y - uy * 0.12 }
+  const base = { x: tip.x - ux * headLen, y: tip.y - uy * headLen }
+  const pt = (p: { x: number; y: number }, off: number, h: number) =>
+    `${(p.x + nx * off * h).toFixed(3)},${(p.y + ny * off * h).toFixed(3)}`
+  return [
+    pt(start, 1, bodyHalf), pt(base, 1, bodyHalf), pt(base, 1, headHalf), pt(tip, 0, 0),
+    pt(base, -1, headHalf), pt(base, -1, bodyHalf), pt(start, -1, bodyHalf)
+  ].join(' ')
+}
+
+const shapeItems = computed<ShapeItem[]>(() =>
+  cleanShapes(props.node.attrs.shapes).map((s): ShapeItem => {
+    const color = SHAPE_INK[s.brush]
+    const from = cellCenter(s.orig)
+    if (!s.dest) return { kind: 'circle', color, cx: from.x, cy: from.y, points: '' }
+    return { kind: 'arrow', color, cx: 0, cy: 0, points: arrowPoints(from, cellCenter(s.dest)) }
+  })
+)
+
+// La larghezza segue l'avanzamento reale del font (MERIDA_ADVANCE_EM), l'altezza è il line-height
+const shapesSvgStyle =
+  'position:absolute;left:0;top:0;pointer-events:none;overflow:visible;' +
+  `width:calc(var(--diagram-size) * ${MERIDA_ADVANCE_EM * 10});height:calc(var(--diagram-size) * 10);`
 
 const sizeLevel = computed<DiagramSizeLevel>(() => normalizeSizeLevel(props.node.attrs.size))
 const currentSizePx = computed(() => diagramFontPx(sizeLevel.value, store.metadata.pageFormat))
@@ -348,10 +457,10 @@ const boardString = computed(() => fenToBoardString(props.node.attrs.fen, !!prop
   position: absolute;
   /* Sposta il menu verso l'alto per allinearlo alla prima linea nera della scacchiera */
   top: 4px;
-  /* Avvicina il menu al bordo destro, riducendo la distanza precedente */
-  right: -12px;
-  display: flex;
-  flex-direction: column;
+  /* Fuori dalla scacchiera, a destra: 4 righe da 3 pulsanti */
+  left: calc(100% + 6px);
+  display: grid;
+  grid-template-columns: repeat(3, 28px);
   gap: 2px;
 
   background-color: #ffffff;
@@ -416,6 +525,7 @@ const boardString = computed(() => fenToBoardString(props.node.attrs.fen, !!prop
 }
 
 .action-divider {
+  grid-column: 1 / -1;
   height: 1px;
   background-color: #e5e5e5;
   margin: 2px 4px;

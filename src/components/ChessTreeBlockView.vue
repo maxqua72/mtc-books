@@ -5,6 +5,8 @@
     <!-- Header comandi stile Gmail: compare in posizione assoluta solo all'hover del blocco -->
     <div class="block-header">
       <span class="game-title">📊 {{ currentTree?.title || 'Albero di mosse' }}</span>
+      <button @click.stop="insertParagraph('before')" class="action-btn" title="Inserisci un paragrafo sopra">¶↑</button>
+      <button @click.stop="insertParagraph('after')" class="action-btn" title="Inserisci un paragrafo sotto">¶↓</button>
       <button v-if="currentTree" @click.stop="copyBlock" class="action-btn"
         :title="copied ? 'Copiato' : 'Copia l\'albero (poi Ctrl+V o «Incolla albero»)'">
         <i :class="['fa-solid', copied ? 'fa-check' : 'fa-copy']"></i>
@@ -98,6 +100,14 @@ const onMouseDown = (event: MouseEvent) => {
 
   event.preventDefault()          // il browser non sposta il cursore nel paragrafo vicino
   props.editor.commands.blur()    // niente focus nel testo: nessun paragrafo evidenziato
+}
+
+// Paragrafo sopra/sotto il blocco: i blocchi non si possono "attraversare" col cursore, serve un comando esplicito
+const insertParagraph = (where: 'before' | 'after') => {
+  const pos = props.getPos()
+  if (typeof pos !== 'number') return
+  const at = where === 'before' ? pos : pos + props.node.nodeSize
+  props.editor.chain().insertContentAt(at, { type: 'paragraph' }).setTextSelection(at + 1).focus().run()
 }
 
 // Copia: istantanea dell'albero negli appunti interni; il blocco resta dov'è

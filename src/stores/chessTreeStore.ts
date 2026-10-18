@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { Chess } from 'chess.js'
 import { STANDARD_FEN, isLegalFen, normalizeFen } from '../utils/fen'
+import { toggleNagInList } from '../utils/nags'
+import type { BoardShape } from '../utils/shapes'
 
 export interface ChessMoveNode {
   id: string
@@ -11,6 +13,7 @@ export interface ChessMoveNode {
   parentId: string | null
   comment: string | null
   nags?: number[]          // simboli di annotazione PGN (1 = !, 2 = ?, ...)
+  shapes?: BoardShape[]    // frecce e marcatori di casella disegnati su questa posizione
   children: ChessMoveNode[]
 }
 
@@ -53,6 +56,7 @@ const cloneNodes = (nodes: ChessMoveNode[], parentId: string | null): ChessMoveN
       id,
       parentId,
       ...(n.nags ? { nags: [...n.nags] } : {}),
+      ...(n.shapes ? { shapes: n.shapes.map(s => ({ ...s })) } : {}),
       children: cloneNodes(n.children, id),
     }
   })
@@ -148,6 +152,24 @@ export const useChessTreeStore = defineStore('chessTree', {
   actions: {
     toggleBoardFlip() {
       this.boardFlipped = !this.boardFlipped
+    },
+
+    /** Aggiunge/toglie un simbolo di annotazione (!, ?, +=, ...) a una mossa. I gruppi esclusivi si sostituiscono. */
+    toggleNag(nodeId: string, nag: number) {
+      const tree = this.workingTree
+      const node = tree ? findNode(tree.rootNodes, nodeId) : null
+      if (!node) return
+      const next = toggleNagInList(node.nags ?? [], nag)
+      if (next.length) node.nags = next
+      else delete node.nags
+    },
+
+    /** Frecce e marcatori della posizione attiva (senza mossa attiva restano solo sulla scacchiera) */
+    setNodeShapes(shapes: BoardShape[]) {
+      const node = this.currentNode
+      if (!node) return
+      if (shapes.length) node.shapes = shapes.map(s => ({ ...s }))
+      else delete node.shapes
     },
     
     /** Crea (senza inserirlo nello store né attivarlo) un albero che parte da `fen` */

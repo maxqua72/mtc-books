@@ -24,10 +24,17 @@
 
     <div class="flex items-center justify-between border-b border-neutral-100 pb-2">
       <span class="text-xs font-bold text-neutral-400 uppercase tracking-wider">Console Scacchiera</span>
-      <button v-if="showReset" @click="emit('reset')"
-        class="text-xs font-semibold text-neutral-500 hover:text-neutral-900 transition underline underline-offset-4">
-        Resetta Posizione
-      </button>
+      <div class="flex items-center gap-3">
+        <button @click="emit('clearShapes')"
+          class="text-xs font-semibold text-neutral-500 hover:text-neutral-900 transition underline underline-offset-4"
+          title="Frecce e cerchi: tasto destro sulla scacchiera (nero nel libro); con Maiusc o Ctrl (grigio nel libro)">
+          Cancella frecce
+        </button>
+        <button v-if="showReset" @click="emit('reset')"
+          class="text-xs font-semibold text-neutral-500 hover:text-neutral-900 transition underline underline-offset-4">
+          Resetta Posizione
+        </button>
+      </div>
     </div>
 
     <div class="grid grid-cols-3 gap-2 items-center">
@@ -36,6 +43,23 @@
         class="col-span-2 justify-self-start font-mono bg-neutral-100 border border-neutral-200 px-2 py-0.5 rounded text-xs text-neutral-800 font-bold">
         {{ lastMove }}
       </span>
+    </div>
+
+    <!-- Simboli di valutazione della mossa attiva -->
+    <div v-if="showNags" class="space-y-1.5">
+      <div v-for="g in NAG_GROUPS" :key="g.id">
+        <div class="text-[10px] font-medium text-neutral-400 mb-0.5">{{ g.title }}</div>
+        <div class="flex flex-wrap gap-1">
+          <button v-for="n in g.items" :key="n.code" @click="toggleNag(n.code)" :title="n.label"
+            :aria-pressed="activeNags.includes(n.code)"
+            class="min-w-[32px] h-7 px-1.5 rounded border text-xs font-bold transition"
+            :class="activeNags.includes(n.code)
+              ? 'bg-neutral-900 border-neutral-900 text-white'
+              : 'bg-white border-neutral-300 text-neutral-700 hover:bg-neutral-100'">
+            {{ n.symbol }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <div class="space-y-3">
@@ -96,6 +120,7 @@ import { useChessTreeStore } from '../../stores/chessTreeStore'
 import { useChessBookStore } from '../../stores/chessBookStore'
 import PgnImportPanel from './PgnImportPanel.vue'
 import { hasDisplayableHeader } from '../../utils/pgnHeader'
+import { NAG_GROUPS } from '../../utils/nags'
 
 const props = defineProps<{
   currentFen: string
@@ -108,6 +133,7 @@ const emit = defineEmits<{
   (e: 'deleteBranch'): void
   (e: 'updateFen', newFen: string): void
   (e: 'newTree'): void
+  (e: 'clearShapes'): void
 }>()
 
 const treeStore = useChessTreeStore()
@@ -125,6 +151,14 @@ const inChapter = computed(() => bookStore.activeSectionInfo?.type === 'chapter'
 const hasHeader = computed(() => !!tree.value && hasDisplayableHeader(tree.value.header))
 const onToggleHeader = (event: Event) => {
   if (tree.value) treeStore.setShowHeader(tree.value.id, (event.target as HTMLInputElement).checked)
+}
+
+// I simboli si assegnano alla mossa attiva di un albero del documento
+const showNags = computed(() => !!tree.value && !!treeStore.currentNode)
+const activeNags = computed(() => treeStore.currentNode?.nags ?? [])
+const toggleNag = (code: number) => {
+  const id = treeStore.activeNodeId
+  if (id) treeStore.toggleNag(id, code)
 }
 
 const statusSubtitle = computed(() => {

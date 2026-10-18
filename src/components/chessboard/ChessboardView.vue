@@ -14,6 +14,8 @@ import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { Chessground } from 'chessground'
 import type { Api } from 'chessground/api'
 import type { Key } from 'chessground/types'
+import type { DrawShape } from 'chessground/draw'
+import { cleanShapes, type BoardShape } from '../../utils/shapes'
 
 const props = defineProps<{
   fen: string
@@ -21,10 +23,12 @@ const props = defineProps<{
   orientation?: 'white' | 'black'
   dests: Map<Key, Key[]>
   linked?: boolean   // modalità albero: bordo azzurro
+  shapes?: BoardShape[]   // frecce e marcatori della posizione mostrata
 }>()
 
 const emit = defineEmits<{
   (e: 'move', orig: Key, dest: Key): void
+  (e: 'shapes', shapes: BoardShape[]): void   // l'utente ha disegnato o tolto una freccia/un cerchio
 }>()
 
 const boardElement = ref<HTMLElement | null>(null)
@@ -45,6 +49,17 @@ const updateBoard = () => {
 }
 
 const resync = () => cgApi?.set({ fen: props.fen, ...boardConfig() })
+
+const toDrawShapes = (shapes?: BoardShape[]): DrawShape[] =>
+  (shapes ?? []).map(s => ({ orig: s.orig as Key, ...(s.dest ? { dest: s.dest as Key } : {}), brush: s.brush }))
+
+// Cambiare il FEN azzera le forme di Chessground: vanno riapplicate dopo (questo watcher viene dopo updateBoard)
+const syncShapes = () => cgApi?.setShapes(toDrawShapes(props.shapes))
+watch([() => props.fen, () => props.shapes], syncShapes)
+
+/** Forme attualmente sulla scacchiera, normalizzate (servono anche quando la posizione non ha un nodo) */
+const getShapes = (): BoardShape[] => (cgApi ? cleanShapes(cgApi.state.drawable.shapes) : [])
+const clearShapes = () => cgApi?.setShapes([])
 
 watch(() => props.fen, updateBoard)
 watch(() => props.dests, updateBoard)
@@ -79,6 +94,12 @@ onMounted(() => {
     },
     events: { 
       move: (orig, dest) => emit('move', orig, dest) 
+    },
+    drawable: {
+      shapes: toDrawShapes(props.shapes),
+      // un clic normale (selezionare un pezzo) non deve cancellare le frecce salvate: c'è il pulsante "Cancella frecce"
+      eraseOnClick: false,
+      onChange: (shapes: DrawShape[]) => emit('shapes', cleanShapes(shapes))
     }
   })
 
@@ -110,7 +131,7 @@ onBeforeUnmount(() => {
 
 
 
-defineExpose({ redraw: remeasure, resync })
+defineExpose({ redraw: remeasure, resync, getShapes, clearShapes })
 </script>
 
 <style scoped>

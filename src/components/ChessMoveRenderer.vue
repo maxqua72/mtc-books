@@ -74,6 +74,7 @@ import { useChessTreeStore } from '../stores/chessTreeStore'
 import type { ChessMoveNode } from '../stores/chessTreeStore'
 import { computed, reactive, ref, watch, nextTick } from 'vue'
 import { sanitizeCommentHtml } from '../utils/sanitize'
+import { nagsToText } from '../utils/nags'
 
 interface Props {
   nodes: ChessMoveNode[]
@@ -239,18 +240,8 @@ const sanParts = (san: string) => {
     : { glyph: null, cls: '', rest: san }
 }
 
-// Simboli PGN più comuni. Usiamo caratteri sicuri nel PDF (niente glifi rari)
-const QUALITY_NAGS: Record<number, string> = { 1: '!', 2: '?', 3: '!!', 4: '??', 5: '!?', 6: '?!' }
-const EVAL_NAGS: Record<number, string> = {
-  10: '=', 13: '∞', 14: '+=', 15: '=+', 16: '+/-', 17: '-/+', 18: '+-', 19: '-+'
-}
-
-const nagText = (node: ChessMoveNode) => {
-  const nags = node.nags ?? []
-  const quality = nags.map(n => QUALITY_NAGS[n]).find(Boolean) ?? ''
-  const evaluation = nags.map(n => EVAL_NAGS[n]).find(Boolean) ?? ''
-  return quality + (evaluation ? (quality ? ' ' : '') + evaluation : '')
-}
+// Simboli di valutazione (!, ?, +=, ...): tabella e testo in utils/nags.ts
+const nagText = (node: ChessMoveNode) => nagsToText(node.nags)
 </script>
 
 <style scoped>

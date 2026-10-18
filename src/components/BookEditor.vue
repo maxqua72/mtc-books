@@ -520,18 +520,22 @@ watch(() => store.insertSignal, () => {
 
     try {
         const diagramFen = treeStore.activeFen
+        const diagramShapes = [...store.activeShapes]
         const tree = treeStore.currentTree
         const block = tree ? findTreeBlock(tree.id) : null
 
         // Modalità libera: al cursore, senza toccare alberi
         if (!tree || !block) {
             ed.chain().focus()
-                .insertChessDiagram({ fen: diagramFen, flipped: treeStore.boardFlipped })
+                .insertChessDiagram({ fen: diagramFen, flipped: treeStore.boardFlipped, shapes: diagramShapes })
                 .insertContent({ type: 'paragraph' }).run()
             return
         }
 
-        const diagram = { type: 'chessDiagram', attrs: { fen: diagramFen, flipped: treeStore.boardFlipped } }
+        const diagram = {
+            type: 'chessDiagram',
+            attrs: { fen: diagramFen, flipped: treeStore.boardFlipped, shapes: diagramShapes.length ? diagramShapes : null }
+        }
         const paragraph = { type: 'paragraph' }
         const afterBlock = block.pos + block.size
         const node = treeStore.currentNode

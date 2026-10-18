@@ -3,6 +3,7 @@ import { Chess } from 'chess.js'
 import type { ChessMoveNode, ChessTree } from '../stores/chessTreeStore'
 import type { SectionIndexItem } from '../stores/chessBookStore'
 import { STANDARD_FEN, isLegalFen, normalizeFen } from './fen'
+import { cleanShapes } from './shapes'
 
 const SAFE_ID = /^[\w.-]{1,80}$/
 const SAN_RE = /^[KQRBNOa-h1-8x=+#-]{2,9}$/
@@ -99,6 +100,8 @@ function cleanNode(raw: any, parentId: string | null, parentFen: string, ctx: Ct
     children: []
   }
   if (nags.length) node.nags = nags
+  const shapes = cleanShapes(raw.shapes)
+  if (shapes.length) node.shapes = shapes
 
   if (Array.isArray(raw.children)) {
     node.children = raw.children

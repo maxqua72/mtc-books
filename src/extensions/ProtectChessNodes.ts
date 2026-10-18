@@ -70,7 +70,24 @@ export const ProtectChessNodes = Extension.create({
       return true // true = evento consumato, il tasto non fa altro
     }
 
+    // Invio nella didascalia di un diagramma: la conferma (niente spezzare il diagramma in due)
+    const confirmCaption = () => {
+      const { $from, empty } = this.editor.state.selection
+      if (!empty || $from.depth === 0 || $from.parent.type.name !== 'chessDiagram') return false
+      const pos = $from.before()
+      const attrs = $from.parent.attrs
+      this.editor.chain()
+        .command(({ tr }) => {
+          tr.setNodeMarkup(pos, undefined, { ...attrs, captionEditable: false })
+          return true
+        })
+        .blur()
+        .run()
+      return true
+    }
+
     return {
+      Enter: confirmCaption,
       Backspace: handler('backward'),
       'Mod-Backspace': handler('backward'),
       'Shift-Backspace': handler('backward'),
