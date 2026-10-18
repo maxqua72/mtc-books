@@ -1,5 +1,8 @@
 <template>
     <div class="border-b border-neutral-200 p-2 bg-neutral-50 flex flex-wrap gap-1 items-center shrink-0">
+        <span v-if="locked" class="text-xs font-medium text-neutral-500 px-1 select-none">🔒 Sola lettura</span>
+        <!-- Strumenti di modifica: nascosti in sola lettura (lo zoom resta) -->
+        <div v-show="!locked" class="contents">
         <button @click="editor.chain().focus().toggleBold().run()"
             :class="{ 'bg-black text-white': editor.isActive('bold'), 'text-neutral-600 hover:bg-neutral-200': !editor.isActive('bold') }"
             class="p-1.5 rounded text-xs font-bold transition min-w-[28px]" title="Grassetto">
@@ -104,6 +107,8 @@
             </template>
         </div>
 
+        </div>
+
         <!-- Aggiungi nella sezione destra dei controlli della toolbar -->
         <div class="flex items-center gap-1 border-l border-neutral-200 pl-2">
             <span class="text-xs text-neutral-500 font-medium select-none">Zoom:</span>
@@ -142,6 +147,7 @@ defineEmits<{
 const treeStore = useChessTreeStore()
 const bookStore = useChessBookStore()
 const showRefMenu = ref(false)
+const locked = computed(() => bookStore.isLocked)
 
 const insertRef = (id: string) => {
     props.editor.chain().focus().insertDiagramRef(id).run()

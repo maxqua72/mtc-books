@@ -80,11 +80,14 @@
             {{ copied ? 'Copiato!' : 'Copia FEN' }}
           </button>
         </div>
-        <input type="text" :value="currentFen" :readonly="fenLocked" @change="handleFenChange"
+        <input type="text" :value="currentFen" :readonly="fenReadonly" @change="handleFenChange"
           class="w-full font-mono text-[11px] bg-neutral-900 text-neutral-300 p-2 rounded break-all focus:outline-none focus:ring-1 focus:ring-neutral-500 select-all leading-relaxed border border-neutral-800"
-          :class="{ 'opacity-70 cursor-default': fenLocked }" />
+          :class="{ 'opacity-70 cursor-default': fenReadonly }" />
         <p v-if="fenLocked" class="text-[11px] text-neutral-500">
           Posizione iniziale già fissata: per partire da un’altra posizione crea un nuovo albero.
+        </p>
+        <p v-else-if="tree && locked" class="text-[11px] text-neutral-500">
+          Documento in sola lettura: la posizione iniziale non è modificabile.
         </p>
         <p v-else-if="tree" class="text-[11px] text-blue-700">
           Un FEN incollato diventa la posizione iniziale di questo albero.
@@ -95,18 +98,18 @@
     </div>
 
     <div class="flex flex-wrap gap-2 pt-2">
-      <button @click="emit('insertDiagram')" :disabled="!inChapter"
+      <button @click="emit('insertDiagram')" :disabled="!inChapter || locked"
         class="flex-1 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded text-xs tracking-wide transition uppercase font-bold shadow-sm border border-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed">
         Inserisci Diagramma
       </button>
 
-      <button v-if="tree && treeStore.activeNodeId" @click="emit('deleteBranch')"
+      <button v-if="tree && treeStore.activeNodeId && !locked" @click="emit('deleteBranch')"
         class="py-2 px-3 bg-red-50 hover:bg-red-100 text-red-600 rounded text-xs transition uppercase font-bold border border-red-200"
         title="Elimina la mossa selezionata e tutto ciò che la segue">
         Elimina Variante
       </button>
 
-      <button v-if="!tree || fenLocked" @click="emit('newTree')" :disabled="!inChapter"
+      <button v-if="!tree || fenLocked" @click="emit('newTree')" :disabled="!inChapter || locked"
         class="w-full py-2 bg-white hover:bg-neutral-50 text-neutral-700 rounded text-xs transition font-semibold border border-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed">
         + Nuovo albero da questa posizione
       </button>
@@ -146,6 +149,9 @@ const fenLocked = computed(() => treeStore.isFenLocked)
 const showReset = computed(() => !tree.value || treeStore.isCurrentTreeEmpty)
 // Diagrammi e alberi si inseriscono solo in un capitolo (copertina e indice non hanno testo)
 const inChapter = computed(() => bookStore.activeSectionInfo?.type === 'chapter')
+// Sola lettura: l'albero del documento non si modifica; la posizione libera e la navigazione restano attive
+const locked = computed(() => bookStore.isLocked)
+const fenReadonly = computed(() => fenLocked.value || (locked.value && !!tree.value))
 
 // L'interruttore compare solo se l'albero ha tag PGN da mostrare
 const hasHeader = computed(() => !!tree.value && hasDisplayableHeader(tree.value.header))
@@ -154,7 +160,7 @@ const onToggleHeader = (event: Event) => {
 }
 
 // I simboli si assegnano alla mossa attiva di un albero del documento
-const showNags = computed(() => !!tree.value && !!treeStore.currentNode)
+const showNags = computed(() => !!tree.value && !!treeStore.currentNode && !locked.value)
 const activeNags = computed(() => treeStore.currentNode?.nags ?? [])
 const toggleNag = (code: number) => {
   const id = treeStore.activeNodeId
@@ -182,7 +188,7 @@ const copyFenToClipboard = async () => {
 // Il campo mostra sempre il valore dello store: se il FEN viene rifiutato, il testo digitato sparisce
 const handleFenChange = async (event: Event) => {
   const target = event.target as HTMLInputElement
-  if (!fenLocked.value && target.value.trim() !== '') emit('updateFen', target.value.trim())
+  if (!fenReadonly.value && target.value.trim() !== '') emit('updateFen', target.value.trim())
   await nextTick()
   target.value = props.currentFen
 }

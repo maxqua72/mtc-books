@@ -7,6 +7,7 @@ export interface LocalBookState {
   sectionIndex: SectionIndexItem[]
   activeSectionId: string | null
   updatedAt: string
+  dirtyVsFile?: boolean   // il lavoro nel browser è più recente dell'ultimo file .mtcbook salvato
 }
 
 export interface LocalSection {
@@ -58,7 +59,8 @@ export async function saveFullStateToIndexedDB(
   sectionIndex: SectionIndexItem[],
   activeSectionId: string | null,
   zippedSectionsCache: Record<string, string>,
-  keepAssetIds?: string[]
+  keepAssetIds?: string[],
+  dirtyVsFile?: boolean
 ) {
   await db.transaction('rw', db.bookState, db.sections, db.assets, async () => {
     await db.bookState.put({
@@ -66,7 +68,8 @@ export async function saveFullStateToIndexedDB(
       metadata: JSON.parse(JSON.stringify(metadata)),
       sectionIndex: JSON.parse(JSON.stringify(sectionIndex)),
       activeSectionId,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      dirtyVsFile
     })
 
     const validIds = new Set(sectionIndex.map(s => s.id))
@@ -89,6 +92,11 @@ export async function saveFullStateToIndexedDB(
       if (staleAssets.length) await db.assets.bulkDelete(staleAssets)
     }
   })
+}
+
+/** Aggiorna solo l'indicatore "copia su disco non aggiornata" */
+export async function setDirtyVsFile(flag: boolean) {
+  await db.bookState.update('current_book', { dirtyVsFile: flag })
 }
 
 /**

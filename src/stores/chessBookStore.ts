@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed, nextTick } from 'vue'
 import JSZip from 'jszip'
-import { db, putAsset, getAsset } from '../db'
+import { db, putAsset, getAsset, saveFullStateToIndexedDB, setDirtyVsFile } from '../db'
 import {
     type BookCover, createEmptyCover, normalizeCover, coverToHtml,
     blobToDataUrl, getPageSizeMm, newCoverId, escapeHtml
@@ -340,6 +340,80 @@ export const useChessBookStore = defineStore('chessBook', () => {
     )
 
 
+    // ==========================================================
+    // SOLA LETTURA E STATO DELLA COPIA SU DISCO
+    // ==========================================================
+    // Un libro aperto da file o ripristinato è in sola lettura; uno nuovo è subito modificabile.
+    const isLocked = ref(true)
+    // true = il lavoro nel browser (IndexedDB) differisce dall'ultimo file .mtcbook salvato o caricato
+    const fileDirty = ref(false)
+    let fileBaselineSig: string | null = null   // null = linea di base sconosciuta: resta "da salvare" fino al prossimo salvataggio
+
+    function setLocked(value: boolean) {
+        isLocked.value = value
+    }
+
+    /**
+     * Impronta del contenuto che finisce nel file: metadati (senza date), indice, e per ogni sezione
+     * html, alberi usati e copertina. Esclusi lo stato di navigazione (nodo attivo) e gli alberi orfani,
+     * così spostarsi tra le mosse o l'autosave non contano come modifiche.
+     */
+    function contentSignature(): string {
+        const meta: Record<string, unknown> = { ...metadata.value }
+        delete meta.createdAt
+        delete meta.updatedAt
+
+        const sections = sectionIndex.value.map(item => {
+            let body: unknown = null
+            try {
+                const p = JSON.parse(zippedSectionsCache.value[item.id] || '{}')
+                const html: string = typeof p.html === 'string' ? p.html : ''
+                const used = new Set(Array.from(html.matchAll(/data-tree-id="([^"]*)"/g), m => m[1]))
+                const trees = (Array.isArray(p.trees) ? p.trees : [])
+                    .filter((t: any) => used.has(t?.id))
+                    .map((t: any) => {
+                        const copy = { ...t }
+                        delete copy.activeNodeId
+                        return copy
+                    })
+                body = { html, trees, cover: p.cover ?? null }
+            } catch { body = null }
+            return [item.id, item.type, item.title, body]
+        })
+        return JSON.stringify([meta, sections])
+    }
+
+    /** dirty = true: la linea di base è ignota (libro mai salvato su file). dirty = false: lo stato attuale coincide col file. */
+    function resetFileBaseline(dirty: boolean) {
+        fileDirty.value = dirty
+        fileBaselineSig = dirty ? null : contentSignature()
+    }
+
+    function refreshFileDirty() {
+        if (fileBaselineSig !== null) fileDirty.value = contentSignature() !== fileBaselineSig
+    }
+
+    /** Salva tutto in IndexedDB. Con refreshDirty ricalcola anche lo stato della copia su disco. */
+    async function persistToIndexedDB(opts: { refreshDirty?: boolean } = {}) {
+        syncActiveSectionToCache()   // niente prune: l'autosave non cancella mai alberi
+        if (opts.refreshDirty) refreshFileDirty()
+        await saveFullStateToIndexedDB(
+            metadata.value,
+            sectionIndex.value,
+            activeSectionId.value,
+            zippedSectionsCache.value,
+            collectAssetIds(),
+            fileDirty.value
+        )
+    }
+
+    /** Da chiamare dopo aver scaricato il file .mtcbook */
+    async function markFileSaved() {
+        fileBaselineSig = contentSignature()
+        fileDirty.value = false
+        try { await setDirtyVsFile(false) } catch (e) { console.error(e) }
+    }
+
     // --- FUNZIONI ESISTENTI ---
     function updateActiveFen(fen: string) {
         activeFen.value = fen
@@ -406,6 +480,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
     }
 
     async function startNewBook(title: string, author: string) {
+        isLocked.value = false   // un libro nuovo è subito modificabile
         // Azzera tutto PRIMA: con activeSectionId null changeActiveSection non congela nulla
         activeSectionId.value = null
         activeSectionHtml.value = ''
@@ -418,6 +493,8 @@ export const useChessBookStore = defineStore('chessBook', () => {
         const firstId = createNewSection('Capitolo 1', 'chapter')
         await changeActiveSection(firstId)
         isBookLoaded.value = true
+        resetFileBaseline(true)   // mai salvato su file
+        await persistToIndexedDB()
     }
 
     // --- NUOVE FUNZIONI: I/O FILE .MTCBOOK (JSZIP) ---
@@ -429,6 +506,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
     async function loadMtcBook(fileBuffer: ArrayBuffer | Blob) {
         const chessTreeStore = useChessTreeStore()
 
+        isLocked.value = true   // un libro aperto da file è in sola lettura finché non si sblocca
         // Resetta completamente lo store delle partite del vecchio libro aperto
         //chessTreeStore.resetStore?.()
 
@@ -502,6 +580,12 @@ export const useChessBookStore = defineStore('chessBook', () => {
             await nextTick()
         }
         isBookLoaded.value = true
+
+        // La copia di lavoro in IndexedDB diventa questo libro (altrimenti F5 riaprirebbe quello precedente)
+        fileDirty.value = false
+        syncActiveSectionToCache()
+        resetFileBaseline(false)
+        await persistToIndexedDB()
     }
 
     /**
@@ -620,6 +704,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
         try {
             const savedState = await db.bookState.get('current_book')
             if (!savedState) return false
+            isLocked.value = true   // dopo un ricaricamento si riparte in sola lettura
 
             // 1. Ripristina metadati e indice capitoli
             metadata.value = { ...defaultMetadata(), ...savedState.metadata }
@@ -634,6 +719,9 @@ export const useChessBookStore = defineStore('chessBook', () => {
             allSections.forEach(sec => {
                 zippedSectionsCache.value[sec.id] = sec.json
             })
+
+            // Stato della copia su disco: se non era noto (dati vecchi) lo si considera non aggiornato
+            resetFileBaseline(savedState.dirtyVsFile ?? true)
 
             // 3. Determina la sezione da caricare
             const sectionToOpen = savedState.activeSectionId || sectionIndex.value[0]?.id
@@ -721,6 +809,12 @@ export const useChessBookStore = defineStore('chessBook', () => {
         syncActiveSectionToCache,
 
         startNewBook,
+
+        isLocked,
+        fileDirty,
+        setLocked,
+        persistToIndexedDB,
+        markFileSaved,
 
         coverModel,
         coverImageUrl,

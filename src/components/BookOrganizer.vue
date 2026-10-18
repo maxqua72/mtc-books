@@ -26,7 +26,7 @@
         <div class="flex-1 overflow-y-auto p-2 space-y-0.5">
             <div v-for="(section, index) in store.sectionIndex" :key="section.id"
                 @click="handleSectionClick(section.id)" 
-                :draggable="section.type === 'chapter'"
+                :draggable="section.type === 'chapter' && !locked"
                 @dragstart="onDragStart(index)"
                 @dragend="onDragEnd"
                 @dragover.prevent="onDragOver(index)"
@@ -37,7 +37,7 @@
                     store.activeSectionId === section.id
                         ? 'bg-neutral-900 text-white'
                         : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900',
-                    section.type === 'chapter' ? 'cursor-grab active:cursor-grabbing' : '',
+                    section.type === 'chapter' && !locked ? 'cursor-grab active:cursor-grabbing' : '',
                     // Classi dinamiche per il feedback visivo del drag
                     //activeDropIndex === index && section.type === 'chapter' ? 'bg-neutral-100 border-t-2 border-neutral-900 pt-1.5' : ''
                     dropIndicatorClass(index, section)
@@ -45,7 +45,7 @@
                 
                 <div class="flex items-center gap-2 truncate">
                     <!-- Icona di trascinamento visibile al passaggio del mouse sui capitoli -->
-                    <span v-if="section.type === 'chapter'" class="opacity-0 group-hover:opacity-100 text-neutral-400 mr-0.5 cursor-grab">
+                    <span v-if="section.type === 'chapter' && !locked" class="opacity-0 group-hover:opacity-100 text-neutral-400 mr-0.5 cursor-grab">
                         ⋮⋮
                     </span>
                     <span>{{ getIcon(section.type) }}</span>
@@ -53,7 +53,7 @@
                 </div>
 
                 <!-- Azioni rapide al passaggio del mouse -->
-                <div class="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity pl-1 shrink-0">
+                <div v-if="!locked" class="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity pl-1 shrink-0">
                     <!-- Rinomina -->
                     <button @click.stop="promptRename(section)" class="p-0.5 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded text-[10px]" title="Rinomina voce indice">
                         ✏️
@@ -68,17 +68,17 @@
 
         <!-- Pulsante Aggiungi Capitolo in fondo -->
         <div class="p-3 border-t border-neutral-100 space-y-1">
-            <button @click="addSection('chapter')"
-                class="w-full py-2 px-3 border border-neutral-200 hover:border-neutral-900 rounded-lg text-xs font-bold text-neutral-700 transition">
+            <button @click="addSection('chapter')" :disabled="locked"
+                class="w-full py-2 px-3 border border-neutral-200 hover:border-neutral-900 rounded-lg text-xs font-bold text-neutral-700 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-neutral-200">
                 ➕ Nuovo Capitolo
             </button>
             <div class="flex gap-1">
-                <button @click="addSection('cover')"
-                    class="flex-1 py-1.5 border border-neutral-200 text-[10px] font-bold text-neutral-600 rounded hover:bg-neutral-50">
+                <button @click="addSection('cover')" :disabled="locked"
+                    class="flex-1 py-1.5 border border-neutral-200 text-[10px] font-bold text-neutral-600 rounded hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed">
                     📘 Copertina
                 </button>
-                <button @click="addSection('index')"
-                    class="flex-1 py-1.5 border border-neutral-200 text-[10px] font-bold text-neutral-600 rounded hover:bg-neutral-50">
+                <button @click="addSection('index')" :disabled="locked"
+                    class="flex-1 py-1.5 border border-neutral-200 text-[10px] font-bold text-neutral-600 rounded hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed">
                     📋 Indice
                 </button>
             </div>
@@ -90,12 +90,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useChessBookStore, type SectionType, type SectionIndexItem } from '../stores/chessBookStore'
 import BookPropertiesModal from './BookPropertiesModal.vue'
 
 const store = useChessBookStore()
 const isPropsOpen = ref(false)
+const locked = computed(() => store.isLocked)   // sola lettura: struttura del libro non modificabile
 
 // Variabili di stato per il Drag and Drop
 const draggedIndex = ref<number | null>(null)
@@ -114,6 +115,7 @@ const handleSectionClick = async (id: string) => {
 }
 
 const addSection = (type: SectionType) => {
+  if (locked.value) return
   if (type !== 'chapter' && store.sectionIndex.some(s => s.type === type)) {
     alert(`Il libro contiene già una sezione di tipo: ${type === 'cover' ? 'Copertina' : 'Indice'}`)
     return
@@ -146,6 +148,7 @@ const addSection = (type: SectionType) => {
 }
 
 const promptRename = (section: SectionIndexItem) => {
+    if (locked.value) return
     const newTitle = prompt(`Inserisci il nuovo nome identificativo per l'indice:`, section.title)
     if (newTitle && newTitle.trim()) {
         section.title = newTitle.trim()
@@ -153,6 +156,7 @@ const promptRename = (section: SectionIndexItem) => {
 }
 
 const deleteSection = async (section: SectionIndexItem, index: number) => {
+    if (locked.value) return
     const confirmDelete = confirm(`Sei sicuro di voler eliminare definitivamente "${section.title}"? Tutto il testo al suo interno andrà perduto.`)
     if (!confirmDelete) return
 
@@ -174,6 +178,7 @@ const deleteSection = async (section: SectionIndexItem, index: number) => {
 
 // --- FUNZIONI DRAG AND DROP CON FEEDBACK ---
 const onDragStart = (index: number) => {
+    if (locked.value) return
     draggedIndex.value = index
 }
 
@@ -218,6 +223,7 @@ const onDrop = (targetIndex: number) => {
 
 const onDrop = (targetIndex: number) => {
     const fromIndex = draggedIndex.value
+    if (locked.value) { draggedIndex.value = null; activeDropIndex.value = null; return }
     draggedIndex.value = null
     activeDropIndex.value = null
     if (fromIndex === null || fromIndex === targetIndex) return

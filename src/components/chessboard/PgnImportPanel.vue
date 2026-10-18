@@ -1,7 +1,9 @@
 <template>
   <div class="space-y-3">
     <p v-if="!canUse" class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
-      Apri un capitolo per importare un PGN: gli alberi di mosse stanno nei capitoli.
+      {{ bookStore.isLocked
+        ? 'Documento in sola lettura: abilita le modifiche dall’intestazione per importare un PGN.'
+        : 'Apri un capitolo per importare un PGN: gli alberi di mosse stanno nei capitoli.' }}
     </p>
 
     <template v-else>
@@ -127,7 +129,7 @@ const treeStore = useChessTreeStore()
 const bookStore = useChessBookStore()
 const pgn = usePgnImportStore()
 
-const canUse = computed(() => bookStore.activeSectionInfo?.type === 'chapter')
+const canUse = computed(() => bookStore.activeSectionInfo?.type === 'chapter' && !bookStore.isLocked)
 
 // Il pannello aperto attiva i riferimenti nel documento (riquadro tratteggiato e cartellino)
 watch(canUse, (v) => { pgn.isOpen = v }, { immediate: true })

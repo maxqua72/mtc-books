@@ -5,17 +5,17 @@
     <!-- Header comandi stile Gmail: compare in posizione assoluta solo all'hover del blocco -->
     <div class="block-header">
       <span class="game-title">📊 {{ currentTree?.title || 'Albero di mosse' }}</span>
-      <button @click.stop="insertParagraph('before')" class="action-btn" title="Inserisci un paragrafo sopra">¶↑</button>
-      <button @click.stop="insertParagraph('after')" class="action-btn" title="Inserisci un paragrafo sotto">¶↓</button>
+      <button v-if="!locked" @click.stop="insertParagraph('before')" class="action-btn" title="Inserisci un paragrafo sopra">¶↑</button>
+      <button v-if="!locked" @click.stop="insertParagraph('after')" class="action-btn" title="Inserisci un paragrafo sotto">¶↓</button>
       <button v-if="currentTree" @click.stop="copyBlock" class="action-btn"
         :title="copied ? 'Copiato' : 'Copia l\'albero (poi Ctrl+V o «Incolla albero»)'">
         <i :class="['fa-solid', copied ? 'fa-check' : 'fa-copy']"></i>
       </button>
-      <button v-if="currentTree" @click.stop="cutBlock" class="action-btn"
+      <button v-if="currentTree && !locked" @click.stop="cutBlock" class="action-btn"
         title="Taglia l'albero (poi Ctrl+V o «Incolla albero»)">
         <i class="fa-solid fa-scissors"></i>
       </button>
-      <button @click.stop="deleteBlock" class="delete-btn" title="Elimina il blocco albero">
+      <button v-if="!locked" @click.stop="deleteBlock" class="delete-btn" title="Elimina il blocco albero">
         ✕
       </button>
     </div>
@@ -51,6 +51,7 @@ import { nodeViewProps, NodeViewWrapper } from '@tiptap/vue-3'
 import { computed, ref } from 'vue'
 import { useChessTreeStore } from '../stores/chessTreeStore'
 import { usePgnImportStore } from '../stores/pgnImportStore'
+import { useChessBookStore } from '../stores/chessBookStore'
 import ChessMoveRenderer from './ChessMoveRenderer.vue'
 import { getHeaderView } from '../utils/pgnHeader'
 import { writeTreeClipMarker } from '../utils/treeClipboard'
@@ -62,6 +63,8 @@ defineOptions({
 const props = defineProps(nodeViewProps)
 const treeStore = useChessTreeStore()
 const pgnStore = usePgnImportStore()
+const bookStore = useChessBookStore()
+const locked = computed(() => bookStore.isLocked)   // sola lettura: restano visibili solo titolo e copia
 
 const pgnBadge = computed(() => {
   const badge = pgnStore.targetBadge

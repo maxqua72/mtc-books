@@ -10,8 +10,12 @@
         </button>
       </div>
 
+      <p v-if="store.isLocked" class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5 mb-3">
+        Documento in sola lettura: abilita le modifiche dall'intestazione per cambiare queste impostazioni.
+      </p>
+
       <!-- Corpo del Form -->
-      <div class="space-y-4 flex-1 overflow-y-auto pr-1">
+      <fieldset :disabled="store.isLocked" class="space-y-4 flex-1 overflow-y-auto pr-1 border-0 p-0 m-0 min-w-0">
         <!-- Titolo -->
         <div>
           <label class="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1">Titolo del Libro</label>
@@ -77,7 +81,7 @@
             </div>
           </label>
         </div>
-      </div>
+      </fieldset>
 
       <!-- Pulsante di Chiusura -->
       <div class="border-t border-neutral-100 pt-3 mt-4 flex justify-end">

@@ -56,6 +56,22 @@
         Apri...
       </button>
 
+      <!-- Interruttore sola lettura / modifica -->
+      <button v-if="store.isBookLoaded" @click="store.setLocked(!store.isLocked)" role="switch"
+        :aria-checked="!store.isLocked"
+        :title="store.isLocked ? 'Documento in sola lettura: clic per abilitare le modifiche' : 'Modifiche abilitate: clic per bloccare il documento'"
+        class="flex items-center gap-2 px-3 py-1.5 rounded border text-xs font-semibold transition cursor-pointer select-none"
+        :class="store.isLocked
+          ? 'border-neutral-300 text-neutral-600 hover:bg-neutral-50'
+          : 'border-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100'">
+        <span class="relative inline-block w-7 h-4 rounded-full transition-colors"
+          :class="store.isLocked ? 'bg-neutral-300' : 'bg-amber-500'">
+          <span class="absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform"
+            :class="store.isLocked ? '' : 'translate-x-3'"></span>
+        </span>
+        {{ store.isLocked ? 'Sola lettura' : 'Modifica attiva' }}
+      </button>
+
       <!-- PERSISTENT SPLIT BUTTON -->
       <div class="relative inline-flex items-center" v-click-outside="closeDropdown">
         <!-- Pulsante Azione Principale Persistent -->
@@ -109,7 +125,12 @@
       </div>
 
       <button @click="handleSaveFile"
-        class="px-4 py-1.5 text-xs font-bold bg-neutral-900 text-white hover:bg-neutral-800 rounded shadow transition cursor-pointer">
+        :title="store.fileDirty
+          ? 'La copia su disco non è aggiornata rispetto al lavoro nel browser: clicca per salvare'
+          : 'La copia su disco è aggiornata'"
+        class="px-4 py-1.5 text-xs font-bold text-white rounded shadow transition cursor-pointer flex items-center gap-1.5"
+        :class="store.fileDirty ? 'bg-red-600 hover:bg-red-700' : 'bg-neutral-900 hover:bg-neutral-800'">
+        <span v-if="store.fileDirty" class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
         Salva Lavoro
       </button>
     </div>
@@ -178,7 +199,9 @@ const handleOpenFile = async (event: Event) => {
   if (!target.files || target.files.length === 0) return
 
   if (store.isBookLoaded &&
-    !confirm("Aprire un altro libro? Il libro corrente verrà sostituito. Se non l'hai ancora salvato, esporta prima un file .mtcbook.")) {
+    !confirm(store.fileDirty
+      ? "Il libro corrente ha modifiche non salvate su file (.mtcbook): se continui andranno perse. Aprire un altro libro?"
+      : "Aprire un altro libro? Il libro corrente verrà sostituito.")) {
     target.value = ''
     return
   }
@@ -187,7 +210,7 @@ const handleOpenFile = async (event: Event) => {
   try {
     const arrayBuffer = await file.arrayBuffer()
     await store.loadMtcBook(arrayBuffer)
-    alert(`Libro "${store.metadata.title}" caricato con successo!`)
+    alert(`Libro "${store.metadata.title}" caricato in sola lettura: usa l'interruttore in alto per modificarlo.`)
   } catch (error) {
     console.error(error)
     alert("Errore durante il caricamento del file .mtcbook")
@@ -209,6 +232,7 @@ const handleSaveFile = async () => {
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
+    await store.markFileSaved()
   } catch (error) {
     console.error(error)
     alert("Errore durante il salvataggio.")
@@ -226,7 +250,9 @@ const handleNewBook = () => {
 }*/
 
 const handleNewBook = async () => {
-  if (!confirm("Vuoi creare un nuovo libro? I dati non salvati andranno persi.")) return
+  if (!confirm(store.fileDirty
+    ? "Il libro corrente ha modifiche non salvate su file (.mtcbook): se continui andranno perse. Creare un nuovo libro?"
+    : "Vuoi creare un nuovo libro?")) return
   await store.startNewBook('Nuovo Libro di Scacchi', 'Autore')
 }
 

@@ -41,12 +41,12 @@ import BookEditor from './components/BookEditor.vue'
 import ChessboardController from './components/ChessboardController.vue'
 import { useChessBookStore } from './stores/chessBookStore'
 import { useChessTreeStore } from './stores/chessTreeStore'
-import { saveFullStateToIndexedDB } from './db'
 
 const bookStore = useChessBookStore()
 const treeStore = useChessTreeStore()
 
 let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
+let pendingSave = false
 
 // --- RIPRISTINO ALL'AVVIO ---
 onMounted(async () => {
@@ -67,29 +67,29 @@ watch(
     () => bookStore.coverModel          // testi, posizioni, inquadratura, immagine
   ],
   () => {
-    // 1. Appena l'utente modifica qualcosa, segnamo che ci sono modifiche pendenti
-    bookStore.saveStatus = 'unsaved'
+    // Sola lettura: niente autosave e nessuna modifica da segnalare (anche gli spostamenti tra capitoli fanno scattare il watcher)
+    if (bookStore.isLocked) return
 
-    // 1. Se l'utente sta digitando o facendo azioni rapide, annulla il timer precedente
+    // Appena l'utente modifica qualcosa, segnamo che ci sono modifiche pendenti
+    bookStore.saveStatus = 'unsaved'
+    pendingSave = true
+
+    // Se l'utente sta digitando o facendo azioni rapide, annulla il timer precedente
     if (autoSaveTimer) clearTimeout(autoSaveTimer)
 
-    // 2. Avvia la scrittura su IndexedDB solo dopo 800ms di inattività
+    // Scrittura su IndexedDB solo dopo 800ms di inattività. Il timer salva anche se nel frattempo
+    // il documento è stato bloccato: le modifiche fatte da sbloccato non devono andare perse.
     autoSaveTimer = setTimeout(async () => {
-      if (!bookStore.isBookLoaded) return
+      if (!bookStore.isBookLoaded || !pendingSave) return
+      pendingSave = false
       bookStore.saveStatus = 'saving'
       try {
-        bookStore.syncActiveSectionToCache()   // niente prune: l'autosave non cancella mai alberi
-        await saveFullStateToIndexedDB(
-          bookStore.metadata,
-          bookStore.sectionIndex,
-          bookStore.activeSectionId,
-          bookStore.zippedSectionsCache,
-          bookStore.collectAssetIds()     // le altre immagini vengono eliminate
-        )
+        await bookStore.persistToIndexedDB({ refreshDirty: true })
         bookStore.saveStatus = 'saved'
       } catch (e) {
         console.error(e)
         bookStore.saveStatus = 'unsaved'
+        pendingSave = true
       }
     }, 800)
   },

@@ -20,7 +20,7 @@
         ></div>
 
         <!-- Action Bar in stile Gmail a comparsa (in alto a destra del bordo scacchiera) -->
-        <div class="diagram-actions-menu">
+        <div v-if="!store.isLocked" class="diagram-actions-menu">
           <!-- Riga 1: dimensione -->
           <button @click="setSizeLevel('small')" :class="{ active: sizeLevel === 'small' }"
             title="Dimensione piccola" class="action-btn">
@@ -128,7 +128,7 @@
       <node-view-content ref="captionRef" 
         class="diagram-caption" 
         :class="{ 'is-editing': isCaptionEditable }"
-        :contenteditable="isCaptionEditable"
+        :contenteditable="isCaptionEditable && !store.isLocked"
         @blur="disableCaptionEditing"
         @keydown.enter="onCaptionEnter"
         placeholder="Diagramma X: inserisci didascalia..." />

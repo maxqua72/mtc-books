@@ -27,6 +27,7 @@
 
         <!-- Copertina: una pagina fissa, non un documento di testo -->
         <CoverEditor v-if="isCoverActive && store.coverModel" v-model="coverProxy" class="flex-1 min-h-0"
+            :inert="store.isLocked ? '' : undefined"
             :image-url="store.coverImageUrl" :page-width-mm="coverPageMm.width"
             :page-height-mm="coverPageMm.height" @pick-image="onPickCoverImage"
             @remove-image="store.removeCoverImage()" />
@@ -245,6 +246,7 @@ const DEFAULT_CONTENT = `
 
 const editor = useEditor({
     content: store.activeSectionHtml || DEFAULT_CONTENT,
+    editable: !store.isLocked,
     extensions: [
         StarterKit.configure({
             heading: false // Disabilitiamo sempre l'heading standard per evitare conflitti
@@ -347,7 +349,7 @@ const loadSectionIntoEditor = (sectionId: string | null) => {
     if (currentSection?.type === 'cover') return
 
     // 4. Per i CAPITOLI normali, sblocchiamo l'editor e carichiamo il loro HTML
-    editor.value.setOptions({ editable: true })
+    editor.value.setOptions({ editable: !store.isLocked })
     //editor.value.commands.setContent(store.activeSectionHtml)
     // CONTROLLO: Se il capitolo è vuoto o non ha ancora un contenuto reale,
     // inseriamo un h2 vuoto così il CSS mostra subito il numero del capitolo,
@@ -368,6 +370,11 @@ const loadSectionIntoEditor = (sectionId: string | null) => {
 // Ascolta se lo store cambia la sezione attiva esternamente (es: all'apertura di un file)
 // Ascolta se lo store cambia la sezione attiva esternamente (es: selezione dalla barra laterale)
 watch(() => store.activeSectionId, (id) => loadSectionIntoEditor(id))
+
+// Sola lettura: l'editor di testo si blocca (l'indice resta sempre non modificabile)
+watch(() => store.isLocked, (locked) => {
+    if (editor.value && store.activeSectionInfo?.type === 'chapter') editor.value.setEditable(!locked, false)
+})
 
 // L'editor viene creato dopo il montaggio: al primo istante il watcher sopra non scatta
 watch(editor, (ed) => {

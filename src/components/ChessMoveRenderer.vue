@@ -22,10 +22,10 @@
         </span>
 
         <!-- 2. Commento della mossa corrente -->
-        <div v-if="nodes[0].comment || isNodeActive(nodes[0].id)" class="move-comment-box"
+        <div v-if="nodes[0].comment || (isNodeActive(nodes[0].id) && !locked)" class="move-comment-box"
           :class="isVariantContext ? 'comment-inline' : 'comment-block'" @click.stop="activateThisTree(nodes[0].id)">
           <span
-            :ref="(el) => { if (el) commentRefs[nodes[0].id] = el as HTMLElement }"
+            :ref="(el) => { if (el) { commentRefs[nodes[0].id] = el as HTMLElement; applyEditable(el as HTMLElement) } }"
             contenteditable="true"
             class="comment-editable-text"
             v-once
@@ -71,6 +71,7 @@
 
 <script setup lang="ts">
 import { useChessTreeStore } from '../stores/chessTreeStore'
+import { useChessBookStore } from '../stores/chessBookStore'
 import type { ChessMoveNode } from '../stores/chessTreeStore'
 import { computed, reactive, ref, watch, nextTick } from 'vue'
 import { sanitizeCommentHtml } from '../utils/sanitize'
@@ -93,7 +94,12 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const treeStore = useChessTreeStore()
+const locked = computed(() => useChessBookStore().isLocked)   // sola lettura: commenti non modificabili
 const commentRefs = reactive<Record<string, HTMLElement>>({})
+
+// Il commento ha v-once (per non perdere il cursore): l'attributo contenteditable va aggiornato a mano
+const applyEditable = (el: HTMLElement) => el.setAttribute('contenteditable', locked.value ? 'false' : 'true')
+watch(locked, () => Object.values(commentRefs).forEach(applyEditable))
 const safeComment = (comment: string | null) => sanitizeCommentHtml(comment)
 
 
@@ -140,6 +146,9 @@ const handleMoveKeydown = (nodeId: string, event: KeyboardEvent) => {
     return
   }
 
+  // Sola lettura: niente digitazione automatica nel commento
+  if (locked.value) return
+
   // Blocca la propagazione e l'azione di Prosemirror
   event.preventDefault()
   event.stopPropagation()
@@ -169,6 +178,7 @@ const handleMoveKeydown = (nodeId: string, event: KeyboardEvent) => {
 }
 
 const onCommentBlur = (nodeId: string, event: FocusEvent) => {
+  if (locked.value) return
   const target = event.target as HTMLElement
   const targetNode = treeStore.findNodeById(myTree.value?.rootNodes || [], nodeId)
   if (!targetNode) return

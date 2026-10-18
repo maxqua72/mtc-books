@@ -108,6 +108,13 @@ const handlePhysicsMove = (orig: Key, dest: Key) => {
   try {
     const moveData = chess.move({ from: orig, to: dest, promotion: 'q' })
 
+    // Sola lettura: nell'albero del documento si può solo seguire una mossa già presente
+    if (bookStore.isLocked && treeStore.currentTree && !treeStore.findChildBySan(moveData.san)) {
+      chess.load(treeStore.activeFen)
+      chessboardRef.value?.resync()
+      return
+    }
+
     const result = treeStore.addMove(moveData.san)
     if (!result) {
       chess.load(treeStore.activeFen)
@@ -145,25 +152,30 @@ const resetBoard = () => {
 // L'array vuoto è una costante, così la scacchiera non vede un "cambiamento" a ogni ricalcolo.
 const NO_SHAPES: BoardShape[] = []
 const nodeShapes = computed(() => treeStore.currentNode?.shapes ?? NO_SHAPES)
-const onShapes = (shapes: BoardShape[]) => treeStore.setNodeShapes(shapes)
+const onShapes = (shapes: BoardShape[]) => {
+  if (bookStore.isLocked && treeStore.currentTree) return   // sola lettura: le frecce restano solo visive
+  treeStore.setNodeShapes(shapes)
+}
 const clearShapes = () => {
-  treeStore.setNodeShapes([])
+  if (!(bookStore.isLocked && treeStore.currentTree)) treeStore.setNodeShapes([])
   chessboardRef.value?.clearShapes()
 }
 
 // Diagramma statico nell'editor: la posizione è sempre treeStore.activeFen
 const insertDiagramIntoText = () => {
+  if (bookStore.isLocked) return
   bookStore.updateActiveFen(treeStore.activeFen)
   bookStore.updateActiveShapes(chessboardRef.value?.getShapes() ?? [])
   bookStore.triggerInsertDiagram()
 }
 
 const deleteActiveBranch = () => {
-  if (treeStore.activeNodeId) treeStore.deleteBranch(treeStore.activeNodeId)
+  if (treeStore.activeNodeId && !bookStore.isLocked) treeStore.deleteBranch(treeStore.activeNodeId)
 }
 
 // FEN incollato: posizione libera, oppure posizione iniziale di un albero vuoto
 const handleManualFenUpdate = (newFen: string) => {
+  if (bookStore.isLocked && treeStore.currentTree) return   // sola lettura: la posizione iniziale dell'albero non si cambia
   const result = treeStore.setBoardFen(newFen)
   if (result === 'invalid') {
     alert('Il FEN inserito non è valido. Verifica la stringa e riprova.')
@@ -176,6 +188,7 @@ const handleManualFenUpdate = (newFen: string) => {
 
 // Nuovo albero che parte dalla posizione corrente (anche da una mossa di un altro albero)
 const newTreeHere = () => {
+  if (bookStore.isLocked) return
   const tree = treeStore.buildTree(`Albero #${treeStore.trees.length + 1}`)
   pgnStore.addTrees([tree], pgnStore.canPlace('after-active') ? 'after-active' : 'cursor')
 }
