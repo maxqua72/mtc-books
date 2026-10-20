@@ -248,7 +248,9 @@ export const useChessBookStore = defineStore('chessBook', () => {
 `
         }
 
-        let html = `<div class="toc-container"><h2 style="font-family: Lora, Georgia, serif; font-size: 2rem; margin-bottom: 1.5rem;">Indice Generale</h2><ul style="list-style: none; padding: 0; margin: 0; font-family: Lora,Georgia, serif;">`
+        let html = `<div class="toc-container"><h2 style="font-family: Lora, Georgia, serif; font-size: 2rem; margin-bottom: 1.5rem;">Indice Generale</h2><ul style="list-style: none; padding: 0; margin: 0; font-family: Lora, Georgia, serif;">`
+
+        let entryIndex = 0   // progressivo globale: corrisponde all'id toc-h-N assegnato dal server
 
         chapters.forEach((ch, i) => {
             const mainCounter = i + 1
@@ -259,7 +261,6 @@ export const useChessBookStore = defineStore('chessBook', () => {
                 : scanSection(ch.id, zippedSectionsCache.value[ch.id] || '', true)
 
             for (const h of scan.headings) {
-                // textContent è testo già decodificato: va riescapato
                 const text = escapeHtml(h.text || 'Titolo senza testo')
                 let numbering: string
                 let paddingLeft: string
@@ -279,9 +280,10 @@ export const useChessBookStore = defineStore('chessBook', () => {
                 }
 
                 html += `
-    <li style="display: flex; justify-content: space-between; margin-bottom: 8px; padding-left: ${paddingLeft}; font-size: ${fontSize}; font-weight: ${fontWeight}; border-bottom: 1px dotted #e5e7eb;">
-      <span style="background: #fff; padding-right: 4px;">${numbering}${text}</span>
-      <span style="background: #fff; padding-left: 4px; color: #737373;">...</span>
+    <li class="toc-entry" data-toc-n="${entryIndex++}" style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 8px; padding-left: ${paddingLeft}; font-size: ${fontSize}; font-weight: ${fontWeight}; break-inside: avoid;">
+      <span class="toc-title">${numbering}${text}</span>
+      <span class="toc-leader" style="flex: 1; border-bottom: 1px dotted #a3a3a3; transform: translateY(-3px);"></span>
+      <span class="toc-page" style="min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums; color: #404040;">…</span>
     </li>
   `
             }
