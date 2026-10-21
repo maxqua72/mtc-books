@@ -274,8 +274,8 @@ const nagText = (node: ChessMoveNode) => nagsToText(node.nags)
 }
 
 .chess-move-item.is-active {
-  background: #3b82f6;
-  color: #fff !important;
+  background: var(--t-accent, #3b82f6);
+  color: var(--t-accent-fg, #fff) !important;
   border-radius: 2px;
 }
 
@@ -313,7 +313,7 @@ const nagText = (node: ChessMoveNode) => nagsToText(node.nags)
 }
 
 .comment-editable-text:focus {
-  border-bottom-color: #3b82f6;
+  border-bottom-color: var(--t-accent, #3b82f6);
   background: #f8fafc;
 }
 

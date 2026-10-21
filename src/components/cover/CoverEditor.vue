@@ -1,7 +1,7 @@
 <template>
-  <div class="flex flex-col h-full min-h-0 bg-neutral-100">
+  <div class="th-desk flex flex-col h-full min-h-0 bg-neutral-100">
     <!-- Barra degli strumenti -->
-    <div class="shrink-0 border-b border-neutral-200 bg-white px-3 py-2 space-y-2">
+    <div class="th-toolbar shrink-0 border-b border-neutral-200 bg-white px-3 py-2 space-y-2">
       <div class="flex flex-wrap items-center gap-2">
         <button class="cv-btn" @click="fileInput?.click()">
           <i class="fa-solid fa-image"></i>
@@ -394,23 +394,24 @@ const onPageKeydown = (e: KeyboardEvent) => {
   height: 2rem;
   padding: 0 0.7rem;
   border-radius: 0.375rem;
-  border: 1px solid #e5e5e5;
-  background: #ffffff;
-  color: #262626;
+  border: 1px solid var(--t-surface-border, #e5e5e5);
+  background: var(--t-surface-bg, #ffffff);
+  color: var(--t-surface-fg, var(--t-text, #262626));
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s;
 }
-.cv-btn:hover { background: #f5f5f5; }
-.cv-btn.active { background: #171717; color: #ffffff; border-color: #171717; }
+.cv-btn:hover { background: var(--t-surface-hover, #f5f5f5); }
+.cv-btn.active { background: var(--t-btn-bg, #171717); color: var(--t-btn-fg, #ffffff); border-color: var(--t-btn-bg, #171717); }
 
 .cv-input {
   height: 2rem;
   padding: 0 0.5rem;
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--t-surface-border, #e5e5e5);
   border-radius: 0.375rem;
-  background: #ffffff;
+  background: var(--t-surface-bg, #ffffff);
+  color: var(--t-surface-fg, var(--t-text, inherit));
   font-size: 0.75rem;
 }
 </style>

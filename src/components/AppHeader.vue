@@ -1,5 +1,5 @@
 <template>
-  <header class="h-14 bg-white border-b border-neutral-200 px-6 flex items-center justify-between shadow-sm shrink-0">
+  <header class="th-header h-14 bg-white border-b border-neutral-200 px-6 flex items-center justify-between shadow-sm shrink-0">
     <!-- Brand / Logo -->
     <div class="flex items-center gap-3">
       <!-- 
@@ -49,6 +49,12 @@
       <button @click="handleNewBook"
         class="px-3.5 py-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer">
         Nuovo
+      </button>
+
+      <button @click="isSettingsOpen = true"
+        class="px-3.5 py-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer"
+        title="Impostazioni: aspetto dell'applicazione">
+        <i class="fa-solid fa-gear"></i> Impostazioni
       </button>
 
       <!-- Input nascosto per caricare il file -->
@@ -136,6 +142,8 @@
         Salva Lavoro
       </button>
     </div>
+
+    <SettingsModal :is-open="isSettingsOpen" @close="isSettingsOpen = false" />
   </header>
 </template>
 
@@ -143,12 +151,14 @@
 import { ref, computed } from 'vue'
 import { useChessBookStore } from '../stores/chessBookStore'
 import logo from '../assets/mtcbooks-logo.png'
+import SettingsModal from './SettingsModal.vue'
 
 type ExportMode = 'chapter-server' | 'book-server'
 
 const store = useChessBookStore()
 const fileInput = ref<HTMLInputElement | null>(null)
 const isDropdownOpen = ref(false)
+const isSettingsOpen = ref(false)
 
 // Lettura dello stato di salvataggio dallo store (reattivo)
 const saveStatus = computed(() => store.saveStatus)

@@ -1,5 +1,5 @@
 <template>
-    <aside class="w-64 bg-white border-r border-neutral-200 flex flex-col shrink-0 h-full select-none no-print">
+    <aside class="th-left w-64 bg-white border-r border-neutral-200 flex flex-col shrink-0 h-full select-none no-print">
         <!-- Intestazione Informazioni Libro -->
         <div class="p-4 border-b border-neutral-100 flex items-center justify-between gap-2">
             <div class="space-y-1 min-w-0 flex-1">

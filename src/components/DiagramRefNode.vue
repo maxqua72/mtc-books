@@ -73,17 +73,17 @@ const onClick = (event: MouseEvent) => {
 
 <style scoped>
 .diagram-ref {
-  color: #1d4ed8;
+  color: var(--t-link, #1d4ed8);
   font-weight: 500;
   cursor: pointer;
   padding: 0 1px;
   border-radius: 2px;
 }
 .diagram-ref:hover {
-  background-color: #eff6ff;
+  background-color: var(--t-link-soft, #eff6ff);
 }
 .diagram-ref.is-selected {
-  outline: 2px solid #93c5fd;
+  outline: 2px solid var(--t-link-ring, #93c5fd);
 }
 .diagram-ref.is-broken {
   color: #dc2626;

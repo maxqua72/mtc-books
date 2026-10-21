@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col w-screen h-screen bg-neutral-50 font-sans antialiased overflow-hidden">
+  <div class="flex flex-col w-screen h-screen bg-neutral-50 th-main font-sans antialiased overflow-hidden">
 
     <!-- 1. Barra di Navigazione Superiore (Sempre Attiva) -->
     <AppHeader />
@@ -15,13 +15,13 @@
       <BookOrganizer />
 
       <!-- Colonna Centrale: Editor del Libro -->
-      <main class="flex-1 p-6 flex flex-col min-w-0 bg-neutral-50">
+      <main class="th-main flex-1 p-6 flex flex-col min-w-0 bg-neutral-50">
         <BookEditor />
       </main>
 
       <!-- Colonna Destra: Console di Supporto e Scacchiera -->
       <aside
-        class="w-[460px] bg-white border-l border-neutral-200 py-6 px-3 flex flex-col items-center justify-start overflow-y-auto shrink-0 no-print">
+        class="th-right w-[460px] bg-white border-l border-neutral-200 py-6 px-3 flex flex-col items-center justify-start overflow-y-auto shrink-0 no-print">
         <!-- <ChessBoard />  -->
         <!-- Sostituito ChessBoard con ChessboardController passandogli l'istanza dell'editor -->
         <ChessboardController />

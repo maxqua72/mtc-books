@@ -1,0 +1,304 @@
+/* ==========================================================================
+   TEMI DELL'INTERFACCIA
+
+   Il tema attivo è l'attributo <html data-theme="standard|alt"> (lo imposta
+   stores/themeStore.ts). Questo file NON è incluso nell'esportazione PDF, che
+   usa solo pdf-print.css: i temi non cambiano mai il PDF.
+
+   Struttura:
+   1. Valori derivati (bordi, tinte dell'accento...): ogni tema può ridefinirli.
+   2. I DUE TEMI: qui si cambiano i colori.
+   3. Regole che applicano le variabili ai componenti: di norma non si toccano.
+   ========================================================================== */
+
+/* ==========================================================================
+   1. VALORI DERIVATI (valgono per entrambi i temi)
+   Per forzarne uno, basta scriverlo nel blocco del tema (viene dopo e vince).
+   ========================================================================== */
+[data-theme] {
+  --t-surface-border: color-mix(in srgb, var(--t-text) 11%, var(--t-surface-bg));
+  --t-surface-hover:  color-mix(in srgb, var(--t-text) 6%, var(--t-surface-bg));
+  --t-accent-soft:    color-mix(in srgb, var(--t-accent) 15%, #ffffff);
+  --t-accent-wash:    color-mix(in srgb, var(--t-accent) 8%, transparent);
+  --t-accent-tint:    color-mix(in srgb, var(--t-accent) 6%, transparent);
+  --t-accent-text:    color-mix(in srgb, var(--t-accent) 70%, #000000);
+  --t-link-soft:      color-mix(in srgb, var(--t-link) 10%, #ffffff);
+  --t-link-ring:      color-mix(in srgb, var(--t-link) 45%, #ffffff);
+}
+
+/* ==========================================================================
+   2. I DUE TEMI
+
+   Aree dell'app
+     --t-header-bg   intestazione (header)
+     --t-left-bg     sidebar sinistra (capitoli)
+     --t-right-bg    sidebar destra (scacchiera e console)
+     --t-main-bg     sfondo del blocco centrale
+     --t-toolbar-bg  toolbar dell'editor
+     --t-desk-bg     sfondo dell'editor, fuori dal foglio
+     --t-sheet-bg    foglio dell'editor (nel PDF il foglio resta sempre bianco)
+     --t-surface-bg  schede, finestre, campi, menu
+   Testo
+     --t-text / --t-text-muted   testo principale e secondario
+     --t-sheet-text              testo sul foglio
+     Facoltativi, per un'area con sfondo di luminosità diversa dalle altre:
+     --t-<area>-fg e --t-<area>-muted, con <area> = header, left, right, main,
+     toolbar, desk, surface (se mancano valgono --t-text e --t-text-muted)
+   Accento e link
+     --t-accent        mossa attiva, albero selezionato, linea del paragrafo attivo
+     --t-accent-fg     testo sopra l'accento
+     --t-accent-strong pulsanti blu (es. «Esporta»)
+     --t-accent-ink    testo accentato su fondo tinto (scala blue-700/800/900)
+     --t-link          riferimenti ai diagrammi nel testo
+   Pulsanti scuri
+     --t-btn-bg, --t-btn-fg, --t-btn-hover
+   Scacchiera
+     --t-square-light, --t-square-dark   usate solo se si attiva la regola
+     "case della scacchiera" in fondo al file (altrimenti restano gli SVG)
+   ========================================================================== */
+
+/* --- Tema standard: i colori attuali dell'applicazione ---------------------- */
+[data-theme="standard"] {
+  color-scheme: light;
+
+  --t-header-bg: #ffffff;
+  --t-left-bg: #ffffff;
+  --t-right-bg: #ffffff;
+  --t-main-bg: #fafafa;
+  --t-toolbar-bg: #fafafa;
+  --t-desk-bg: #f3f4f6;
+  --t-sheet-bg: #ffffff;
+  --t-surface-bg: #ffffff;
+
+  --t-text: #171717;
+  --t-text-muted: #737373;
+  --t-sheet-text: #171717;
+
+  --t-accent: #3b82f6;
+  --t-accent-fg: #ffffff;
+  --t-accent-strong: #2563eb;
+  --t-accent-ink: #1e40af;
+  --t-link: #1d4ed8;
+
+  --t-btn-bg: #171717;
+  --t-btn-fg: #ffffff;
+  --t-btn-hover: #404040;
+
+  --t-square-light: #f0d9b5;
+  --t-square-dark: #b58863;
+
+  /* sfumature originali, al posto di quelle derivate */
+  --t-accent-soft: #dbeafe;
+  --t-accent-wash: rgba(239, 246, 255, 0.4);
+  --t-accent-tint: rgba(59, 130, 246, 0.06);
+  --t-accent-text: #1d4ed8;
+  --t-link-soft: #eff6ff;
+  --t-link-ring: #93c5fd;
+}
+
+/* --- Tema alternativo: da rifinire cambiando i valori qui sotto ------------- */
+[data-theme="alt"] {
+  color-scheme: dark;
+
+  --t-header-bg: #1b1e23;
+  --t-left-bg: #23272e;
+  --t-right-bg: #23272e;
+  --t-main-bg: #16181c;
+  --t-toolbar-bg: #2b3038;
+  --t-desk-bg: #1f2227;
+  --t-sheet-bg: #ffffff;
+  --t-surface-bg: #2b3038;
+
+  --t-text: #e7e9ec;
+  --t-text-muted: #9aa3ad;
+  --t-sheet-text: #171717;
+
+  --t-accent: #e8a15d;
+  --t-accent-fg: #171717;
+  --t-accent-strong: #d98f45;
+  --t-accent-ink: #f0c08e;
+  --t-link: #2563eb;
+
+  --t-btn-bg: #d7dce2;
+  --t-btn-fg: #171717;
+  --t-btn-hover: #bfc5cc;
+
+  --t-square-light: #dfd8c8;
+  --t-square-dark: #7d8f7f;
+}
+
+/* --- Tema carta: da rifinire cambiando i valori qui sotto ------------- */
+[data-theme="paper"] {
+  color-scheme: light;
+
+  --t-header-bg: #ffffff;
+  --t-left-bg: #ffffff;
+  --t-right-bg: #ffffff;
+  --t-main-bg: #fafafa;
+  --t-toolbar-bg: #fafafa;
+  --t-desk-bg: #f3f4f6;
+  --t-sheet-bg: #ffffff;
+  --t-surface-bg: #ffffff;
+
+  --t-text: #171717;
+  --t-text-muted: #737373;
+  --t-sheet-text: #171717;
+
+  --t-accent: #3b82f6;
+  --t-accent-fg: #ffffff;
+  --t-accent-strong: #2563eb;
+  --t-accent-ink: #1e40af;
+  --t-link: #1d4ed8;
+
+  --t-btn-bg: #171717;
+  --t-btn-fg: #ffffff;
+  --t-btn-hover: #404040;
+
+  --t-square-light: #f0d9b5;
+  --t-square-dark: #b58863;
+
+  /* sfumature originali, al posto di quelle derivate */
+  --t-accent-soft: #dbeafe;
+  --t-accent-wash: rgba(239, 246, 255, 0.4);
+  --t-accent-tint: rgba(59, 130, 246, 0.06);
+  --t-accent-text: #1d4ed8;
+  --t-link-soft: #eff6ff;
+  --t-link-ring: #93c5fd;
+}
+
+/* ==========================================================================
+   3. APPLICAZIONE DEI TEMI (di norma non si modifica)
+
+   Ogni area (.th-*) riscrive la scala di grigi di Tailwind (--color-neutral-*)
+   a partire dal proprio sfondo (--r-bg) e dal proprio testo (--r-fg): così tutte
+   le classi neutral-* già presenti nei componenti (testi, bordi, hover, sfondi
+   chiari) si adattano da sole all'area in cui si trovano.
+   ========================================================================== */
+
+html[data-theme] {
+  --r-bg: var(--t-main-bg);
+  --r-fg: var(--t-main-fg, var(--t-text));
+  --r-muted: var(--t-main-muted, var(--t-text-muted));
+  background-color: var(--t-main-bg);
+}
+
+/* --- Aree: sfondi (fuori da ogni layer, per prevalere sulle utility di Tailwind) --- */
+html[data-theme] .bg-white {
+  --r-bg: var(--t-surface-bg);
+  --r-fg: var(--t-surface-fg, var(--t-text));
+  --r-muted: var(--t-surface-muted, var(--t-text-muted));
+  background-color: var(--t-surface-bg);
+}
+html[data-theme] .th-header {
+  --r-bg: var(--t-header-bg);
+  --r-fg: var(--t-header-fg, var(--t-text));
+  --r-muted: var(--t-header-muted, var(--t-text-muted));
+  background-color: var(--t-header-bg);
+}
+html[data-theme] .th-left {
+  --r-bg: var(--t-left-bg);
+  --r-fg: var(--t-left-fg, var(--t-text));
+  --r-muted: var(--t-left-muted, var(--t-text-muted));
+  background-color: var(--t-left-bg);
+}
+html[data-theme] .th-right {
+  --r-bg: var(--t-right-bg);
+  --r-fg: var(--t-right-fg, var(--t-text));
+  --r-muted: var(--t-right-muted, var(--t-text-muted));
+  background-color: var(--t-right-bg);
+}
+html[data-theme] .th-main {
+  --r-bg: var(--t-main-bg);
+  --r-fg: var(--t-main-fg, var(--t-text));
+  --r-muted: var(--t-main-muted, var(--t-text-muted));
+  background-color: var(--t-main-bg);
+}
+html[data-theme] .th-toolbar {
+  --r-bg: var(--t-toolbar-bg);
+  --r-fg: var(--t-toolbar-fg, var(--t-text));
+  --r-muted: var(--t-toolbar-muted, var(--t-text-muted));
+  background-color: var(--t-toolbar-bg);
+}
+/* Editor: cornice, scrivania attorno al foglio e scrivania della copertina */
+html[data-theme] .th-frame,
+html[data-theme] .th-desk,
+html[data-theme] #book-editor-content {
+  --r-bg: var(--t-desk-bg);
+  --r-fg: var(--t-desk-fg, var(--t-text));
+  --r-muted: var(--t-desk-muted, var(--t-text-muted));
+  background-color: var(--t-desk-bg);
+}
+
+/* --- Aree: testo e scala di grigi (sotto le utility, così text-* e simili vincono) --- */
+@layer components {
+  html[data-theme],
+  html[data-theme] .bg-white,
+  html[data-theme] .th-header,
+  html[data-theme] .th-left,
+  html[data-theme] .th-right,
+  html[data-theme] .th-main,
+  html[data-theme] .th-toolbar,
+  html[data-theme] .th-frame,
+  html[data-theme] .th-desk,
+  html[data-theme] #book-editor-content {
+    color: var(--r-fg);
+    --color-neutral-50:  color-mix(in srgb, var(--r-fg) 2%, var(--r-bg));
+    --color-neutral-100: color-mix(in srgb, var(--r-fg) 4%, var(--r-bg));
+    --color-neutral-200: color-mix(in srgb, var(--r-fg) 11%, var(--r-bg));   /* bordi */
+    --color-neutral-300: color-mix(in srgb, var(--r-fg) 19%, var(--r-bg));
+    --color-neutral-400: color-mix(in srgb, var(--r-fg) 40%, var(--r-bg));
+    --color-neutral-500: var(--r-muted);
+    --color-neutral-600: color-mix(in srgb, var(--r-fg) 75%, var(--r-bg));
+    --color-neutral-700: color-mix(in srgb, var(--r-fg) 83%, var(--r-bg));
+    --color-neutral-800: color-mix(in srgb, var(--r-fg) 94%, var(--r-bg));
+    --color-neutral-900: var(--r-fg);
+    --color-neutral-950: var(--r-fg);
+  }
+}
+
+/* Effetto al passaggio del mouse sulle schede (che hanno sfondo proprio) */
+html[data-theme] .bg-white:is(.hover\:bg-neutral-50, .hover\:bg-neutral-100):hover {
+  background-color: var(--color-neutral-100);
+}
+
+/* --- Pulsanti scuri (bg-neutral-900/950, bg-black) -------------------------- */
+html[data-theme] :is(.bg-neutral-900, .bg-neutral-950, .bg-black):not(:disabled) {
+  background-color: var(--t-btn-bg);
+  border-color: var(--t-btn-bg);
+  color: var(--t-btn-fg);
+}
+html[data-theme] :is(.hover\:bg-neutral-700, .hover\:bg-neutral-800):hover:not(:disabled) {
+  background-color: var(--t-btn-hover);
+  border-color: var(--t-btn-hover);
+}
+html[data-theme] .text-black { color: var(--r-fg); }
+html[data-theme] .border-black { border-color: var(--r-fg); }
+
+/* --- Accento: la scala blue di Tailwind (pulsanti blu, riquadri informativi) --- */
+html[data-theme] {
+  --color-blue-50:  color-mix(in srgb, var(--t-accent) 10%, var(--t-surface-bg));
+  --color-blue-100: color-mix(in srgb, var(--t-accent) 18%, var(--t-surface-bg));
+  --color-blue-200: color-mix(in srgb, var(--t-accent) 30%, var(--t-surface-bg));
+  --color-blue-300: color-mix(in srgb, var(--t-accent) 50%, var(--t-surface-bg));
+  --color-blue-400: color-mix(in srgb, var(--t-accent) 75%, var(--t-surface-bg));
+  --color-blue-500: var(--t-accent);
+  --color-blue-600: var(--t-accent-strong);
+  --color-blue-700: var(--t-accent-ink);
+  --color-blue-800: var(--t-accent-ink);
+  --color-blue-900: var(--t-accent-ink);
+}
+html[data-theme] :is(.bg-blue-600, .bg-blue-700) { color: var(--t-accent-fg); }
+
+/* --- Link ----------------------------------------------------------------------- */
+html[data-theme] a { color: var(--t-link); }
+
+/* --- Case della scacchiera (facoltativo) -------------------------------------------
+   Di serie la scacchiera usa gli SVG verde (posizione libera) e marrone (albero attivo).
+   Per usare invece --t-square-light / --t-square-dark di un tema, decommentare la regola
+   del tema (o sostituire [data-theme="alt"] con [data-theme]  per averla in entrambi). */
+/*
+html[data-theme="alt"] .chessboard-outer cg-board {
+  background-image: repeating-conic-gradient(var(--t-square-dark) 0 25%, var(--t-square-light) 0 50%) !important;
+  background-size: 25% 25% !important;
+}
+*/

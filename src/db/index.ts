@@ -22,6 +22,12 @@ export interface LocalAsset {
   name: string
 }
 
+// Impostazioni dell'applicazione (es. tema): vivono solo in questo browser, mai nel file .mtcbook
+export interface LocalSetting {
+  id: string
+  value: unknown
+}
+
 export const putAsset = (asset: LocalAsset) => db.assets.put(asset)
 export const getAsset = (id: string) => db.assets.get(id)
 
@@ -36,6 +42,7 @@ export class MtcDatabase extends Dexie {
   bookState!: Table<LocalBookState>
   sections!: Table<LocalSection>
   assets!: Table<LocalAsset>
+  settings!: Table<LocalSetting>
 
   constructor() {
     super('MtcBookDatabase')
@@ -45,6 +52,14 @@ export class MtcDatabase extends Dexie {
       bookState: 'id',
       sections: 'id',
       assets: 'id'
+    })
+
+    // Versione 3: tabella delle impostazioni dell'applicazione
+    this.version(3).stores({
+      bookState: 'id',
+      sections: 'id',
+      assets: 'id',
+      settings: 'id'
     })
   }
 }
@@ -93,6 +108,9 @@ export async function saveFullStateToIndexedDB(
     }
   })
 }
+
+export const getSetting = async (id: string): Promise<unknown> => (await db.settings.get(id))?.value
+export const putSetting = (id: string, value: unknown) => db.settings.put({ id, value })
 
 /** Aggiorna solo l'indicatore "copia su disco non aggiornata" */
 export async function setDirtyVsFile(flag: boolean) {

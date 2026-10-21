@@ -190,7 +190,7 @@ const deleteBlock = () => {
 }
 
 .chess-tree-block-container.is-active-tree {
-  background-color: rgba(239, 246, 255, 0.4);
+  background-color: var(--t-accent-wash, rgba(239, 246, 255, 0.4));
 }
 
 /* Stessa linea blu dei paragrafi (-12px), compensando il margin-left: -7px del blocco */
@@ -201,7 +201,7 @@ const deleteBlock = () => {
   top: 0;
   bottom: 0;
   width: 3px;
-  background-color: #3b82f6;
+  background-color: var(--t-accent, #3b82f6);
   border-radius: 2px;
 }
 
@@ -261,9 +261,9 @@ const deleteBlock = () => {
 }
 
 .chess-tree-block-container.is-pgn-target {
-  outline: 2px dashed #3b82f6;
+  outline: 2px dashed var(--t-accent, #3b82f6);
   outline-offset: 3px;
-  background-color: rgba(59, 130, 246, 0.05);
+  background-color: var(--t-accent-tint, rgba(59, 130, 246, 0.05));
 }
 
 .pgn-target-badge {
@@ -271,8 +271,8 @@ const deleteBlock = () => {
   margin: 0 0 6px;
   padding: 2px 8px;
   border-radius: 999px;
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--t-accent-soft, #dbeafe);
+  color: var(--t-accent-text, #1d4ed8);
   font: 600 11px ui-sans-serif, system-ui, sans-serif;
   user-select: none;
 }

@@ -1,5 +1,5 @@
 <template>
-    <div class="flex-1 bg-white border border-neutral-200 rounded-xl flex flex-col shadow-sm overflow-hidden relative">
+    <div class="th-frame flex-1 bg-white border border-neutral-200 rounded-xl flex flex-col shadow-sm overflow-hidden relative">
 
         <!-- OVERLAY DI CARICAMENTO PER OPZIONE B -->
         <div v-if="isGeneratingPdf"
@@ -1185,7 +1185,7 @@ watch(() => pgnStore.request, async (req) => {
     font-family: Lora, Georgia, Cambria, serif !important;
     font-size: 11pt !important;
     line-height: 1.5 !important;
-    color: #171717 !important;
+    color: var(--t-sheet-text, #171717) !important;
 }
 
 .book-text-engine p,
@@ -1209,7 +1209,7 @@ watch(() => pgnStore.request, async (req) => {
     font-weight: bold !important;
     margin-top: 0 !important;
     margin-bottom: 6mm !important;
-    color: #171717 !important;
+    color: var(--t-sheet-text, #171717) !important;
 }
 
 .book-text-engine h3,
@@ -1219,7 +1219,7 @@ watch(() => pgnStore.request, async (req) => {
     font-weight: bold !important;
     margin-top: 18pt !important;
     margin-bottom: 9pt !important;
-    color: #262626 !important;
+    color: var(--t-sheet-text, #262626) !important;
 }
 
 /* Gestione dei Contatori dei Capitoli */
@@ -1243,7 +1243,7 @@ watch(() => pgnStore.request, async (req) => {
 /* Struttura del Contenitore della Pagina Editor */
 .tiptap-container {
     counter-reset: chapter-count var(--chapter-index) section-count 0;
-    background: #ffffff;
+    background: var(--t-sheet-bg, #ffffff);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     border: 1px solid #e5e7eb;
     transition: all 0.3s ease;
@@ -1318,7 +1318,7 @@ watch(() => pgnStore.request, async (req) => {
 
 /* Personalizzazione Caret (Cursore di Scrittura) */
 .ProseMirror {
-    caret-color: #2563eb !important;
+    caret-color: var(--t-accent-text, #2563eb) !important;
     /* Cursore blu visibile ed elegante */
 }
 
@@ -1332,7 +1332,7 @@ watch(() => pgnStore.request, async (req) => {
 .ProseMirror h2.is-node-focused,
 .ProseMirror h3.is-node-focused {
     position: relative;
-    background-color: rgba(239, 246, 255, 0.4);
+    background-color: var(--t-accent-wash, rgba(239, 246, 255, 0.4));
     /* Un leggerissimo azzurro di background */
     border-radius: 2px;
 }
@@ -1347,7 +1347,7 @@ watch(() => pgnStore.request, async (req) => {
     top: 0;
     bottom: 0;
     width: 3px;
-    background-color: #3b82f6;
+    background-color: var(--t-accent, #3b82f6);
     border-radius: 2px;
 }
 
@@ -1364,10 +1364,10 @@ watch(() => pgnStore.request, async (req) => {
 .pgn-insert-marker {
     margin: 8px 0;
     padding: 6px 10px;
-    border: 2px dashed #3b82f6;
+    border: 2px dashed var(--t-accent, #3b82f6);
     border-radius: 6px;
-    background: rgba(59, 130, 246, 0.06);
-    color: #1d4ed8;
+    background: var(--t-accent-tint, rgba(59, 130, 246, 0.06));
+    color: var(--t-accent-text, #1d4ed8);
     font: 600 11px ui-sans-serif, system-ui, sans-serif;
     text-align: center;
     user-select: none;

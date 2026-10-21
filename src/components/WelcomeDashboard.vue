@@ -1,5 +1,5 @@
 <template>
-  <div class="flex-1 flex flex-col items-center justify-center bg-neutral-50 px-4 py-12 select-none">
+  <div class="flex-1 flex flex-col items-center justify-center bg-neutral-50 th-main px-4 py-12 select-none">
     <div class="max-w-md w-full text-center space-y-8">
       
       <!-- Logo / Icona Brand -->
