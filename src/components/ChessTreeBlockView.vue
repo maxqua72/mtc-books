@@ -29,7 +29,7 @@
       <div v-if="headerView.opening" class="tph-opening">{{ headerView.opening }}</div>
     </div>
 
-    <div class="block-content">
+    <div class="block-content" ref="contentEl">
       <!-- Blocco senza albero nello store: non attivabile, nessun albero vuoto creato di nascosto -->
       <div v-if="!currentTree" class="empty-tree-placeholder is-orphan">
         Albero non trovato. Elimina questo blocco oppure prova ad annullare l'ultima operazione.
@@ -48,7 +48,7 @@
 
 <script setup lang="ts">
 import { nodeViewProps, NodeViewWrapper } from '@tiptap/vue-3'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useChessTreeStore } from '../stores/chessTreeStore'
 import { usePgnImportStore } from '../stores/pgnImportStore'
 import { useChessBookStore } from '../stores/chessBookStore'
@@ -138,6 +138,21 @@ const deleteBlock = () => {
     props.deleteNode()
   }
 }
+
+// Porta in vista la mossa attiva di QUESTO albero. Un solo watcher per blocco,
+// al posto di uno per ogni mossa (prima stava in ogni ChessMoveRenderer).
+const contentEl = ref<HTMLElement | null>(null)
+
+watch(
+  [() => treeStore.activeTreeId, () => treeStore.activeNodeId],
+  () => {
+    if (!isActive.value || !treeStore.activeNodeId) return
+    contentEl.value
+      ?.querySelector('.chess-move-item.is-active')
+      ?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
+  },
+  { flush: 'post' }   // dopo il render: la classe .is-active è già applicata
+)
 </script>
 
 <style scoped>

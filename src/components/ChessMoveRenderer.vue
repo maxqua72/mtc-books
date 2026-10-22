@@ -115,13 +115,14 @@ const moveEl = ref<HTMLElement | null>(null)
 
 // Quando questa mossa diventa quella attiva (dalla console, dai tasti o dalla scacchiera)
 // la portiamo in vista; con 'nearest' non scorre se è già visibile
+/*
 watch(
   () => !!props.nodes[0] && isNodeActive(props.nodes[0].id),
   (active) => {
     if (!active) return
     nextTick(() => moveEl.value?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }))
   }
-)
+)*/
 
 const selectMove = (nodeId: string) => {
   // Deseleziona visivamente la NodeView di Tiptap rimuovendo le selezioni globali dell'editor
@@ -214,10 +215,15 @@ const getMovePrefix = (node: ChessMoveNode): string => {
     return `${node.moveNumber}. `
   }
 
+  /*
   const parentNode = treeStore.findNodeById(myTree.value?.rootNodes || [], node.parentId || '')
   if (!parentNode) {
     return `${node.moveNumber}... `
   }
+    */
+  // parentId null = prima mossa dell'albero (nessun padre)
+  if (node.parentId === null) return `${node.moveNumber}... `
+
 
   if (props.isVariantRoot) {
     return `${node.moveNumber}... `

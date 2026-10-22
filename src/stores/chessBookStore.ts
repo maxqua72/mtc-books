@@ -43,6 +43,7 @@ export interface BookMetadata {
 
 
 export const useChessBookStore = defineStore('chessBook', () => {
+    const sanitizedSections = new Set<string>()
     // --- STATO ESISTENTE (Scacchiera e Segnali) ---
     const activeFen = ref('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
     const globalDiagramSize = ref(28)
@@ -450,6 +451,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
         // 1. Se c'era una sezione aperta, congeliamo il suo contenuto attuale nella cache di memoria
         if (activeSectionId.value && currentEditorContent !== undefined) {
             syncActiveSectionToCache({ html: currentEditorContent, prune: true })
+            performance.mark('section-saved')
         }
 
         const nextType = sectionIndex.value.find(s => s.id === nextSectionId)?.type
@@ -462,7 +464,13 @@ export const useChessBookStore = defineStore('chessBook', () => {
             try {
                 const parsed = JSON.parse(cachedData)
                 nextHtml = parsed.html || ''
-                nextTrees = sanitizeTrees(parsed.trees)
+                //nextTrees = sanitizeTrees(parsed.trees)
+                nextTrees = sanitizedSections.has(nextSectionId)
+                    ? (Array.isArray(parsed.trees) ? parsed.trees : [])
+                    : sanitizeTrees(parsed.trees)
+                sanitizedSections.add(nextSectionId)
+
+                performance.mark('section-loaded')
                 nextCover = parsed.cover ?? null
             } catch (e) {
                 console.error('Errore nel parsing della sezione:', e)
@@ -471,6 +479,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
 
         // Carica subito partite e copertina negli store (PRIMA di cambiare sezione attiva)
         chessTreeStore.setChapterTrees(nextType === 'cover' ? [] : nextTrees)
+        performance.mark('trees-loaded')
         coverModel.value = nextType === 'cover' ? normalizeCover(nextCover) : null
 
         // DOPO: impostiamo l'ID e l'HTML per attivare il re-render dell'editor
@@ -560,6 +569,8 @@ export const useChessBookStore = defineStore('chessBook', () => {
                 }
             }
         }
+
+        sanitizedSections.clear()
 
         // 3b. Immagini della copertina: dallo zip a IndexedDB
         const assetsFolder = zip.folder('assets')
@@ -721,6 +732,8 @@ export const useChessBookStore = defineStore('chessBook', () => {
             allSections.forEach(sec => {
                 zippedSectionsCache.value[sec.id] = sec.json
             })
+
+            sanitizedSections.clear()
 
             // Stato della copia su disco: se non era noto (dati vecchi) lo si considera non aggiornato
             resetFileBaseline(savedState.dirtyVsFile ?? true)
