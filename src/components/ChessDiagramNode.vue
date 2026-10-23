@@ -552,14 +552,14 @@ const boardString = computed(() => fenToBoardString(props.node.attrs.fen, !!prop
 /* Evidenzia il rettangolo della didascalia quando è attiva o sotto focus */
 .diagram-caption:focus,
 .diagram-caption:hover {
-  background-color: #f8fafc;
-  border-color: #e2e8f0;
+  background-color: color-mix(in srgb, var(--t-accent-wash) 70%, transparent);
+  border-color: color-mix(in srgb, var(--t-accent), #ffffff 80%);
 }
 
 .diagram-caption.is-editing {
   cursor: text;
-  background-color: #f8fafc;
-  border-color: #cbd5e1;
+  background-color: color-mix(in srgb, var(--t-accent-wash) 70%, transparent);
+  border-color: color-mix(in srgb, var(--t-accent), #ffffff 80%);
   user-select: text !important;
   -webkit-user-select: text !important;
 }

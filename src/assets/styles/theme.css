@@ -19,7 +19,7 @@
   --t-surface-border: color-mix(in srgb, var(--t-text) 11%, var(--t-surface-bg));
   --t-surface-hover:  color-mix(in srgb, var(--t-text) 6%, var(--t-surface-bg));
   --t-accent-soft:    color-mix(in srgb, var(--t-accent) 15%, #ffffff);
-  --t-accent-wash:    color-mix(in srgb, var(--t-accent) 8%, transparent);
+  --t-accent-wash:    color-mix(in srgb, var(--t-accent) 4%, transparent);
   --t-accent-tint:    color-mix(in srgb, var(--t-accent) 6%, transparent);
   --t-accent-text:    color-mix(in srgb, var(--t-accent) 70%, #000000);
   --t-link-soft:      color-mix(in srgb, var(--t-link) 10%, #ffffff);
@@ -128,15 +128,16 @@
 }
 
 /* --- Tema carta: da rifinire cambiando i valori qui sotto ------------- */
+/*
 [data-theme="paper"] {
   color-scheme: light;
 
   --t-header-bg: #ffffff;
-  --t-left-bg: #ffffff;
+  --t-left-bg: #faf9f5;
   --t-right-bg: #ffffff;
-  --t-main-bg: #fafafa;
+  --t-main-bg: #f2efe7;
   --t-toolbar-bg: #fafafa;
-  --t-desk-bg: #f3f4f6;
+  --t-desk-bg: #E6E1D5;
   --t-sheet-bg: #ffffff;
   --t-surface-bg: #ffffff;
 
@@ -144,11 +145,11 @@
   --t-text-muted: #737373;
   --t-sheet-text: #171717;
 
-  --t-accent: #3b82f6;
+  --t-accent: #c77359;
   --t-accent-fg: #ffffff;
-  --t-accent-strong: #2563eb;
-  --t-accent-ink: #1e40af;
-  --t-link: #1d4ed8;
+  --t-accent-strong: #d07a5a;
+  --t-accent-ink: #995B44;
+  --t-link: #f1efeb;
 
   --t-btn-bg: #171717;
   --t-btn-fg: #ffffff;
@@ -157,13 +158,37 @@
   --t-square-light: #f0d9b5;
   --t-square-dark: #b58863;
 
-  /* sfumature originali, al posto di quelle derivate */
-  --t-accent-soft: #dbeafe;
-  --t-accent-wash: rgba(239, 246, 255, 0.4);
-  --t-accent-tint: rgba(59, 130, 246, 0.06);
-  --t-accent-text: #1d4ed8;
-  --t-link-soft: #eff6ff;
-  --t-link-ring: #93c5fd;
+ 
+}*/
+
+[data-theme="paper"] {
+  color-scheme: light;
+
+  --t-header-bg: #fdfff8;
+  --t-left-bg: #faf9f5;
+  --t-right-bg: #faf9f5;
+  --t-main-bg: #f2efe7;
+  --t-toolbar-bg: #fdfff8;
+  --t-desk-bg: #e6e1d5;
+  --t-sheet-bg: #ffffff;
+  --t-surface-bg: #ffffff;
+
+  --t-text: #2a251f;
+  --t-text-muted: #6b6458;
+  --t-sheet-text: #171717;
+
+  --t-accent: #b45f44;          /* bianco sopra ≈ 4,5:1 */
+  --t-accent-fg: #ffffff;
+  --t-accent-strong: #a3513a;   /* ora più scuro di accent: 5,5:1 */
+  --t-accent-ink: #84402b;      /* più scuro di strong, per hover e testi su tinta */
+  --t-link: #9a4c33;            /* era quasi bianco */
+
+  --t-btn-bg: #2a251f;
+  --t-btn-fg: #ffffff;
+  --t-btn-hover: #4a433a;
+
+  --t-square-light: #f0d9b5;
+  --t-square-dark: #b58863;
 }
 
 /* ==========================================================================
@@ -276,7 +301,7 @@ html[data-theme] .border-black { border-color: var(--r-fg); }
 
 /* --- Accento: la scala blue di Tailwind (pulsanti blu, riquadri informativi) --- */
 html[data-theme] {
-  --color-blue-50:  color-mix(in srgb, var(--t-accent) 10%, var(--t-surface-bg));
+  --color-blue-50:  color-mix(in srgb, var(--t-accent) 6%, var(--t-surface-bg));
   --color-blue-100: color-mix(in srgb, var(--t-accent) 18%, var(--t-surface-bg));
   --color-blue-200: color-mix(in srgb, var(--t-accent) 30%, var(--t-surface-bg));
   --color-blue-300: color-mix(in srgb, var(--t-accent) 50%, var(--t-surface-bg));

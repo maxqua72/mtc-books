@@ -179,8 +179,10 @@ watch(
 
 /* Quando il mouse passa sopra il blocco intero della partita */
 .chess-tree-block-container:hover {
-  background-color: rgba(248, 250, 252, 0.7);
-  border-color: #cbd5e1;
+  /*background-color: rgba(248, 250, 252, 0.7);
+  border-color: #cbd5e1;*/
+  background-color: color-mix(in srgb, var(--t-accent-wash) 70%, transparent);
+  border-color: color-mix(in srgb, var(--t-accent), #ffffff 80%);
 }
 
 /* Header comandi nascosto di base */
