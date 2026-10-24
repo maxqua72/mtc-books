@@ -166,7 +166,6 @@ body {
   right: 100% !important;
   margin-right: 10px !important;
   width: auto !important;
-  height: calc(var(--diagram-size) * 0.5, 24px) !important;
   min-width: 24px !important;
   background-color: #000000 !important;
   padding: 0 7px !important;

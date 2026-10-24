@@ -108,7 +108,7 @@ html, body, #app {
       }
 
 .font-text {
-  font-family: 'Lora, EB Garamond', Georgia, serif !important;
+  font-family: 'Lora', 'EB Garamond', Georgia, serif !important;
 }
 
 /* Classe di utilità per la scacchiera tipografica */
