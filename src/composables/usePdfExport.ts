@@ -6,6 +6,7 @@ import { useChessBookStore } from '../stores/chessBookStore'
 import { usePdfStore, type ExportSection } from '../stores/pdfStore'
 import { treeIdsInDoc } from '../utils/editorDoc'
 import type { PageLayout } from './usePageLayout'
+import typographyStyles from '../assets/styles/book-typography.css?raw'
 import pdfPrintStyles from '../assets/styles/pdf-print.css?raw'
 
 type EditorRef = ShallowRef<Editor | undefined>
@@ -17,7 +18,7 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
   /** true mentre il client assembla i capitoli (prima della chiamata al server) */
   const isAssembling = ref(false)
 
-  // CSS inviato al server: variabili del libro + regole di stampa
+  // CSS inviato al server: variabili del libro + tipografia condivisa + regole di stampa
   const buildCss = (chapterIndex: number) => {
     const { top, right, bottom, left } = layout.margins.value
     const { paragraph, diagram, variation } = layout.spacing.value
@@ -34,7 +35,8 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
       --variation-spacing: ${variation}mm;
     }
   `
-    return `${variables}\n${pdfPrintStyles}`
+    // Prima la tipografia condivisa con l'editor, poi le regole di stampa (nessuna proprietà in comune)
+    return `${variables}\n${typographyStyles}\n${pdfPrintStyles}`
   }
 
   /**

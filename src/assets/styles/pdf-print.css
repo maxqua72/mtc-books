@@ -70,26 +70,19 @@ body {
 }
 /* ----- */
 
-.book-text-engine, .tiptap, .book-text-engine p, .tiptap p {
+/* Tipografia di base (font, paragrafi, titoli, spaziatura prima dei blocchi): book-typography.css,
+   anteposto a questo file e condiviso con l'editor. Qui restano le regole del solo PDF. */
+
+/* Paragrafi: font esplicito oltre a quello ereditato, e display */
+.book-text-engine p, .tiptap p {
   font-family: Lora,Georgia, Cambria, serif !important;
   color: #171717 !important;
   font-size: 11pt !important;
   line-height: 1.5 !important;
-}
-
-.book-text-engine p, .tiptap p {
   display: block !important;
-  margin-top: 0 !important;
-  margin-bottom: var(--paragraph-spacing, 4.5mm) !important;
-  padding: 0 !important;
 }
 
 .book-text-engine h2, .tiptap h2 { 
-  font-size: 24pt !important; 
-  line-height: 1.2 !important;
-  font-weight: bold !important; 
-  margin-top: 0 !important;
-  margin-bottom: 6mm !important;
   padding: 0 !important;
   font-family: Lora,Georgia, serif !important; 
   page-break-inside: avoid !important; 
@@ -103,11 +96,6 @@ body {
 }
 
 .book-text-engine h3, .tiptap h3 { 
-  font-size: 15pt !important; 
-  line-height: 19pt !important;
-  font-weight: bold !important; 
-  margin-top: 18pt !important; 
-  margin-bottom: 9pt !important; 
   font-family: Lora,Georgia, serif !important; 
   page-break-inside: avoid !important; 
   break-inside: avoid !important; 
@@ -388,14 +376,6 @@ body {
   outline: none !important;
 }
 
-/* Spazio tra paragrafo e diagramma/partita = quello del blocco (niente somma né collasso dei margini) */
-.book-text-engine p:has(+ .chess-diagram-container:not([data-align="left"]):not([data-align="right"])),
-.book-text-engine p:has(+ .chess-tree-block-container),
-.tiptap p:has(+ .chess-diagram-container:not([data-align="left"]):not([data-align="right"])),
-.tiptap p:has(+ .chess-tree-block-container) {
-  margin-bottom: 0 !important;
-}
-
 /* --- DIAGRAMMI A MARGINE: il testo che segue scorre accanto --- */
 .chess-diagram-container[data-align="left"],
 .chess-diagram-container[data-align="right"] {
@@ -416,12 +396,6 @@ body {
 .chess-diagram-container[data-align="right"] .diagram-caption {
   width: 0 !important;
   min-width: 100% !important;
-}
-
-/* I titoli non si infilano accanto a un diagramma */
-.book-text-engine h2, .book-text-engine h3,
-.tiptap h2, .tiptap h3 {
-  clear: both;
 }
 
 /* Ogni sezione contiene i propri float: un diagramma non esce dal capitolo */

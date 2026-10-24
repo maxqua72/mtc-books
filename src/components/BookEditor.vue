@@ -47,6 +47,7 @@ import { useBlockInsertion, pasteTreeFromClipboard } from '../composables/useBlo
 import EditorToolbar from './EditorToolbar.vue'
 import CoverEditor from './cover/CoverEditor.vue'
 import PdfLoadingOverlay from './PdfLoadingOverlay.vue'
+import '../assets/styles/book-typography.css'
 
 const store = useChessBookStore()
 const pdfStore = usePdfStore()
@@ -142,46 +143,12 @@ const handleCanvasClick = (event: MouseEvent) => {
     will-change: transform;
 }
 
-/* Stili Tipografici Assoluti in punti (pt) condivisi nativamente con l'editor */
-.book-text-engine,
-.tiptap {
-    font-family: Lora, Georgia, Cambria, serif !important;
-    font-size: 11pt !important;
-    line-height: 1.5 !important;
-    color: var(--t-sheet-text, #171717) !important;
-}
+/* Tipografia di base (font, paragrafi, titoli, spaziatura prima dei blocchi): assets/styles/book-typography.css,
+   condiviso con il PDF. Qui restano solo le regole valide per il solo editor. */
 
-.book-text-engine p,
-.tiptap p {
-    margin-top: 0 !important;
-    margin-bottom: var(--paragraph-spacing, 4.5mm) !important;
-    padding: 0 !important;
-}
-
-/* Prima di un diagramma o di una partita lo spazio è esattamente quello del blocco:
-   il margine del paragrafo non si somma e non collassa con quello del blocco */
-.tiptap p:has(+ .chess-diagram-container),
-.tiptap p:has(+ .chess-tree-block-container) {
-    margin-bottom: 0 !important;
-}
-
-.book-text-engine h2,
-.tiptap h2 {
-    font-size: 24pt !important;
-    line-height: 1.2 !important;
-    font-weight: bold !important;
-    margin-top: 0 !important;
-    margin-bottom: 6mm !important;
-    color: var(--t-sheet-text, #171717) !important;
-}
-
+/* Colore dei sottotitoli: nell'editor segue il tema (ripiego #262626); nel PDF eredita il colore del testo */
 .book-text-engine h3,
 .tiptap h3 {
-    font-size: 15pt !important;
-    line-height: 19pt !important;
-    font-weight: bold !important;
-    margin-top: 18pt !important;
-    margin-bottom: 9pt !important;
     color: var(--t-sheet-text, #262626) !important;
 }
 
@@ -252,17 +219,6 @@ const handleCanvasClick = (event: MouseEvent) => {
     max-width: 100%;
     word-break: break-word;
     overflow-wrap: break-word;
-}
-
-.tiptap h2,
-.tiptap h3 {
-    clear: both;          /* i titoli non si infilano accanto a un diagramma */
-}
-
-/* Sostituisce la regola della spaziatura aggiunta in precedenza */
-.tiptap p:has(+ .chess-diagram-container:not([data-align="left"]):not([data-align="right"])),
-.tiptap p:has(+ .chess-tree-block-container) {
-    margin-bottom: 0 !important;
 }
 
 /* Applica il rientro della prima riga ai paragrafi standard dell'editor */
