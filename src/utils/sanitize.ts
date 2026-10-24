@@ -4,6 +4,7 @@ import type { ChessMoveNode, ChessTree } from '../stores/chessTreeStore'
 import type { SectionIndexItem } from '../stores/chessBookStore'
 import { STANDARD_FEN, isLegalFen, normalizeFen } from './fen'
 import { cleanShapes } from './shapes'
+import { newId } from './ids'
 
 const SAFE_ID = /^[\w.-]{1,80}$/
 const SAN_RE = /^[KQRBNOa-h1-8x=+#-]{2,9}$/
@@ -55,9 +56,6 @@ export function isValidFen(fen: unknown): fen is string {
 // ---------------------------------------------------------------------------
 interface Ctx { count: number; ids: Set<string>; dropped: number }
 
-const randomId = (prefix: string) =>
-  `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
-
 // Rigioca la mossa dalla posizione del padre: colore, numero e FEN si ricavano da lì, mai dal file
 function replayMove(parentFen: string, san: string) {
   try {
@@ -80,8 +78,8 @@ function cleanNode(raw: any, parentId: string | null, parentFen: string, ctx: Ct
   const played = replayMove(parentFen, raw.san)
   if (!played) { ctx.dropped++; return null }
 
-  let id = typeof raw.id === 'string' && SAFE_ID.test(raw.id) ? raw.id : randomId('move')
-  if (ctx.ids.has(id)) id = randomId('move')
+  let id = typeof raw.id === 'string' && SAFE_ID.test(raw.id) ? raw.id : newId('move')
+  if (ctx.ids.has(id)) id = newId('move')
   ctx.ids.add(id)
   ctx.count++
 

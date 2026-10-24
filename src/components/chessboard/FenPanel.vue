@@ -1,0 +1,60 @@
+<template>
+  <div class="space-y-1">
+    <div class="flex justify-between items-center">
+      <span class="text-[11px] font-medium text-neutral-400">Notazione FEN corrente:</span>
+      <button @click="copyFenToClipboard"
+        class="text-[11px] font-semibold text-neutral-600 hover:text-neutral-900 transition flex items-center gap-1">
+        {{ copied ? 'Copiato!' : 'Copia FEN' }}
+      </button>
+    </div>
+    <input type="text" :value="currentFen" :readonly="fenReadonly" @change="handleFenChange"
+      class="w-full font-mono text-[11px] bg-neutral-900 text-neutral-300 p-2 rounded break-all focus:outline-none focus:ring-1 focus:ring-neutral-500 select-all leading-relaxed border border-neutral-800"
+      :class="{ 'opacity-70 cursor-default': fenReadonly }" />
+    <p v-if="fenLocked" class="text-[11px] text-neutral-500">
+      Posizione iniziale già fissata: per partire da un’altra posizione crea un nuovo albero.
+    </p>
+    <p v-else-if="tree && locked" class="text-[11px] text-neutral-500">
+      Documento in sola lettura: la posizione iniziale non è modificabile.
+    </p>
+    <p v-else-if="tree" class="text-[11px] text-blue-700">
+      Un FEN incollato diventa la posizione iniziale di questo albero.
+    </p>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, nextTick, ref } from 'vue'
+import { useChessTreeStore } from '../../stores/chessTreeStore'
+import { useChessBookStore } from '../../stores/chessBookStore'
+
+const props = defineProps<{ currentFen: string }>()
+const emit = defineEmits<{ (e: 'updateFen', fen: string): void }>()
+
+const treeStore = useChessTreeStore()
+const bookStore = useChessBookStore()
+
+const tree = computed(() => treeStore.currentTree)
+const fenLocked = computed(() => treeStore.isFenLocked)
+// Sola lettura: la posizione iniziale dell'albero del documento non si cambia
+const locked = computed(() => bookStore.isLocked)
+const fenReadonly = computed(() => fenLocked.value || (locked.value && !!tree.value))
+
+const copied = ref(false)
+const copyFenToClipboard = async () => {
+  try {
+    await navigator.clipboard.writeText(props.currentFen)
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 2000)
+  } catch (err) {
+    console.error('Impossibile copiare il FEN:', err)
+  }
+}
+
+// Il campo mostra sempre il valore dello store: se il FEN viene rifiutato, il testo digitato sparisce
+const handleFenChange = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (!fenReadonly.value && target.value.trim() !== '') emit('updateFen', target.value.trim())
+  await nextTick()
+  target.value = props.currentFen
+}
+</script>

@@ -4,6 +4,9 @@ import { makeSquare } from 'chessops/util'
 import type { Game, PgnNodeData, ChildNode } from 'chessops/pgn'
 import type { ChessMoveNode, ChessTree } from '../stores/chessTreeStore'
 import { STANDARD_FEN } from './fen'
+import { newId } from './ids'
+import { escapeHtml } from './html'
+import { countNodes } from './treeOps'
 import { shouldShowHeaderByDefault } from './pgnHeader'
 import { cleanShapes, normalizeBrush, type BoardShape } from './shapes'
 
@@ -31,12 +34,6 @@ export interface ImportStats {
   nags: number
   warnings: string[]
 }
-
-const randomId = (prefix: string) =>
-  `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
-
-const escapeHtml = (s: string) =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 export const nodeLabel = (n: ChessMoveNode) =>
   `${n.moveNumber}${n.color === 'w' ? '.' : '...'} ${n.san}`
@@ -177,7 +174,7 @@ function buildNodes(
     ])
 
     const node: ChessMoveNode = {
-      id: randomId('move'),
+      id: newId('move'),
       san: played.san,
       fen: chess.fen(),
       moveNumber,
@@ -220,7 +217,7 @@ export function buildTreeFromGame(info: PgnGameInfo): { tree: ChessTree; stats: 
   attachGameComment(rootNodes, info, ctx.stats)
 
   const tree: ChessTree = {
-    id: randomId('tree'),
+    id: newId('tree'),
     title: info.title,
     startingFen: info.startFen,
     rootNodes,
@@ -247,9 +244,6 @@ export function buildBranch(
 // ---------------------------------------------------------------------------
 // Unione con un albero esistente
 // ---------------------------------------------------------------------------
-const countNodes = (n: ChessMoveNode): number =>
-  1 + n.children.reduce((sum, c) => sum + countNodes(c), 0)
-
 /** Unisce i rami importati a quelli esistenti (stessa mossa = stesso nodo). Restituisce i nodi aggiunti. */
 export function mergeNodes(target: ChessMoveNode[], incoming: ChessMoveNode[]): number {
   let added = 0
@@ -257,7 +251,7 @@ export function mergeNodes(target: ChessMoveNode[], incoming: ChessMoveNode[]): 
     const existing = target.find(n => n.san === inc.san)
     if (!existing) {
       target.push(inc)
-      added += countNodes(inc)
+      added += countNodes([inc])
       continue
     }
     if (!existing.comment && inc.comment) existing.comment = inc.comment

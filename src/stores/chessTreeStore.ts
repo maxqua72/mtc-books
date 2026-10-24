@@ -3,6 +3,8 @@ import { Chess } from 'chess.js'
 import { STANDARD_FEN, isLegalFen, normalizeFen } from '../utils/fen'
 import { toggleNagInList } from '../utils/nags'
 import type { BoardShape } from '../utils/shapes'
+import { newId } from '../utils/ids'
+import { findNode, cloneTree, countNodes } from '../utils/treeOps'
 
 export interface ChessMoveNode {
   id: string
@@ -31,55 +33,8 @@ export interface ChessTree {
 
 export type FenResult = 'ok' | 'invalid' | 'locked'
 
-const newId = (prefix: string) =>
-  `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
-
-const findNode = (nodes: ChessMoveNode[] | undefined, id: string): ChessMoveNode | null => {
-  const stack = [...(nodes ?? [])]
-  while (stack.length) {
-    const n = stack.pop()!
-    if (n.id === id) return n
-    if (n.children?.length) stack.push(...n.children)
-  }
-  return null
-}
-
 // Tetto di nodi della cronologia temporanea: oltre, riparte dalla posizione corrente
 const SCRATCH_MAX_NODES = 2000
-
-// Copia profonda dei nodi con id nuovi (e parentId coerenti): due alberi non condividono mai nulla
-const cloneNodes = (nodes: ChessMoveNode[], parentId: string | null): ChessMoveNode[] =>
-  nodes.map(n => {
-    const id = newId('move')
-    return {
-      ...n,
-      id,
-      parentId,
-      ...(n.nags ? { nags: [...n.nags] } : {}),
-      ...(n.shapes ? { shapes: n.shapes.map(s => ({ ...s })) } : {}),
-      children: cloneNodes(n.children, id),
-    }
-  })
-
-const cloneTree = (src: ChessTree, title: string): ChessTree => ({
-  id: newId('tree'),
-  title,
-  startingFen: src.startingFen,
-  rootNodes: cloneNodes(src.rootNodes, null),
-  activeNodeId: null,
-  ...(src.header ? { header: { ...src.header }, showHeader: src.showHeader === true } : {}),
-})
-
-const countNodes = (nodes: ChessMoveNode[]): number => {
-  let total = 0
-  const stack = [...nodes]
-  while (stack.length) {
-    const n = stack.pop()!
-    total++
-    if (n.children?.length) stack.push(...n.children)
-  }
-  return total
-}
 
 /**
  * Modello: la scacchiera è in modalità LIBERA (activeTreeId === null) oppure in modalità ALBERO

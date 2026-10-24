@@ -1,6 +1,5 @@
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-    <div class="bg-white rounded-xl shadow-xl border border-neutral-200 w-full max-w-md p-6 overflow-hidden flex flex-col">
+  <BaseModal :is-open="isOpen" panel-class="p-6" overlay-class="bg-black/50 backdrop-blur-sm" @close="close">
       
       <!-- Intestazione -->
       <div class="flex items-center justify-between border-b border-neutral-100 pb-3 mb-4">
@@ -90,12 +89,12 @@
         </button>
       </div>
 
-    </div>
-  </div>
+  </BaseModal>
 </template>
 
 <script setup lang="ts">
 import { useChessBookStore } from '../stores/chessBookStore'
+import BaseModal from './BaseModal.vue'
 
 defineProps<{
   isOpen: boolean

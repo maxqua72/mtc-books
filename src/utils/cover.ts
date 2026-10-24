@@ -1,4 +1,9 @@
 // Modello, stile e generazione HTML della copertina
+import { newUuid } from './ids'
+import { escapeHtml } from './html'
+
+// Formati pagina: unica fonte in pageFormats.ts (qui ri-esportati per chi già li importa da cover)
+export { PAGE_FORMATS_MM, getPageSizeMm, MM_TO_PX } from './pageFormats'
 
 export type CoverFontKey = 'lora' | 'garamond' | 'sans'
 
@@ -35,19 +40,17 @@ export interface BookCover {
     texts: CoverTextElement[]
 }
 
-// --- Formati pagina (mm) ---
-export const PAGE_FORMATS_MM: Record<string, { width: number; height: number }> = {
-    a4: { width: 210, height: 297 },
-    'crown-quarto': { width: 189, height: 246 },
-    'b-format': { width: 129, height: 198 },
+// --- Immagini di copertina ---
+export const COVER_EXT_BY_MIME: Record<string, string> = {
+    'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp'
 }
-export const getPageSizeMm = (format?: string) =>
-    PAGE_FORMATS_MM[format || 'a4'] ?? PAGE_FORMATS_MM.a4
-export const MM_TO_PX = 96 / 25.4
+export const COVER_MIME_BY_EXT: Record<string, string> = {
+    png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp'
+}
+export const MAX_COVER_IMAGE_BYTES = 25 * 1024 * 1024
 
 // --- Creazione ---
-export const newCoverId = (prefix = 'ct') =>
-    `${prefix}_${crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36)}`
+export const newCoverId = (prefix = 'ct') => newUuid(prefix)
 
 export const createEmptyCover = (): BookCover => ({ version: 1, image: null, texts: [] })
 
@@ -140,10 +143,6 @@ export const coverImageStyle = (img: CoverImage): StyleMap => ({
 })
 
 // --- HTML per l'esportazione PDF ---
-export const escapeHtml = (s: string) =>
-    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
-
 const kebab = (k: string) => k.replace(/[A-Z]/g, m => '-' + m.toLowerCase())
 export const styleToString = (s: StyleMap) =>
     Object.entries(s).map(([k, v]) => `${kebab(k)}:${v}`).join(';')

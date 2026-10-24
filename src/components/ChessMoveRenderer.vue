@@ -3,7 +3,7 @@
     <template v-if="nodes && nodes.length > 0">
       <slot :node="nodes[0]">
         <!-- 1. Mossa corrente (Marcata come contenteditable="false" per blindarla da Tiptap) -->
-        <span ref="moveEl"
+        <span
           class="chess-move-item" 
           :class="{
             'is-active': isNodeActive(nodes[0].id),
@@ -73,7 +73,7 @@
 import { useChessTreeStore } from '../stores/chessTreeStore'
 import { useChessBookStore } from '../stores/chessBookStore'
 import type { ChessMoveNode } from '../stores/chessTreeStore'
-import { computed, reactive, ref, watch, nextTick } from 'vue'
+import { computed, reactive, watch } from 'vue'
 import { sanitizeCommentHtml } from '../utils/sanitize'
 import { nagsToText } from '../utils/nags'
 
@@ -110,19 +110,6 @@ const myTree = computed(() => {
 const isNodeActive = (nodeId: string) => {
   return treeStore.activeTreeId === props.treeId && treeStore.activeNodeId === nodeId
 }
-
-const moveEl = ref<HTMLElement | null>(null)
-
-// Quando questa mossa diventa quella attiva (dalla console, dai tasti o dalla scacchiera)
-// la portiamo in vista; con 'nearest' non scorre se è già visibile
-/*
-watch(
-  () => !!props.nodes[0] && isNodeActive(props.nodes[0].id),
-  (active) => {
-    if (!active) return
-    nextTick(() => moveEl.value?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }))
-  }
-)*/
 
 const selectMove = (nodeId: string) => {
   // Deseleziona visivamente la NodeView di Tiptap rimuovendo le selezioni globali dell'editor

@@ -55,6 +55,7 @@ import { useChessBookStore } from '../stores/chessBookStore'
 import ChessMoveRenderer from './ChessMoveRenderer.vue'
 import { getHeaderView } from '../utils/pgnHeader'
 import { writeTreeClipMarker } from '../utils/treeClipboard'
+import { useInsertParagraph } from '../composables/useInsertParagraph'
 
 defineOptions({
   name: 'ChessTreeBlockView'
@@ -106,12 +107,7 @@ const onMouseDown = (event: MouseEvent) => {
 }
 
 // Paragrafo sopra/sotto il blocco: i blocchi non si possono "attraversare" col cursore, serve un comando esplicito
-const insertParagraph = (where: 'before' | 'after') => {
-  const pos = props.getPos()
-  if (typeof pos !== 'number') return
-  const at = where === 'before' ? pos : pos + props.node.nodeSize
-  props.editor.chain().insertContentAt(at, { type: 'paragraph' }).setTextSelection(at + 1).focus().run()
-}
+const insertParagraph = useInsertParagraph(props)
 
 // Copia: istantanea dell'albero negli appunti interni; il blocco resta dov'è
 const copied = ref(false)

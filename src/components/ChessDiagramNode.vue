@@ -1,132 +1,31 @@
 <template>
   <node-view-wrapper class="chess-diagram-container avoid-break" :data-align="align" :style="containerStyle">
-    <div class="diagram-card" 
-    :style="{ '--diagram-size': currentSizePx + 'px' }">
+    <div class="diagram-card" :style="{ '--diagram-size': currentSizePx + 'px' }">
 
-      <!-- Spostiamo il menu dentro il wrapper per ancorarlo al testo reale -->
       <div class="board-wrapper" contenteditable="false" style="position: relative">
 
-        <!-- NUOVO: Etichetta Numero Diagramma (es. 1.1, 1.2) -->
-        <div v-if="diagramNumber"
-          class="diagram-number-badge" title="Numero diagramma">
+        <!-- Etichetta numero diagramma (es. 1.1, 1.2) -->
+        <div v-if="diagramNumber" class="diagram-number-badge" title="Numero diagramma">
           <div class="badge-text">{{ diagramNumber }}</div>
         </div>
 
-        <!-- Indicatore del tratto nell'angolo in alto a sinistra del diagramma -->
-        <div 
-          class="turn-indicator" 
-          :class="activeColor"
-          :title="activeColor === 'white' ? 'Mossa al Bianco' : 'Mossa al Nero'"
-        ></div>
+        <!-- Indicatore del tratto -->
+        <div class="turn-indicator" :class="activeColor"
+          :title="activeColor === 'white' ? 'Mossa al Bianco' : 'Mossa al Nero'"></div>
 
-        <!-- Action Bar in stile Gmail a comparsa (in alto a destra del bordo scacchiera) -->
-        <div v-if="!store.isLocked" class="diagram-actions-menu">
-          <!-- Riga 1: dimensione -->
-          <button @click="setSizeLevel('small')" :class="{ active: sizeLevel === 'small' }"
-            title="Dimensione piccola" class="action-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2">
-              <rect x="6" y="6" width="12" height="12" rx="1" />
-            </svg>
-          </button>
-          <button @click="setSizeLevel('medium')" :class="{ active: sizeLevel === 'medium' }"
-            title="Dimensione media" class="action-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2">
-              <rect x="4" y="4" width="16" height="16" rx="2" />
-            </svg>
-          </button>
-          <button @click="setSizeLevel('large')" :class="{ active: sizeLevel === 'large' }"
-            title="Dimensione grande" class="action-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2">
-              <rect x="2" y="2" width="20" height="20" rx="2" />
-            </svg>
-          </button>
-
-          <div class="action-divider"></div>
-
-          <!-- Riga 2: allineamento -->
-          <button @click="setAlign('left')" :class="{ active: align === 'left' }"
-            title="A sinistra: il testo scorre accanto" class="action-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <rect x="3" y="3" width="8" height="8" rx="1" />
-              <path d="M15 5h6M15 9h6M3 15h18M3 19h18" />
-            </svg>
-          </button>
-          <button @click="setAlign('center')" :class="{ active: align === 'center' }"
-            title="Al centro" class="action-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <rect x="8" y="3" width="8" height="8" rx="1" />
-              <path d="M3 15h18M3 19h18" />
-            </svg>
-          </button>
-          <button @click="setAlign('right')" :class="{ active: align === 'right' }"
-            title="A destra: il testo scorre accanto" class="action-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <rect x="13" y="3" width="8" height="8" rx="1" />
-              <path d="M3 5h6M3 9h6M3 15h18M3 19h18" />
-            </svg>
-          </button>
-
-          <div class="action-divider"></div>
-
-          <!-- Riga 3: didascalia, inversione, scacchiera -->
-          <button @click="toggleOrFocusCaption" :class="{ active: isCaptionEditable }" title="Modifica didascalia (Invio per confermare)"
-            class="action-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-          </button>
-          <button @click="toggleFlip" :class="{ active: flipped }"
-            title="Inverti il diagramma (Nero in basso)" class="action-btn">
-            <i class="fa-solid fa-arrows-rotate" style="font-size: 13px"></i>
-          </button>
-          <button @click="loadOnBoard" title="Carica la posizione sulla scacchiera" class="action-btn">
-            <i class="fa-solid fa-chess-board" style="font-size: 13px"></i>
-          </button>
-
-          <div class="action-divider"></div>
-
-          <!-- Riga 4: paragrafi attorno al blocco, eliminazione -->
-          <button @click="insertParagraph('before')" title="Inserisci un paragrafo sopra" class="action-btn">
-            <span style="font-size: 11px; font-weight: 700">¶↑</span>
-          </button>
-          <button @click="insertParagraph('after')" title="Inserisci un paragrafo sotto" class="action-btn">
-            <span style="font-size: 11px; font-weight: 700">¶↓</span>
-          </button>
-          <button @click="deleteNode" class="action-btn delete-btn-icon" title="Elimina diagramma">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2">
-              <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-            </svg>
-          </button>
-        </div>
+        <DiagramActionsMenu v-if="!store.isLocked" :size-level="sizeLevel" :align="align" :flipped="flipped"
+          :caption-editable="isCaptionEditable" @size="setSizeLevel" @align="setAlign"
+          @toggle-caption="toggleOrFocusCaption" @flip="toggleFlip" @load-on-board="loadOnBoard"
+          @paragraph="insertParagraph" @remove="deleteNode" />
 
         <pre class="chess-pure-text">{{ boardString }}</pre>
 
-        <!-- Frecce e marcatori: il font Merida non li ha, quindi un SVG sopra la scacchiera (griglia 10x10:
-             bordo sinistro + 8 colonne + bordo destro; riga delle coordinate + 8 traverse + riga in basso).
-             Stili inline: nel PDF non arrivano gli stili scoped di questo componente. -->
-        <svg v-if="shapeItems.length" viewBox="0 0 10 10" preserveAspectRatio="none" aria-hidden="true"
-          :style="shapesSvgStyle">
-          <template v-for="(s, i) in shapeItems" :key="i">
-            <circle v-if="s.kind === 'circle'" :cx="s.cx" :cy="s.cy" r="0.42" fill="none" :stroke="s.color"
-              stroke-width="0.09" opacity="0.9" />
-            <polygon v-else :points="s.points" :fill="s.color" stroke="#ffffff" stroke-width="0.03"
-              stroke-linejoin="round" opacity="0.85" />
-          </template>
-        </svg>
+        <ShapesOverlay :shapes="node.attrs.shapes" :flipped="flipped" />
       </div>
 
       <!-- Didascalia del diagramma -->
-      <node-view-content ref="captionRef" 
-        class="diagram-caption" 
+      <node-view-content ref="captionRef"
+        class="diagram-caption"
         :class="{ 'is-editing': isCaptionEditable }"
         :contenteditable="isCaptionEditable && !store.isLocked"
         @blur="disableCaptionEditing"
@@ -140,70 +39,52 @@
 import { ref, computed, nextTick } from 'vue'
 import { nodeViewProps, NodeViewWrapper, NodeViewContent } from '@tiptap/vue-3'
 import { useChessBookStore } from '../stores/chessBookStore'
-import { normalizeSizeLevel, diagramFontPx, MERIDA_ADVANCE_EM, type DiagramSizeLevel } from '../utils/diagramSizes'
 import { useChessTreeStore } from '../stores/chessTreeStore'
+import { normalizeSizeLevel, diagramFontPx, type DiagramSizeLevel } from '../utils/diagramSizes'
 import { isLegalFen } from '../utils/fen'
-import { cleanShapes, SHAPE_INK } from '../utils/shapes'
 import { fenToBoardString } from '../utils/chessFormatter'
+import { useInsertParagraph } from '../composables/useInsertParagraph'
+import DiagramActionsMenu from './diagram/DiagramActionsMenu.vue'
+import ShapesOverlay from './diagram/ShapesOverlay.vue'
 
 const store = useChessBookStore()
+const treeStore = useChessTreeStore()
 const props = defineProps(nodeViewProps)
 
-// Ref per accedere all'elemento DOM della didascalia
-const captionRef = ref<InstanceType<typeof NodeViewContent> | null>(null)
+const insertParagraph = useInsertParagraph(props)
 
-  // Verifica se la didascalia è attiva
-const isCaptionEditable = computed(() => {
-  return props.node.attrs.captionEditable !== false
-})
-
-// 3. Quando l'utente clicca fuori dalla didascalia (blur), disattiviamo l'editing
-const disableCaptionEditing = () => {
-  props.updateAttributes({ captionEditable: false })
-}
-
-// Invio nella didascalia = conferma. L'evento si ferma qui, prima di ProseMirror: altrimenti
-// lo split di blocco di default creerebbe un nuovo paragrafo. Maiusc+Invio (a capo) resta com'è.
-const onCaptionEnter = (event: KeyboardEvent) => {
-  if (event.isComposing || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return
-  event.preventDefault()
-  event.stopPropagation()
-  ;(event.currentTarget as HTMLElement | null)?.blur()
-  disableCaptionEditing()
-}
-
-// Funzione per attivare e mettere a fuoco la didascalia
-const toggleOrFocusCaption = async () => {
-  if (!isCaptionEditable.value) {
-    props.updateAttributes({ captionEditable: true })
-  } else {
-    disableCaptionEditing()
-  }
-  
-  await nextTick()
-
-  // Seleziona ed evidenzia il testo della didascalia per la modifica immediata
-  if (captionRef.value && captionRef.value.$el) {
-    const el = captionRef.value.$el as HTMLElement
-    // Mettiamo a fuoco direttamente il contenitore interno di TipTap
-    const innerChild = (el.querySelector('[data-node-view-content-vue]') || el) as HTMLElement
-    innerChild.focus()
-    
-    // Seleziona tutto il testo presente per sovrascriverlo facilmente
-    const range = document.createRange()
-    range.selectNodeContents(el)
-    const sel = window.getSelection()
-    if (sel) {
-      sel.removeAllRanges()
-      sel.addRange(range)
-    }
-  }
-}
-
-// --- Inversione, caricamento sulla scacchiera, paragrafi attorno al blocco ---
-const treeStore = useChessTreeStore()
+// --- Attributi del nodo ---
 const flipped = computed(() => !!props.node.attrs.flipped)
 const toggleFlip = () => props.updateAttributes({ flipped: !flipped.value })
+
+const sizeLevel = computed<DiagramSizeLevel>(() => normalizeSizeLevel(props.node.attrs.size))
+const currentSizePx = computed(() => diagramFontPx(sizeLevel.value, store.metadata.pageFormat))
+// 'medium' è il valore predefinito: si salva come null
+const setSizeLevel = (level: DiagramSizeLevel) => props.updateAttributes({ size: level === 'medium' ? null : level })
+
+const align = computed<'left' | 'center' | 'right'>(() => {
+  const value = props.node.attrs.align
+  return value === 'left' || value === 'right' ? value : 'center'
+})
+const setAlign = (value: 'left' | 'center' | 'right') => props.updateAttributes({ align: value })
+
+// A chi spetta la mossa: secondo campo del FEN ('b' = Nero, altrimenti Bianco)
+const activeColor = computed(() => props.node.attrs.fen.trim().split(/\s+/)[1] === 'b' ? 'black' : 'white')
+
+const boardString = computed(() => fenToBoardString(props.node.attrs.fen, flipped.value))
+
+const diagramNumber = computed(() => store.diagramLabels.get(props.node.attrs.id)?.label ?? '')
+
+// Spazio a sinistra della scacchiera per badge e pallino (che sono position:absolute).
+// Serve solo con il diagramma a margine: il box float deve includerli,
+// altrimenti escono dal foglio (sinistra) o finiscono sotto il testo (destra).
+const containerStyle = computed(() => {
+  if (align.value === 'center') return {}
+  const chars = Math.max(diagramNumber.value.length, 4)       // "12.34" nel caso peggiore
+  const badgeFontPx = currentSizePx.value * 0.8               // come font-size del badge
+  const badgeWidthPx = badgeFontPx * 0.6 * chars + 12         // ~0.6em a carattere + padding 2×6px
+  return { paddingLeft: Math.ceil(badgeWidthPx + 10) + 'px' } // + margin-right del badge
+})
 
 // Porta posizione e orientamento del diagramma sulla scacchiera, in modalità libera (nessun albero collegato)
 const loadOnBoard = () => {
@@ -217,185 +98,42 @@ const loadOnBoard = () => {
   treeStore.boardFlipped = flipped.value
 }
 
-const insertParagraph = (where: 'before' | 'after') => {
-  const pos = props.getPos()
-  if (typeof pos !== 'number') return
-  const at = where === 'before' ? pos : pos + props.node.nodeSize
-  props.editor.chain().insertContentAt(at, { type: 'paragraph' }).setTextSelection(at + 1).focus().run()
+// --- Didascalia ---
+const captionRef = ref<InstanceType<typeof NodeViewContent> | null>(null)
+const isCaptionEditable = computed(() => props.node.attrs.captionEditable !== false)
+
+// Clic fuori dalla didascalia (blur): l'editing si disattiva
+const disableCaptionEditing = () => props.updateAttributes({ captionEditable: false })
+
+// Invio nella didascalia = conferma. L'evento si ferma qui, prima di ProseMirror: altrimenti
+// lo split di blocco di default creerebbe un nuovo paragrafo. Maiusc+Invio (a capo) resta com'è.
+const onCaptionEnter = (event: KeyboardEvent) => {
+  if (event.isComposing || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return
+  event.preventDefault()
+  event.stopPropagation()
+  ;(event.currentTarget as HTMLElement | null)?.blur()
+  disableCaptionEditing()
 }
 
-// --- Frecce e marcatori (SVG sopra il testo) ---
-// Unità = una casella. La casella (colonna c, traversa r dall'alto) ha il centro in (c + 1.5, r + 1.5)
-// perché la griglia ha un bordo a sinistra e una riga di bordo in alto. Con la scacchiera invertita si specchia.
-interface ShapeItem { kind: 'circle' | 'arrow'; color: string; cx: number; cy: number; points: string }
+// Attiva la didascalia e la mette a fuoco con il testo selezionato
+const toggleOrFocusCaption = async () => {
+  if (!isCaptionEditable.value) props.updateAttributes({ captionEditable: true })
+  else disableCaptionEditing()
 
-const cellCenter = (square: string) => {
-  const file = square.charCodeAt(0) - 97
-  const rank = Number(square[1])
-  const col = flipped.value ? 7 - file : file
-  const row = flipped.value ? rank - 1 : 8 - rank
-  return { x: col + 1.5, y: row + 1.5 }
+  await nextTick()
+
+  const el = captionRef.value?.$el as HTMLElement | undefined
+  if (!el) return
+  // Si mette a fuoco il contenitore interno di Tiptap
+  ;((el.querySelector('[data-node-view-content-vue]') || el) as HTMLElement).focus()
+
+  // Si seleziona tutto il testo per sovrascriverlo facilmente
+  const range = document.createRange()
+  range.selectNodeContents(el)
+  const sel = window.getSelection()
+  sel?.removeAllRanges()
+  sel?.addRange(range)
 }
-
-const arrowPoints = (from: { x: number; y: number }, to: { x: number; y: number }): string => {
-  const dx = to.x - from.x
-  const dy = to.y - from.y
-  const len = Math.hypot(dx, dy)
-  const ux = dx / len, uy = dy / len
-  const nx = -uy, ny = ux
-  const bodyHalf = 0.07, headHalf = 0.2, headLen = 0.38
-  const start = { x: from.x + ux * 0.25, y: from.y + uy * 0.25 }
-  const tip = { x: to.x - ux * 0.12, y: to.y - uy * 0.12 }
-  const base = { x: tip.x - ux * headLen, y: tip.y - uy * headLen }
-  const pt = (p: { x: number; y: number }, off: number, h: number) =>
-    `${(p.x + nx * off * h).toFixed(3)},${(p.y + ny * off * h).toFixed(3)}`
-  return [
-    pt(start, 1, bodyHalf), pt(base, 1, bodyHalf), pt(base, 1, headHalf), pt(tip, 0, 0),
-    pt(base, -1, headHalf), pt(base, -1, bodyHalf), pt(start, -1, bodyHalf)
-  ].join(' ')
-}
-
-const shapeItems = computed<ShapeItem[]>(() =>
-  cleanShapes(props.node.attrs.shapes).map((s): ShapeItem => {
-    const color = SHAPE_INK[s.brush]
-    const from = cellCenter(s.orig)
-    if (!s.dest) return { kind: 'circle', color, cx: from.x, cy: from.y, points: '' }
-    return { kind: 'arrow', color, cx: 0, cy: 0, points: arrowPoints(from, cellCenter(s.dest)) }
-  })
-)
-
-// La larghezza segue l'avanzamento reale del font (MERIDA_ADVANCE_EM), l'altezza è il line-height
-const shapesSvgStyle =
-  'position:absolute;left:0;top:0;pointer-events:none;overflow:visible;' +
-  `width:calc(var(--diagram-size) * ${MERIDA_ADVANCE_EM * 10});height:calc(var(--diagram-size) * 10);`
-
-const sizeLevel = computed<DiagramSizeLevel>(() => normalizeSizeLevel(props.node.attrs.size))
-const currentSizePx = computed(() => diagramFontPx(sizeLevel.value, store.metadata.pageFormat))
-
-const setSizeLevel = (level: DiagramSizeLevel) => {
-  // 'medium' è il valore predefinito: si salva come null
-  props.updateAttributes({ size: level === 'medium' ? null : level })
-}
-
-const align = computed<'left' | 'center' | 'right'>(() => {
-  const value = props.node.attrs.align
-  return value === 'left' || value === 'right' ? value : 'center'
-})
-const setAlign = (value: 'left' | 'center' | 'right') => props.updateAttributes({ align: value })
-
-/*
-// Usa il getter centralizzato dallo store per il numero del capitolo
-const chapterNumber = computed(() => store.currentChapterNumber)
-// Calcola il numero progressivo del diagramma all'interno del capitolo
-const diagramIndex = computed(() => {
-  if (!props.editor) return 1
-  
-  let count = 0
-  let currentIndex = 1
-
-  props.editor.state.doc.descendants((node, pos) => {
-    if (node.type.name === 'chessDiagram') {
-      count++
-      if (pos === props.getPos()) {
-        currentIndex = count
-      }
-    }
-  })
-
-  return currentIndex
-})
-  
-
-const diagramNumber = computed(() => `${chapterNumber.value}.${diagramIndex.value}`)
-
-// 1. Calcolo dinamico: priorità alla dimensione locale, altrimenti globale
-
-
-const isDarkSquare = (row: number, col: number) => {
-  return (row + col) % 2 === 1
-}
-  */
-
-const diagramNumber = computed(() =>
-  store.diagramLabels.get(props.node.attrs.id)?.label ?? ''
-)
-
-// Spazio a sinistra della scacchiera per badge e pallino (che sono position:absolute).
-// Serve solo con il diagramma a margine: il box float deve includerli,
-// altrimenti escono dal foglio (sinistra) o finiscono sotto il testo (destra).
-const containerStyle = computed(() => {
-  if (align.value === 'center') return {}
-  const chars = Math.max(diagramNumber.value.length, 4)       // "12.34" nel caso peggiore
-  const badgeFontPx = currentSizePx.value * 0.8               // come font-size del badge
-  const badgeWidthPx = badgeFontPx * 0.6 * chars + 12         // ~0.6em a carattere + padding 2×6px
-  const gutterPx = Math.ceil(badgeWidthPx + 10)               // + margin-right del badge
-  return { paddingLeft: gutterPx + 'px' }
-})
-
-// Analizza il secondo parametro della FEN per determinare a chi spetta la mossa ('w' o 'b')
-const activeColor = computed(() => {
-  const fenParts = props.node.attrs.fen.trim().split(/\s+/)
-  // Se il parametro manca o non è 'b', assume che la mossa sia del Bianco ('w')
-  return fenParts[1] === 'b' ? 'black' : 'white'
-})
-
-/*
-const boardString = computed(() => {
-  const fenRows = props.node.attrs.fen.split(' ')[0].split('/')
-
-  const keymap: Record<string, { light: string; dark: string }> = {
-    'P': { light: 'p', dark: 'P' }, 'p': { light: 'o', dark: 'O' },
-    'N': { light: 'n', dark: 'N' }, 'n': { light: 'm', dark: 'M' },
-    'B': { light: 'b', dark: 'B' }, 'b': { light: 'v', dark: 'V' },
-    'R': { light: 'r', dark: 'R' }, 'r': { light: 't', dark: 'T' },
-    'Q': { light: 'q', dark: 'Q' }, 'q': { light: 'w', dark: 'W' },
-    'K': { light: 'k', dark: 'K' }, 'k': { light: 'l', dark: 'L' }
-  }
-
-  
-
-  // 1. Cornice Superiore fissa
-  let output = '1222222223\n'
-
-  // Caratteri reali UTF-8 corrispondenti ai codici ASCII 199-192 (Traverse da 8 a 1)
-  // Questo evita di chiamare String.fromCharCode ad ogni riga nel loop
-  //const leftBorders = ['Ã', 'Â', 'Å', 'Ä', 'Ã\u0083', 'Â\u0082', '\u00C5', '\u00C4'] // Corrispettivi di [199, 198, 197, 196, 195, 194, 193, 192] a seconda dell'encoding
-
-  // Se preferisci usare direttamente l'array di codici numerici nativi senza ambiguità:
-  const leftBorderCodes = [199, 198, 197, 196, 195, 194, 193, 192]
-
-  // 2. Generazione delle 8 Traverse Centrali
-  fenRows.forEach((fenRow: string, rowIndex: number) => {
-    let rowText = String.fromCharCode(leftBorderCodes[rowIndex])
-    let colIndex = 0
-
-    for (const char of fenRow) {
-      if (isNaN(Number(char))) {
-        const dark = isDarkSquare(rowIndex, colIndex)
-        rowText += dark ? keymap[char].dark : keymap[char].light
-        colIndex++
-      } else {
-        const emptyCount = Number(char)
-        for (let i = 0; i < emptyCount; i++) {
-          const dark = isDarkSquare(rowIndex, colIndex)
-          rowText += dark ? '+' : ' '
-          colIndex++
-        }
-      }
-    }
-
-    // Chiusura di ogni riga col bordo destro fisso '5'
-    output += rowText + '5\n'
-  })
-
-  // 3. Cornice Inferiore fissa (7 + caratteri da 200 a 207 + 9)[cite: 1]
-  // Generata in stringa statica per non appesantire l'esecuzione con cicli ad ogni render
-  const bottomCoords = 'ÈÉÊËÌÍÎÏ'
-  output += `7${bottomCoords}9`
-
-  return output
-}) */
-const boardString = computed(() => fenToBoardString(props.node.attrs.fen, !!props.node.attrs.flipped))
 </script>
 
 <style scoped>
@@ -449,86 +187,6 @@ const boardString = computed(() => fenToBoardString(props.node.attrs.fen, !!prop
   text-align: center;
   /* Un piccolo padding inferiore di sicurezza */
   padding-bottom: 4px !important;
-}
-
-/* MENU IN STILE GMAIL ANCORATO SENZA SPAZI VUOTI */
-/* CONFIGURAZIONE PERFETTAMENTE ALLINEATA ALLA SCACCHIERA */
-.diagram-actions-menu {
-  position: absolute;
-  /* Sposta il menu verso l'alto per allinearlo alla prima linea nera della scacchiera */
-  top: 4px;
-  /* Fuori dalla scacchiera, a destra: 4 righe da 3 pulsanti */
-  left: calc(100% + 6px);
-  display: grid;
-  grid-template-columns: repeat(3, 28px);
-  gap: 2px;
-
-  background-color: #ffffff;
-  border: 1px solid #e5e5e5;
-  border-radius: 6px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
-  padding: 2px;
-
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.12s ease;
-  z-index: 30;
-}
-
-/* PONTE INVISIBILE: Mantiene l'hover attivo nel micro-spazio rimasto */
-.diagram-actions-menu::before {
-  content: '';
-  position: absolute;
-  top: -10px;
-  bottom: -10px;
-  left: -15px;
-  /* Copre lo spazio vuoto a sinistra */
-  right: 0;
-  background: transparent;
-  z-index: -1;
-}
-
-/* Attivazione al passaggio del mouse sulla card */
-.diagram-card:hover .diagram-actions-menu {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* Bottoni interni */
-.action-btn {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  color: #525252;
-  cursor: pointer;
-  transition: background-color 0.1s, color 0.1s;
-}
-
-.action-btn:hover {
-  background-color: #f5f5f5;
-  color: #171717;
-}
-
-.action-btn.active {
-  background-color: #e5e5e5;
-  color: #171717;
-}
-
-.delete-btn-icon:hover {
-  background-color: #fee2e2;
-  color: #dc2626;
-}
-
-.action-divider {
-  grid-column: 1 / -1;
-  height: 1px;
-  background-color: #e5e5e5;
-  margin: 2px 4px;
 }
 
 .diagram-caption {
@@ -643,5 +301,4 @@ const boardString = computed(() => fenToBoardString(props.node.attrs.fen, !!prop
   min-width: 100%;
 }
 
-/* Puoi rimuovere completamente le vecchie regole .delete-btn e .delete-btn:hover inutilizzate */
 </style>

@@ -1,4 +1,4 @@
-import { MM_TO_PX } from './cover'
+import { MM_TO_PX } from './pageFormats'
 
 export type DiagramSizeLevel = 'small' | 'medium' | 'large'
 

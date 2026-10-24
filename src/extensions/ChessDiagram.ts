@@ -1,12 +1,12 @@
 import { Node, mergeAttributes } from '@tiptap/core'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { VueNodeViewRenderer } from '@tiptap/vue-3'
-import { fenToBoardString } from '../utils/chessFormatter.ts'
+import { fenToBoardString } from '../utils/chessFormatter'
 import { isValidFen } from '../utils/sanitize'
 import { cleanShapes, type BoardShape } from '../utils/shapes'
+import { STANDARD_FEN } from '../utils/fen'
+import { newUuid } from '../utils/ids'
 import ChessDiagramNode from '../components/ChessDiagramNode.vue'
-
-const STANDARD_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -16,8 +16,7 @@ declare module '@tiptap/core' {
   }
 }
 
-const generateDiagramId = () =>
-  'dg_' + (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36))
+const generateDiagramId = () => newUuid('dg')
 
 export const ChessDiagram = Node.create({
   name: 'chessDiagram',

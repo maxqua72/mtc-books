@@ -1,457 +1,116 @@
 import { defineStore } from 'pinia'
 import { ref, computed, nextTick } from 'vue'
-import JSZip from 'jszip'
-import { db, putAsset, getAsset, saveFullStateToIndexedDB, setDirtyVsFile } from '../db'
-import {
-    type BookCover, createEmptyCover, normalizeCover, coverToHtml,
-    blobToDataUrl, getPageSizeMm, newCoverId, escapeHtml
-} from '../utils/cover'
+import { db, putAsset, getAsset, saveFullStateToIndexedDB } from '../db'
+import { createEmptyCover, normalizeCover } from '../utils/cover'
+import { extractTreeIds } from '../utils/html'
+import { randomToken } from '../utils/ids'
 import { sanitizeTrees, sanitizeSectionIndex } from '../utils/sanitize'
 import type { BoardShape } from '../utils/shapes'
 import { useChessTreeStore, type ChessTree } from './chessTreeStore'
+import { defaultMetadata, type BookMetadata, type SaveStatus, type SectionIndexItem, type SectionType } from './book/types'
+import { useCover } from './book/useCover'
+import { useFileState } from './book/useFileState'
+import { useDiagramIndex } from './book/useDiagramIndex'
+import { useGeneratedToc } from './book/useGeneratedToc'
+import { parseMtcBook, buildMtcBook, type BookAsset } from './book/mtcbookIO'
 
+// I tipi restano importabili da qui, come prima della divisione in moduli
+export type { SectionType, PageFormat, SaveStatus, SectionIndexItem, BookMetadata } from './book/types'
 
-// 1. DEFINIZIONE DELLE INTERFACCE
-export type SectionType = 'cover' | 'index' | 'chapter'
-export type PageFormat = 'a4' | 'crown-quarto' | 'b-format'
-export type SaveStatus = 'saved' | 'saving' | 'unsaved'
-
-export interface SectionIndexItem {
-    id: string
-    type: SectionType
-    title: string
-}
-
-
-export interface BookMetadata {
-    version: string
-    title: string
-    author: string
-    createdAt: string
-    updatedAt: string
-    pageFormat: PageFormat
-    isTwoColumns: boolean,
-    showNumbering: boolean,
-    pageMarginTop: number
-    pageMarginRight: number
-    pageMarginBottom: number
-    pageMarginLeft: number
-    paragraphSpacing: number   // mm: tra due paragrafi
-    diagramSpacing: number     // mm: sopra e sotto i diagrammi
-    variationSpacing: number   // mm: sopra e sotto i blocchi di partita/varianti
-}
-
-
+/**
+ * Store del libro: stato di base, navigazione tra le sezioni e persistenza.
+ * La logica specializzata sta in ./book/: copertina, numerazione diagrammi, indice,
+ * stato della copia su disco, I/O del pacchetto .mtcbook.
+ * Le chiavi restituite sono le stesse di sempre: i componenti non cambiano.
+ */
 export const useChessBookStore = defineStore('chessBook', () => {
+    // Sezioni già passate da sanitizeTrees: al ritorno non si ripete la ricostruzione
     const sanitizedSections = new Set<string>()
-    // --- STATO ESISTENTE (Scacchiera e Segnali) ---
+
+    // --- Scacchiera e segnali verso l'editor ---
     const activeFen = ref('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
     const globalDiagramSize = ref(28)
     const insertSignal = ref(0)
     const activeShapes = ref<BoardShape[]>([])   // frecce da copiare nel prossimo diagramma inserito
-
-    // --- NUOVI SEGNALI PER ESPORTAZIONE SERVER (PLAYWRIGHT) ---
-    const exportServerChapterSignal = ref(0)  // Esportazione Capitolo (Server)
-    const exportServerFullBookSignal = ref(0) // Esportazione Libro (Server)
+    const exportServerChapterSignal = ref(0)
+    const exportServerFullBookSignal = ref(0)
 
     const isBookLoaded = ref(false)
     const saveStatus = ref<SaveStatus>('saved')
 
-    // --- NUOVO STATO (Metadati e Struttura Libro) ---
-    const defaultMetadata = (): BookMetadata => ({
-        version: '1.0.0',
-        title: 'Nuovo Libro di Scacchi',
-        author: 'Autore',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        pageFormat: 'a4',
-        isTwoColumns: false,
-        showNumbering: true,
-        pageMarginTop: 25,
-        pageMarginRight: 20,
-        pageMarginBottom: 25,
-        pageMarginLeft: 20,
-        paragraphSpacing: 4.5,
-        diagramSpacing: 5,
-        variationSpacing: 4
-    })
-
+    // --- Struttura del libro ---
     const metadata = ref<BookMetadata>(defaultMetadata())
-
-    // L'indice delle sezioni (caricato subito in Fase A)
     const sectionIndex = ref<SectionIndexItem[]>([])
-
-    // L'ID della sezione attualmente aperta nell'editor
     const activeSectionId = ref<string | null>(null)
-
-    // Il contenuto HTML della sola sezione attiva nell'editor (Fase B)
+    // HTML della sola sezione aperta nell'editor
     const activeSectionHtml = ref<string>('')
-
-    // Il "disco virtuale": tiene in memoria i file compressi non ancora aperti
-    // Chiave: sectionId, Valore: la stringa JSON grezza o l'oggetto compresso da estrarre su richiesta
+    // "Disco virtuale": JSON grezzo di ogni sezione, analizzato solo all'apertura. Chiave: id sezione.
     const zippedSectionsCache = ref<Record<string, string>>({})
 
-    // --- COPERTINA ---
-    // Modello della copertina quando la sezione attiva è di tipo 'cover' (altrimenti null)
-    const coverModel = ref<BookCover | null>(null)
-    // URL temporaneo dell'immagine di sfondo, per l'anteprima nell'editor
-    const coverImageUrl = ref<string | null>(null)
-    let coverObjectUrl: string | null = null
+    // --- Moduli specializzati ---
+    const cover = useCover({ sectionIndex, activeSectionId, zippedSectionsCache, metadata })
+    const fileState = useFileState({ metadata, sectionIndex, zippedSectionsCache })
+    const scanSources = { activeSectionId, activeSectionHtml, zippedSectionsCache }
+    const { diagramLabels, diagramList, unresolvedDiagramRefs } = useDiagramIndex(sectionIndex, scanSources)
+    const generatedTocHtml = useGeneratedToc(sectionIndex, scanSources)
 
-    const EXT_BY_MIME: Record<string, string> = {
-        'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp'
-    }
-    const MIME_BY_EXT: Record<string, string> = {
-        png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp'
-    }
-    const MAX_COVER_IMAGE_BYTES = 25 * 1024 * 1024
-
-    const clearCoverImageUrl = () => {
-        if (coverObjectUrl) URL.revokeObjectURL(coverObjectUrl)
-        coverObjectUrl = null
-        coverImageUrl.value = null
-    }
-
-    async function refreshCoverImageUrl() {
-        const id = coverModel.value?.image?.assetId
-        if (!id) { clearCoverImageUrl(); return }
-
-        const asset = await getAsset(id)
-        // Nel frattempo l'immagine (o la sezione) può essere cambiata
-        if (coverModel.value?.image?.assetId !== id) return
-        if (!asset) { clearCoverImageUrl(); return }
-
-        clearCoverImageUrl()
-        coverObjectUrl = URL.createObjectURL(asset.blob)
-        coverImageUrl.value = coverObjectUrl
-    }
-
-    /** Salva l'immagine scelta come asset e la collega alla copertina attiva */
-    async function setCoverImage(file: File) {
-        if (!coverModel.value) return
-        if (!(file.type in EXT_BY_MIME)) throw new Error('Formato non supportato: usa PNG, JPEG o WebP.')
-        if (file.size > MAX_COVER_IMAGE_BYTES) throw new Error('Immagine troppo grande (massimo 25 MB).')
-        try {
-            (await createImageBitmap(file)).close() // verifica che sia un'immagine leggibile
-        } catch {
-            throw new Error("Impossibile leggere l'immagine.")
-        }
-
-        const id = newCoverId('img')
-        await putAsset({ id, blob: file, type: file.type, name: file.name })
-        coverModel.value = { ...coverModel.value, image: { assetId: id, x: 50, y: 50, zoom: 1 } }
-        await refreshCoverImageUrl()
-    }
-
-    async function removeCoverImage() {
-        if (!coverModel.value) return
-        coverModel.value = { ...coverModel.value, image: null }
-        clearCoverImageUrl()
-        // il file in IndexedDB viene eliminato al prossimo salvataggio
-    }
-
-    /** Identificativi delle immagini usate dalle copertine del libro */
-    function collectAssetIds(): string[] {
-        const ids = new Set<string>()
-        for (const item of sectionIndex.value) {
-            if (item.type !== 'cover') continue
-            let cover: BookCover | null = null
-            if (item.id === activeSectionId.value) {
-                cover = coverModel.value
-            } else {
-                try {
-                    cover = normalizeCover(JSON.parse(zippedSectionsCache.value[item.id] || '{}').cover)
-                } catch { cover = null }
-            }
-            if (cover?.image) ids.add(cover.image.assetId)
-        }
-        return [...ids]
-    }
-
-    /** HTML della copertina pronto per il PDF (con l'immagine incorporata) */
-    async function buildCoverHtml(sectionId: string): Promise<string> {
-        let cover: BookCover
-        if (sectionId === activeSectionId.value && coverModel.value) {
-            cover = coverModel.value
-        } else {
-            try {
-                cover = normalizeCover(JSON.parse(zippedSectionsCache.value[sectionId] || '{}').cover)
-            } catch { cover = createEmptyCover() }
-        }
-
-        let src: string | null = null
-        if (cover.image) {
-            const asset = await getAsset(cover.image.assetId)
-            if (asset) src = await blobToDataUrl(asset.blob)
-        }
-        return coverToHtml(cover, src, getPageSizeMm(metadata.value.pageFormat))
-    }
-
-    // --- GETTERS COMPOSITI ---
-    const activeSectionInfo = computed(() => {
-        return sectionIndex.value.find(s => s.id === activeSectionId.value) || null
-    })
+    // --- Getter ---
+    const activeSectionInfo = computed(() =>
+        sectionIndex.value.find(s => s.id === activeSectionId.value) || null
+    )
 
     const currentChapterNumber = computed(() => {
         if (!activeSectionId.value) return 1
-
-        // Filtra solo i capitoli reali ignorando indici/sezioni speciali
+        // Solo i capitoli reali: copertina e indice non contano
         const chapters = sectionIndex.value.filter(s => s.type === 'chapter')
         const currentIndex = chapters.findIndex(s => s.id === activeSectionId.value)
-
         return currentIndex !== -1 ? currentIndex + 1 : 1
     })
 
-    // Fuori dalla reattività: un capitolo si rianalizza solo se la sua sorgente è cambiata
-    const sectionScanCache = new Map<string, { source: string; scan: SectionScan }>()
+    // --- Azioni semplici (segnali) ---
+    const updateActiveFen = (fen: string) => { activeFen.value = fen }
+    const updateActiveShapes = (shapes: BoardShape[]) => { activeShapes.value = shapes }
+    const triggerInsertDiagram = () => { insertSignal.value++ }
+    const triggerServerChapterPdfExport = () => { exportServerChapterSignal.value++ }
+    const triggerServerFullBookPdfExport = () => { exportServerFullBookSignal.value++ }
 
-    const scanSection = (sectionId: string, source: string, isJson: boolean): SectionScan => {
-        const cached = sectionScanCache.get(sectionId)
-        if (cached && cached.source === source) return cached.scan
+    // --- Cache della sezione attiva ---
+    function syncActiveSectionToCache(opts: { html?: string; prune?: boolean } = {}) {
+        const id = activeSectionId.value
+        if (!id) return
 
-        let html = source
-        if (isJson) {
-            try { html = source ? JSON.parse(source).html || '' : '' } catch { html = '' }
-        }
-
-        const doc = new DOMParser().parseFromString(html, 'text/html')
-        const scan: SectionScan = {
-            diagrams: Array.from(doc.querySelectorAll('[data-type="chess-diagram"]')).map(el => ({
-                id: el.getAttribute('data-id'),
-                caption: el.querySelector('.diagram-caption')?.textContent?.trim() ?? ''
-            })),
-            refTargets: Array.from(doc.querySelectorAll('[data-type="diagram-ref"]'))
-                .map(el => el.getAttribute('data-target-id') || '')
-                .filter(Boolean),
-            headings: Array.from(doc.querySelectorAll('[data-toc-level]'))
-                .map(el => ({
-                    level: el.getAttribute('data-toc-level') ?? '',
-                    text: el.textContent?.trim() ?? ''
-                }))
-                .filter(h => h.level === '1' || h.level === '2'),
-        }
-        sectionScanCache.set(sectionId, { source, scan })
-        return scan
-    }
-
-    /**
-    * Genera dinamicamente la struttura HTML dell'indice basandosi sui capitoli presenti
-    */
-    const generatedTocHtml = computed(() => {
-        const chapters = sectionIndex.value.filter(s => s.type === 'chapter')
-
-        if (chapters.length === 0) {
-            return `
-  <div class="toc-container">
-    <h2>Indice Generale</h2>
-    <p style="color: #a3a3a3; font-style: italic;">Nessun capitolo inserito nel libro.</p>
-  </div>
-`
-        }
-
-        let html = `<div class="toc-container"><h2 style="font-family: Lora, Georgia, serif; font-size: 2rem; margin-bottom: 1.5rem;">Indice Generale</h2><ul style="list-style: none; padding: 0; margin: 0; font-family: Lora, Georgia, serif;">`
-
-        let entryIndex = 0   // progressivo globale: corrisponde all'id toc-h-N assegnato dal server
-
-        chapters.forEach((ch, i) => {
-            const mainCounter = i + 1
-            let subCounter = 0
-
-            const scan = ch.id === activeSectionId.value
-                ? scanSection(ch.id, activeSectionHtml.value, false)
-                : scanSection(ch.id, zippedSectionsCache.value[ch.id] || '', true)
-
-            for (const h of scan.headings) {
-                const text = escapeHtml(h.text || 'Titolo senza testo')
-                let numbering: string
-                let paddingLeft: string
-                let fontSize: string
-                let fontWeight = 'bold'
-
-                if (h.level === '1') {
-                    numbering = `${mainCounter}. `
-                    paddingLeft = '0px'
-                    fontSize = '1.1rem'
-                } else {
-                    subCounter++
-                    numbering = `${mainCounter}.${subCounter} `
-                    paddingLeft = '20px'
-                    fontSize = '0.95rem'
-                    fontWeight = 'normal'
-                }
-
-                html += `
-    <li class="toc-entry" data-toc-n="${entryIndex++}" style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 8px; padding-left: ${paddingLeft}; font-size: ${fontSize}; font-weight: ${fontWeight}; break-inside: avoid;">
-      <span class="toc-title">${numbering}${text}</span>
-      <span class="toc-leader" style="flex: 1; border-bottom: 1px dotted #a3a3a3; transform: translateY(-3px);"></span>
-      <span class="toc-page" style="min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums; color: #404040;">…</span>
-    </li>
-  `
+        // La copertina non ha HTML né partite: si salva il suo modello
+        if (activeSectionInfo.value?.type === 'cover') {
+            if (cover.coverModel.value) {
+                zippedSectionsCache.value[id] = JSON.stringify({
+                    id, html: '', trees: [], cover: cover.coverModel.value
+                })
             }
-        })
-
-        return html + `</ul></div>`
-    })
-
-
-    // ==========================================================
-    // RIFERIMENTI AI DIAGRAMMI
-    // ==========================================================
-    interface DiagramLabel { label: string; caption: string; sectionId: string }
-    interface SectionScan {
-        diagrams: { id: string | null; caption: string }[]
-        refTargets: string[]
-        headings: { level: string; text: string }[]
-    }
-
-
-
-    const diagramData = computed(() => {
-        const labels = new Map<string, DiagramLabel>()
-        const refTargets: string[] = []
-        let chapterNumber = 0
-
-        for (const section of sectionIndex.value) {
-            if (section.type !== 'chapter') continue
-            chapterNumber++ // stessa regola del PDF: contano solo i capitoli
-
-            const scan = section.id === activeSectionId.value
-                ? scanSection(section.id, activeSectionHtml.value, false)
-                : scanSection(section.id, zippedSectionsCache.value[section.id] || '', true)
-
-            // Il progressivo conta TUTTI i diagrammi (anche quelli senza ID): coincide col contatore CSS del PDF
-            scan.diagrams.forEach((d, i) => {
-                if (d.id) {
-                    labels.set(d.id, {
-                        label: `${chapterNumber}.${i + 1}`,
-                        caption: d.caption,
-                        sectionId: section.id
-                    })
-                }
-            })
-            refTargets.push(...scan.refTargets)
+            return
         }
-        return { labels, refTargets }
-    })
 
-    const diagramLabels = computed(() => diagramData.value.labels)
-    const diagramList = computed(() =>
-        Array.from(diagramLabels.value, ([id, v]) => ({ id, ...v }))
-    )
-    const unresolvedDiagramRefs = computed(() =>
-        diagramData.value.refTargets.filter(id => !diagramLabels.value.has(id))
-    )
+        const treeStore = useChessTreeStore()
+        const html = opts.html ?? activeSectionHtml.value
 
-
-    // ==========================================================
-    // SOLA LETTURA E STATO DELLA COPIA SU DISCO
-    // ==========================================================
-    // Un libro aperto da file o ripristinato è in sola lettura; uno nuovo è subito modificabile.
-    const isLocked = ref(true)
-    // true = il lavoro nel browser (IndexedDB) differisce dall'ultimo file .mtcbook salvato o caricato
-    const fileDirty = ref(false)
-    let fileBaselineSig: string | null = null   // null = linea di base sconosciuta: resta "da salvare" fino al prossimo salvataggio
-
-    function setLocked(value: boolean) {
-        isLocked.value = value
+        let trees = treeStore.trees
+        if (opts.prune) {
+            // copia filtrata, NON modifica lo store
+            const used = new Set(extractTreeIds(html))
+            trees = trees.filter(t => used.has(t.id))
+        }
+        zippedSectionsCache.value[id] = JSON.stringify({ id, html, trees })
     }
 
     /**
-     * Impronta del contenuto che finisce nel file: metadati (senza date), indice, e per ogni sezione
-     * html, alberi usati e copertina. Esclusi lo stato di navigazione (nodo attivo) e gli alberi orfani,
-     * così spostarsi tra le mosse o l'autosave non contano come modifiche.
-     */
-    function contentSignature(): string {
-        const meta: Record<string, unknown> = { ...metadata.value }
-        delete meta.createdAt
-        delete meta.updatedAt
-
-        const sections = sectionIndex.value.map(item => {
-            let body: unknown = null
-            try {
-                const p = JSON.parse(zippedSectionsCache.value[item.id] || '{}')
-                const html: string = typeof p.html === 'string' ? p.html : ''
-                const used = new Set(Array.from(html.matchAll(/data-tree-id="([^"]*)"/g), m => m[1]))
-                const trees = (Array.isArray(p.trees) ? p.trees : [])
-                    .filter((t: any) => used.has(t?.id))
-                    .map((t: any) => {
-                        const copy = { ...t }
-                        delete copy.activeNodeId
-                        return copy
-                    })
-                body = { html, trees, cover: p.cover ?? null }
-            } catch { body = null }
-            return [item.id, item.type, item.title, body]
-        })
-        return JSON.stringify([meta, sections])
-    }
-
-    /** dirty = true: la linea di base è ignota (libro mai salvato su file). dirty = false: lo stato attuale coincide col file. */
-    function resetFileBaseline(dirty: boolean) {
-        fileDirty.value = dirty
-        fileBaselineSig = dirty ? null : contentSignature()
-    }
-
-    function refreshFileDirty() {
-        if (fileBaselineSig !== null) fileDirty.value = contentSignature() !== fileBaselineSig
-    }
-
-    /** Salva tutto in IndexedDB. Con refreshDirty ricalcola anche lo stato della copia su disco. */
-    async function persistToIndexedDB(opts: { refreshDirty?: boolean } = {}) {
-        syncActiveSectionToCache()   // niente prune: l'autosave non cancella mai alberi
-        if (opts.refreshDirty) refreshFileDirty()
-        await saveFullStateToIndexedDB(
-            metadata.value,
-            sectionIndex.value,
-            activeSectionId.value,
-            zippedSectionsCache.value,
-            collectAssetIds(),
-            fileDirty.value
-        )
-    }
-
-    /** Da chiamare dopo aver scaricato il file .mtcbook */
-    async function markFileSaved() {
-        fileBaselineSig = contentSignature()
-        fileDirty.value = false
-        try { await setDirtyVsFile(false) } catch (e) { console.error(e) }
-    }
-
-    // --- FUNZIONI ESISTENTI ---
-    function updateActiveFen(fen: string) {
-        activeFen.value = fen
-    }
-
-    function updateActiveShapes(shapes: BoardShape[]) {
-        activeShapes.value = shapes
-    }
-
-    function triggerInsertDiagram() {
-        insertSignal.value++
-    }
-
-    // --- NUOVE FUNZIONI TRIGGER PER ESPORTAZIONE SERVER ---
-    function triggerServerChapterPdfExport() {
-        exportServerChapterSignal.value++
-    }
-
-    function triggerServerFullBookPdfExport() {
-        exportServerFullBookSignal.value++
-    }
-
-    // --- NUOVE FUNZIONI: NAVIGAZIONE (LAZY LOADING) ---
-
-    /**
-     * Cambia la sezione attiva nell'editor gestendo la memoria (Fase B)
-     * @param nextSectionId ID della sezione da caricare
-     * @param currentEditorContent L'HTML aggiornato dell'editor prima di chiuderlo
+     * Cambia la sezione attiva gestendo la memoria (apertura lazy).
+     * @param nextSectionId sezione da caricare
+     * @param currentEditorContent HTML aggiornato dell'editor, per congelare la sezione in uscita
      */
     async function changeActiveSection(nextSectionId: string, currentEditorContent?: string) {
         const chessTreeStore = useChessTreeStore()
-        // 1. Se c'era una sezione aperta, congeliamo il suo contenuto attuale nella cache di memoria
+
         if (activeSectionId.value && currentEditorContent !== undefined) {
             syncActiveSectionToCache({ html: currentEditorContent, prune: true })
-            performance.mark('section-saved')
         }
 
         const nextType = sectionIndex.value.find(s => s.id === nextSectionId)?.type
@@ -464,34 +123,88 @@ export const useChessBookStore = defineStore('chessBook', () => {
             try {
                 const parsed = JSON.parse(cachedData)
                 nextHtml = parsed.html || ''
-                //nextTrees = sanitizeTrees(parsed.trees)
                 nextTrees = sanitizedSections.has(nextSectionId)
                     ? (Array.isArray(parsed.trees) ? parsed.trees : [])
                     : sanitizeTrees(parsed.trees)
                 sanitizedSections.add(nextSectionId)
-
-                performance.mark('section-loaded')
                 nextCover = parsed.cover ?? null
             } catch (e) {
                 console.error('Errore nel parsing della sezione:', e)
             }
         }
 
-        // Carica subito partite e copertina negli store (PRIMA di cambiare sezione attiva)
+        // Prima partite e copertina negli store, poi la sezione attiva (che fa ripartire l'editor)
         chessTreeStore.setChapterTrees(nextType === 'cover' ? [] : nextTrees)
-        performance.mark('trees-loaded')
-        coverModel.value = nextType === 'cover' ? normalizeCover(nextCover) : null
+        cover.coverModel.value = nextType === 'cover' ? normalizeCover(nextCover) : null
 
-        // DOPO: impostiamo l'ID e l'HTML per attivare il re-render dell'editor
         activeSectionId.value = nextSectionId
         activeSectionHtml.value = nextHtml
 
-        if (nextType === 'cover') void refreshCoverImageUrl()
-        else clearCoverImageUrl()
+        if (nextType === 'cover') void cover.refreshCoverImageUrl()
+        else cover.clearCoverImageUrl()
     }
 
+    /** Crea una nuova sezione (es. un nuovo capitolo) */
+    function createNewSection(title: string, type: SectionType = 'chapter') {
+        const id = `sec-${randomToken()}`
+        sectionIndex.value.push({ id, type, title })
+        zippedSectionsCache.value[id] = JSON.stringify(
+            type === 'cover'
+                ? { id, html: '', trees: [], cover: createEmptyCover() }
+                : { id, html: '' }
+        )
+        return id
+    }
+
+    // --- Persistenza locale (IndexedDB) ---
+
+    /** Salva tutto in IndexedDB. Con refreshDirty ricalcola anche lo stato della copia su disco. */
+    async function persistToIndexedDB(opts: { refreshDirty?: boolean } = {}) {
+        syncActiveSectionToCache()   // niente prune: l'autosave non cancella mai alberi
+        if (opts.refreshDirty) fileState.refreshFileDirty()
+        await saveFullStateToIndexedDB(
+            metadata.value,
+            sectionIndex.value,
+            activeSectionId.value,
+            zippedSectionsCache.value,
+            cover.collectAssetIds(),
+            fileState.fileDirty.value
+        )
+    }
+
+    /** Ripristina la sessione da IndexedDB al ricaricamento della pagina */
+    async function restoreFromIndexedDB(): Promise<boolean> {
+        try {
+            const savedState = await db.bookState.get('current_book')
+            if (!savedState) return false
+            fileState.setLocked(true)   // dopo un ricaricamento si riparte in sola lettura
+
+            metadata.value = { ...defaultMetadata(), ...savedState.metadata }
+            sectionIndex.value = sanitizeSectionIndex(savedState.sectionIndex)
+
+            // Si mantiene la stringa JSON integra ({ id, html, trees })
+            zippedSectionsCache.value = {}
+            for (const sec of await db.sections.toArray()) zippedSectionsCache.value[sec.id] = sec.json
+            sanitizedSections.clear()
+
+            // Stato della copia su disco: se non era noto (dati vecchi) lo si considera non aggiornato
+            fileState.resetFileBaseline(savedState.dirtyVsFile ?? true)
+
+            const sectionToOpen = savedState.activeSectionId || sectionIndex.value[0]?.id
+            if (sectionToOpen) await changeActiveSection(sectionToOpen)
+
+            isBookLoaded.value = true
+            return true
+        } catch (error) {
+            console.error('Errore nel ripristino da IndexedDB:', error)
+            return false
+        }
+    }
+
+    // --- Nuovo libro e file .mtcbook ---
+
     async function startNewBook(title: string, author: string) {
-        isLocked.value = false   // un libro nuovo è subito modificabile
+        fileState.setLocked(false)   // un libro nuovo è subito modificabile
         // Azzera tutto PRIMA: con activeSectionId null changeActiveSection non congela nulla
         activeSectionId.value = null
         activeSectionHtml.value = ''
@@ -504,90 +217,24 @@ export const useChessBookStore = defineStore('chessBook', () => {
         const firstId = createNewSection('Capitolo 1', 'chapter')
         await changeActiveSection(firstId)
         isBookLoaded.value = true
-        resetFileBaseline(true)   // mai salvato su file
+        fileState.resetFileBaseline(true)   // mai salvato su file
         await persistToIndexedDB()
     }
 
-    // --- NUOVE FUNZIONI: I/O FILE .MTCBOOK (JSZIP) ---
-
-    /**
-     * FASE A: Carica un file .mtcbook estratto dal computer dell'utente
-     * Legge solo i metadati; i capitoli rimangono congelati nella cache interna.
-     */
+    /** Apre un file .mtcbook: legge subito metadati e indice, i capitoli restano congelati nella cache */
     async function loadMtcBook(fileBuffer: ArrayBuffer | Blob) {
-        const chessTreeStore = useChessTreeStore()
+        const pkg = await parseMtcBook(fileBuffer)   // se il file non è valido si lancia qui, prima di toccare lo stato
 
-        isLocked.value = true   // un libro aperto da file è in sola lettura finché non si sblocca
-        // Resetta completamente lo store delle partite del vecchio libro aperto
-        //chessTreeStore.resetStore?.()
+        fileState.setLocked(true)   // un libro aperto da file è in sola lettura finché non si sblocca
+        useChessTreeStore().setChapterTrees([])
 
-        const zip = await JSZip.loadAsync(fileBuffer)
-
-        // 1. Svuotiamo lo store globale delle partite
-        chessTreeStore.trees = []
-
-        // 1. Estrazione del file di indice e metadati (leggero)
-        const bookJsonRaw = await zip.file('book.json')?.async('string')
-        if (!bookJsonRaw) throw new Error('File book.json non trovato nell\'archivio.')
-
-        const bookData = JSON.parse(bookJsonRaw)
-
-        // 2. Popoliamo lo stato dei metadati e dell'indice (la barra laterale si aggiorna subito)
-        metadata.value = {
-            version: bookData.version,
-            title: bookData.title,
-            author: bookData.author,
-            createdAt: bookData.createdAt,
-            updatedAt: bookData.updatedAt,
-            pageFormat: bookData.pageFormat || 'a4',
-            isTwoColumns: bookData.isTwoColumns || false,
-            showNumbering: bookData.showNumbering !== undefined ? bookData.showNumbering : true,
-
-            // Nuovi campi: se non esistono nel vecchio file JSON, applichiamo i default numerici
-            pageMarginTop: bookData.pageMarginTop !== undefined ? Number(bookData.pageMarginTop) : 25,
-            pageMarginRight: bookData.pageMarginRight !== undefined ? Number(bookData.pageMarginRight) : 20,
-            pageMarginBottom: bookData.pageMarginBottom !== undefined ? Number(bookData.pageMarginBottom) : 25,
-            pageMarginLeft: bookData.pageMarginLeft !== undefined ? Number(bookData.pageMarginLeft) : 20,
-            paragraphSpacing: bookData.paragraphSpacing !== undefined ? Number(bookData.paragraphSpacing) : 4.5,
-            diagramSpacing: bookData.diagramSpacing !== undefined ? Number(bookData.diagramSpacing) : 5,
-            variationSpacing: bookData.variationSpacing !== undefined ? Number(bookData.variationSpacing) : 4
-        }
-        //sectionIndex.value = bookData.sectionIndex
-        sectionIndex.value = sanitizeSectionIndex(bookData.sectionIndex)
-
-        // 3. Inizializziamo la cache congelata leggendo i puntatori ai file delle sezioni, 
-        // ma SENZA parsarli in oggetti HTML/DOM complessi.
-        zippedSectionsCache.value = {}
-        const sectionsFolder = zip.folder('sections')
-
-        if (sectionsFolder) {
-            for (const item of sectionIndex.value) {
-                const sectionFile = sectionsFolder.file(`${item.id}.json`)
-                if (sectionFile) {
-                    // Conserviamo la stringa json grezza non letta
-                    zippedSectionsCache.value[item.id] = await sectionFile.async('string')
-                }
-            }
-        }
-
+        metadata.value = pkg.metadata
+        sectionIndex.value = pkg.sectionIndex
+        zippedSectionsCache.value = pkg.sections
         sanitizedSections.clear()
 
-        // 3b. Immagini della copertina: dallo zip a IndexedDB
-        const assetsFolder = zip.folder('assets')
-        if (assetsFolder) {
-            const entries: { id: string; file: JSZip.JSZipObject; type: string }[] = []
-            assetsFolder.forEach((relativePath, file) => {
-                if (file.dir) return
-                const m = /^([\w-]{1,64})\.(png|jpg|jpeg|webp)$/i.exec(relativePath)
-                if (m) entries.push({ id: m[1], file, type: MIME_BY_EXT[m[2].toLowerCase()] })
-            })
-            for (const e of entries) {
-                const data = await e.file.async('arraybuffer')
-                await putAsset({ id: e.id, blob: new Blob([data], { type: e.type }), type: e.type, name: e.id })
-            }
-        }
+        for (const a of pkg.assets) await putAsset({ id: a.id, blob: a.blob, type: a.type, name: a.id })
 
-        // 4. Apriamo automaticamente la prima sezione disponibile (se presente)
         if (sectionIndex.value.length > 0) {
             await changeActiveSection(sectionIndex.value[0].id)
             await nextTick()
@@ -595,247 +242,54 @@ export const useChessBookStore = defineStore('chessBook', () => {
         isBookLoaded.value = true
 
         // La copia di lavoro in IndexedDB diventa questo libro (altrimenti F5 riaprirebbe quello precedente)
-        fileDirty.value = false
         syncActiveSectionToCache()
-        resetFileBaseline(false)
+        fileState.resetFileBaseline(false)
         await persistToIndexedDB()
     }
 
-    /**
-     * FASE C (Parziale): Esporta lo stato attuale in un blob binario ZIP .mtcbook
-     * @param currentEditorContent Il contenuto testuale dell'editor attualmente attivo
-     */
+    /** Esporta lo stato attuale come blob .mtcbook. `currentEditorContent` = HTML dell'editor attivo. */
     async function exportMtcBook(currentEditorContent: string): Promise<Blob> {
-        const zip = new JSZip()
-        //const chessTreeStore = useChessTreeStore()
-
-        // 1. Prima della pulizia, eseguiamo la Garbage Collection sui tree del solo capitolo attivo
         syncActiveSectionToCache({ html: currentEditorContent, prune: true })
-
-        // --- GARBAGE COLLECTION PARTITE ZOMBI ---
-        /*
-        const allUsedTreeIds = new Set<string>()
-
-        // Raccoglie tutti i tree-id presenti in TUTTE le sezioni del libro
-        Object.values(zippedSectionsCache.value).forEach(jsonString => {
-            try {
-                const parsed = JSON.parse(jsonString)
-                const ids = extractTreeIdsFromHtml(parsed.html)
-                ids.forEach(id => allUsedTreeIds.add(id))
-            } catch (e) {
-                console.error("Errore nel parsing della sezione per la pulizia tree", e)
-            }
-        })
-
-        // Elimina dallo store tutti gli alberi che non compaiono in nessuna sezione del libro
-        chessTreeStore.cleanOrphanTrees(Array.from(allUsedTreeIds))
-        */
-        // ----------------------------------------
-
-        // 2. Prepariamo il payload del file book.json
         metadata.value.updatedAt = new Date().toISOString()
-        const bookJsonData = {
-            ...metadata.value,
-            sectionIndex: sectionIndex.value
-        }
-        zip.file('book.json', JSON.stringify(bookJsonData, null, 2))
 
-        // 3. Iniettiamo tutte le sezioni dalla cache nella cartella virtuale
-        /*const sectionsFolder = zip.folder('sections')
-        if (sectionsFolder) {
-            for (const [id, jsonString] of Object.entries(zippedSectionsCache.value)) {
-                sectionsFolder.file(`${id}.json`, jsonString)
-            }
-        }*/
-
-        // 3. Iniettiamo nella cartella virtuale solo le sezioni presenti nell'indice
-        const sectionsFolder = zip.folder('sections')
-        if (sectionsFolder) {
-            for (const item of sectionIndex.value) {
-                const json = zippedSectionsCache.value[item.id]
-                if (json) sectionsFolder.file(`${item.id}.json`, json)
-            }
+        const assets: BookAsset[] = []
+        for (const id of cover.collectAssetIds()) {
+            const asset = await getAsset(id)
+            if (asset) assets.push({ id, blob: asset.blob, type: asset.type })
         }
 
-        // 3b. Immagini della copertina (da IndexedDB)
-        const assetsFolder = zip.folder('assets')
-        if (assetsFolder) {
-            for (const assetId of collectAssetIds()) {
-                const asset = await getAsset(assetId)
-                if (asset) assetsFolder.file(`${assetId}.${EXT_BY_MIME[asset.type] ?? 'png'}`, asset.blob)
-            }
-        }
-
-        // 4. Generiamo il pacchetto binario compresso pronto per il download
-        return await zip.generateAsync({ type: 'blob' })
-    }
-
-    /**
-     * Crea una nuova sezione (es. un nuovo capitolo)
-     */
-    function createNewSection(title: string, type: SectionType = 'chapter') {
-        const id = `sec-${Math.random().toString(36).substr(2, 9)}`
-        const newItem: SectionIndexItem = { id, type, title }
-
-        sectionIndex.value.push(newItem)
-        zippedSectionsCache.value[id] = JSON.stringify(
-            type === 'cover'
-                ? { id, html: '', trees: [], cover: createEmptyCover() }
-                : { id, html: '' }
-        )
-
-        return id
-    }
-
-    /**
- * Estrae tutti gli attributi 'tree-id' o 'data-tree-id' presenti nel codice HTML di un capitolo
- */
-    function extractTreeIdsFromHtml(html: string): string[] {
-        if (!html) return []
-        const parser = new DOMParser()
-        const doc = parser.parseFromString(html, 'text/html')
-
-        const treeIds: string[] = []
-        // Cerca i nodi custom del tree (modifica il selettore in base a come Tiptap serializza il nodo in HTML)
-        const treeNodes = doc.querySelectorAll('chess-tree-block, [data-type="chess-tree-block"]')
-
-        treeNodes.forEach((node) => {
-            const id = node.getAttribute('tree-id') || node.getAttribute('data-tree-id')
-            if (id) treeIds.push(id)
+        return buildMtcBook({
+            metadata: metadata.value,
+            sectionIndex: sectionIndex.value,
+            sections: zippedSectionsCache.value,
+            assets
         })
-
-        return treeIds
-    }
-
-
-
-
-    /**
- * Ripristina la sessione da IndexedDB al ricaricamento della pagina (F5)
- */
-    async function restoreFromIndexedDB(): Promise<boolean> {
-        try {
-            const savedState = await db.bookState.get('current_book')
-            if (!savedState) return false
-            isLocked.value = true   // dopo un ricaricamento si riparte in sola lettura
-
-            // 1. Ripristina metadati e indice capitoli
-            metadata.value = { ...defaultMetadata(), ...savedState.metadata }
-            //sectionIndex.value = savedState.sectionIndex
-            sectionIndex.value = sanitizeSectionIndex(savedState.sectionIndex)
-
-            // 2. Recupera le sezioni salvate da Dexie
-            const allSections = await db.sections.toArray()
-            zippedSectionsCache.value = {}
-
-            // 🟢 AGGIORNAMENTO: Mantiene la stringa JSON integra ({ id, html, trees })
-            allSections.forEach(sec => {
-                zippedSectionsCache.value[sec.id] = sec.json
-            })
-
-            sanitizedSections.clear()
-
-            // Stato della copia su disco: se non era noto (dati vecchi) lo si considera non aggiornato
-            resetFileBaseline(savedState.dirtyVsFile ?? true)
-
-            // 3. Determina la sezione da caricare
-            const sectionToOpen = savedState.activeSectionId || sectionIndex.value[0]?.id
-
-            if (sectionToOpen) {
-                // changeActiveSection farà il parse del JSON dalla cache e popolerà sia l'HTML che treeStore.trees
-                await changeActiveSection(sectionToOpen)
-            }
-
-            isBookLoaded.value = true
-            return true
-        } catch (error) {
-            console.error('Errore nel ripristino da IndexedDB:', error)
-            return false
-        }
-    }
-
-    function syncActiveSectionToCache(opts: { html?: string; prune?: boolean } = {}) {
-        const id = activeSectionId.value
-        if (!id) return
-
-        // La copertina non ha HTML né partite: si salva il suo modello
-        if (activeSectionInfo.value?.type === 'cover') {
-            if (coverModel.value) {
-                zippedSectionsCache.value[id] = JSON.stringify({
-                    id, html: '', trees: [], cover: coverModel.value
-                })
-            }
-            return
-        }
-
-        const treeStore = useChessTreeStore()
-        const html = opts.html ?? activeSectionHtml.value
-
-        let trees = treeStore.trees
-        if (opts.prune) {
-            // copia filtrata, NON modifica lo store
-            const used = new Set(extractTreeIdsFromHtml(html))
-            trees = trees.filter(t => used.has(t.id))
-        }
-        zippedSectionsCache.value[id] = JSON.stringify({ id, html, trees })
     }
 
     return {
-        // Stato esistente
-        activeFen,
-        globalDiagramSize,
-        insertSignal,
-        activeShapes,
-        updateActiveShapes,
-        // Nuovi segnali per Server
-        exportServerChapterSignal,
-        exportServerFullBookSignal,
-        updateActiveFen,
-        triggerInsertDiagram,
-        // Nuovi trigger Server
-        triggerServerChapterPdfExport,
-        triggerServerFullBookPdfExport,
+        // Scacchiera e segnali
+        activeFen, globalDiagramSize, insertSignal, activeShapes,
+        updateActiveFen, updateActiveShapes, triggerInsertDiagram,
+        exportServerChapterSignal, exportServerFullBookSignal,
+        triggerServerChapterPdfExport, triggerServerFullBookPdfExport,
 
-        // Nuovo Stato Strutturale
-        isBookLoaded,
-        metadata,
-        sectionIndex,
-        activeSectionId,
-        activeSectionHtml,
-        zippedSectionsCache,
-        activeSectionInfo,
-        generatedTocHtml,
-        diagramLabels,
-        diagramList,
-        unresolvedDiagramRefs,
+        // Struttura del libro
+        isBookLoaded, metadata, sectionIndex, activeSectionId, activeSectionHtml, zippedSectionsCache,
+        activeSectionInfo, currentChapterNumber, generatedTocHtml,
+        diagramLabels, diagramList, unresolvedDiagramRefs,
 
-        // Nuove Funzioni operative
-        changeActiveSection,
-        loadMtcBook,
-        exportMtcBook,
-        createNewSection,
+        // Operazioni
+        changeActiveSection, createNewSection, syncActiveSectionToCache,
+        startNewBook, loadMtcBook, exportMtcBook,
 
-        // Funzioni di salvataggio e ripristino
+        // Salvataggio e ripristino
+        saveStatus, persistToIndexedDB, restoreFromIndexedDB,
+        isLocked: fileState.isLocked, fileDirty: fileState.fileDirty,
+        setLocked: fileState.setLocked, markFileSaved: fileState.markFileSaved,
 
-        restoreFromIndexedDB,
-        saveStatus,
-
-        currentChapterNumber,
-        syncActiveSectionToCache,
-
-        startNewBook,
-
-        isLocked,
-        fileDirty,
-        setLocked,
-        persistToIndexedDB,
-        markFileSaved,
-
-        coverModel,
-        coverImageUrl,
-        setCoverImage,
-        removeCoverImage,
-        buildCoverHtml,
-        collectAssetIds,
+        // Copertina
+        coverModel: cover.coverModel, coverImageUrl: cover.coverImageUrl,
+        setCoverImage: cover.setCoverImage, removeCoverImage: cover.removeCoverImage,
+        buildCoverHtml: cover.buildCoverHtml, collectAssetIds: cover.collectAssetIds,
     }
 })

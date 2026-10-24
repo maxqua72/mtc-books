@@ -1,9 +1,5 @@
 <template>
-  <Teleport to="body">
-    <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 font-sans"
-      @mousedown.self="emit('close')">
-      <div role="dialog" aria-modal="true" aria-labelledby="settings-title"
-        class="bg-white rounded-xl shadow-xl border border-neutral-200 w-full max-w-lg flex flex-col overflow-hidden">
+  <BaseModal :is-open="isOpen" width-class="max-w-lg" labelledby="settings-title" @close="emit('close')">
 
         <div class="flex items-center justify-between border-b border-neutral-200 px-6 py-4">
           <h3 id="settings-title" class="text-lg font-semibold text-neutral-900">Impostazioni · Aspetto</h3>
@@ -46,25 +42,17 @@
             Chiudi
           </button>
         </div>
-      </div>
-    </div>
-  </Teleport>
+  </BaseModal>
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted } from 'vue'
 import { THEMES, useThemeStore } from '../stores/themeStore'
+import BaseModal from './BaseModal.vue'
 
-const props = defineProps<{ isOpen: boolean }>()
+defineProps<{ isOpen: boolean }>()
 const emit = defineEmits<{ (e: 'close'): void }>()
 
 const store = useThemeStore()
-
-const onKeydown = (e: KeyboardEvent) => {
-  if (props.isOpen && e.key === 'Escape') emit('close')
-}
-onMounted(() => window.addEventListener('keydown', onKeydown))
-onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <style scoped>
