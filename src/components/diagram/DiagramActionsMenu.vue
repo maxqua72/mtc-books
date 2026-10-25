@@ -147,10 +147,10 @@ const groups = computed<MenuButton[][]>(() => [
 }
 
 /* Compare al passaggio del mouse sulla card del diagramma (che sta nel componente padre) */
-:global(.diagram-card:hover) .diagram-actions-menu {
+/*:global(.diagram-card:hover) .diagram-actions-menu {
   opacity: 1;
   pointer-events: auto;
-}
+}*/
 
 .action-btn {
   width: 28px;
@@ -186,5 +186,13 @@ const groups = computed<MenuButton[][]>(() => [
   height: 1px;
   background-color: #e5e5e5;
   margin: 2px 4px;
+}
+</style>
+<style>
+/* Non scoped: .diagram-card sta nel componente padre. Nel PDF il menu è nascosto da pdf-print.css */
+.diagram-card:hover .diagram-actions-menu,
+.diagram-card:focus-within .diagram-actions-menu {
+  opacity: 1;
+  pointer-events: auto;
 }
 </style>

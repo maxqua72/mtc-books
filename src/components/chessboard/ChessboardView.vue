@@ -41,28 +41,35 @@ const boardConfig = () => ({
   movable: { color: props.turnColor, dests: props.dests }
 })
 
-const updateBoard = () => {
-  if (!cgApi) return
-  const samePieces = cgApi.getFen() === props.fen.split(' ')[0]
-  // turno e mosse legali vanno aggiornati SEMPRE; i pezzi solo se sono cambiati
-  cgApi.set(samePieces ? boardConfig() : { fen: props.fen, ...boardConfig() })
-}
-
-const resync = () => cgApi?.set({ fen: props.fen, ...boardConfig() })
-
 const toDrawShapes = (shapes?: BoardShape[]): DrawShape[] =>
   (shapes ?? []).map(s => ({ orig: s.orig as Key, ...(s.dest ? { dest: s.dest as Key } : {}), brush: s.brush }))
 
-// Cambiare il FEN azzera le forme di Chessground: vanno riapplicate dopo (questo watcher viene dopo updateBoard)
+const updateBoard = () => {
+  if (!cgApi) return
+  const samePieces = cgApi.getFen() === props.fen.split(' ')[0]
+  // turno e mosse legali vanno aggiornati SEMPRE; i pezzi solo se sono cambiati.
+  // Chessground azzera le forme quando riceve un FEN: si passano nella stessa chiamata.
+  cgApi.set(samePieces
+    ? boardConfig()
+    : { fen: props.fen, ...boardConfig(), drawable: { shapes: toDrawShapes(props.shapes) } })
+}
+
+// Stessa posizione, solo ridisegnata: le frecce attualmente sulla scacchiera restano
+const resync = () => {
+  if (!cgApi) return
+  cgApi.set({ fen: props.fen, ...boardConfig(), drawable: { shapes: [...cgApi.state.drawable.shapes] } })
+}
+
 const syncShapes = () => cgApi?.setShapes(toDrawShapes(props.shapes))
-watch([() => props.fen, () => props.shapes], syncShapes)
 
 /** Forme attualmente sulla scacchiera, normalizzate (servono anche quando la posizione non ha un nodo) */
 const getShapes = (): BoardShape[] => (cgApi ? cleanShapes(cgApi.state.drawable.shapes) : [])
 const clearShapes = () => cgApi?.setShapes([])
 
-watch(() => props.fen, updateBoard)
+// Cambio posizione: prima pezzi e turno, poi le forme del nodo (anche se i pezzi erano già a posto per un drag)
+watch(() => props.fen, () => { updateBoard(); syncShapes() })
 watch(() => props.dests, updateBoard)
+watch(() => props.shapes, syncShapes)
 
 // Chessground posiziona i pezzi con una misura della scacchiera messa in cache.
 // Se la misura è obsoleta (layout non definitivo, zoom del browser, animazioni CSS)
