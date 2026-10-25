@@ -90,7 +90,7 @@ export function useBookEditor() {
     // Se l'albero attivo non è più nel documento (cancellazione, undo, cambio capitolo) si torna in modalità libera
     onTransaction({ editor, transaction }) {
       if (transaction.docChanged && treeStore.activeTreeId &&
-          !treeIdsInDoc(editor.state.doc).includes(treeStore.activeTreeId)) {
+        !treeIdsInDoc(editor.state.doc).includes(treeStore.activeTreeId)) {
         treeStore.deactivateTree()
       }
     }
@@ -161,20 +161,32 @@ export function useBookEditor() {
     }
   }
 
-  // Senza focus in un campo modificabile Ctrl+Z attiverebbe l'undo nativo del browser,
-// la cui cronologia sopravvive al cambio capitolo e punta a nodi DOM ormai staccati
-const blockStrayUndo = (e: KeyboardEvent) => {
-  if (!(e.ctrlKey || e.metaKey) || e.altKey) return
-  const key = e.key.toLowerCase()
-  if (key !== 'z' && key !== 'y') return
-  const target = e.target as HTMLElement | null
-  if (target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return
-  e.preventDefault()
-}
+  const TREE_BLOCK = '.chess-tree-block-container'
+  const EDITABLE = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])'
+
+  // Ctrl+Z / Ctrl+Y (anche Ctrl+Maiusc+Z):
+  // - dentro un blocco albero (commenti compresi): sempre bloccati, l'albero si gestisce dalla scacchiera
+  // - fuori da un campo modificabile: bloccati, per non attivare l'undo nativo del browser
+  //   (la sua cronologia sopravvive al cambio capitolo e punta a nodi DOM ormai staccati)
+  const blockStrayUndo = (e: KeyboardEvent) => {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return
+    const key = e.key.toLowerCase()
+    if (key !== 'z' && key !== 'y') return
+    const target = e.target as HTMLElement | null
+    if (target?.closest(TREE_BLOCK) || !target?.closest(EDITABLE)) e.preventDefault()
+  }
+
+  // Annulla/Ripristina dal menu Modifica o dal menu contestuale del browser:
+  // non passano dalla tastiera ma da beforeinput
+  const blockTreeHistoryInput = (e: InputEvent) => {
+    if (e.inputType !== 'historyUndo' && e.inputType !== 'historyRedo') return
+    if ((e.target as HTMLElement | null)?.closest(TREE_BLOCK)) e.preventDefault()
+  }
 
   onMounted(() => {
     window.addEventListener('request-editor-sync', syncEditorContent)
     window.addEventListener('keydown', blockStrayUndo, true)
+    window.addEventListener('beforeinput', blockTreeHistoryInput, true)
 
     // Libro senza sezioni all'avvio: se ne crea una di default
     if (store.sectionIndex.length === 0) {
@@ -186,6 +198,7 @@ const blockStrayUndo = (e: KeyboardEvent) => {
   onBeforeUnmount(() => {
     window.removeEventListener('request-editor-sync', syncEditorContent)
     window.removeEventListener('keydown', blockStrayUndo, true)
+    window.removeEventListener('beforeinput', blockTreeHistoryInput, true)
   })
 
   return { editor, syncEditorContent }

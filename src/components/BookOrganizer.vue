@@ -13,9 +13,9 @@
             </div>
 
             <button @click="isPropsOpen = true"
-                class="p-1.5 text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition shrink-0"
+                class="w-8 h-8 flex items-center justify-center text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition shrink-0"
                 title="Proprietà Libro">
-                ⚙️
+                <i class="fa-solid fa-gear"></i>
             </button>
         </div>
 
@@ -37,17 +37,17 @@
         <!-- Aggiungi sezioni -->
         <div class="p-3 border-t border-neutral-100 space-y-1">
             <button @click="addSection('chapter')" :disabled="locked"
-                class="w-full py-2 px-3 border border-neutral-200 hover:border-neutral-900 rounded-lg text-xs font-bold text-neutral-700 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-neutral-200">
-                ➕ Nuovo Capitolo
+                class="w-full py-2 px-3 border border-neutral-200 hover:border-neutral-900 rounded-lg text-xs font-bold text-neutral-700 transition flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-neutral-200">
+                <i class="fa-solid fa-plus text-[10px]"></i> Nuovo Capitolo
             </button>
             <div class="flex gap-1">
                 <button @click="addSection('cover')" :disabled="locked"
-                    class="flex-1 py-1.5 border border-neutral-200 text-[10px] font-bold text-neutral-600 rounded hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed">
-                    📘 Copertina
+                    class="flex-1 py-1.5 border border-neutral-200 text-[10px] font-bold text-neutral-600 rounded hover:bg-neutral-50 flex items-center justify-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-book-open text-[10px] text-neutral-500"></i> Copertina
                 </button>
                 <button @click="addSection('index')" :disabled="locked"
-                    class="flex-1 py-1.5 border border-neutral-200 text-[10px] font-bold text-neutral-600 rounded hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed">
-                    📋 Indice
+                    class="flex-1 py-1.5 border border-neutral-200 text-[10px] font-bold text-neutral-600 rounded hover:bg-neutral-50 flex items-center justify-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-list-ol text-[10px] text-neutral-500"></i> Indice
                 </button>
             </div>
         </div>
@@ -56,6 +56,7 @@
     <!-- Il modale sta fuori dal tag aside -->
     <BookPropertiesModal :is-open="isPropsOpen" @close="isPropsOpen = false" />
 </template>
+
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
