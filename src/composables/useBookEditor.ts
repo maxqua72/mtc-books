@@ -3,6 +3,8 @@ import { useEditor } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Focus from '@tiptap/extension-focus'
 import { TextStyle, Color } from '@tiptap/extension-text-style'
+import Highlight from '@tiptap/extension-highlight'
+import TextAlign from '@tiptap/extension-text-align'
 import { EditorState } from '@tiptap/pm/state'
 import type { Editor } from '@tiptap/vue-3'
 import { nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
@@ -14,16 +16,38 @@ import { ChessTreeBlock } from '../extensions/ChessTreeBlock'
 import { ProtectChessNodes } from '../extensions/ProtectChessNodes'
 import { PgnInsertMarker } from '../extensions/PgnInsertMarker'
 import { DiagramRef } from '../extensions/DiagramRef'
+import { Indent } from '../extensions/Indent'
 import { isTreeClipMarker } from '../utils/treeClipboard'
 import { treeIdsInDoc } from '../utils/editorDoc'
 import { pasteTreeFromClipboard } from './useBlockInsertion'
 
 /** Azzera la cronologia annulla/ripristina: lo stato si ricrea con lo stesso documento e gli stessi plugin */
+/*
 const resetHistory = (ed: Editor) => {
   const { view } = ed
   view.updateState(EditorState.create({ doc: view.state.doc, plugins: view.state.plugins }))
   // transazione vuota: riallinea la toolbar (stato dei pulsanti) senza toccare il documento
   view.dispatch(view.state.tr.setMeta('addToHistory', false))
+}*/
+const resetHistory = (ed: Editor) => {
+  try {
+    const { view } = ed
+    view.updateState(EditorState.create({ doc: view.state.doc, plugins: view.state.plugins }))
+  } catch (e) {
+    console.warn('[editor] Impossibile azzerare la cronologia annulla/ripristina:', e)
+    return
+  }
+
+  // Riallinea la toolbar a node view già montate: un dispatch immediato farebbe emettere
+  // selectionUpdate a node view appena create e non ancora pronte (race intermittente)
+  requestAnimationFrame(() => {
+    if (ed.isDestroyed) return
+    try {
+      ed.view.dispatch(ed.view.state.tr.setMeta('addToHistory', false))
+    } catch (e) {
+      console.warn('[editor] Riallineamento della toolbar non riuscito:', e)
+    }
+  })
 }
 
 /** Carica un documento diverso nell'editor (capitolo, indice): non deve essere annullabile */
@@ -47,12 +71,25 @@ export function useBookEditor() {
     editable: !store.isLocked,
     extensions: [
       StarterKit.configure({
-        heading: false // l'heading standard è sostituito da CustomHeading
+        heading: false, // l'heading standard è sostituito da CustomHeading
+        link: {
+          openOnClick: false,
+          autolink: true,          // un indirizzo digitato seguito da spazio diventa link
+          defaultProtocol: 'https',
+          HTMLAttributes: { rel: 'noopener noreferrer nofollow', target: '_blank' },
+        },
       }),
       Focus.configure({
         className: 'is-node-focused', // classe CSS applicata al blocco/nodo attivo
         mode: 'deepest',
       }),
+      Highlight,
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+        alignments: ['left', 'center', 'right', 'justify'],
+        defaultAlignment: 'left',
+      }),
+      Indent,
       TextStyle,
       Color,
       CustomHeading,
@@ -77,6 +114,12 @@ export function useBookEditor() {
       // Click nel testo fuori da alberi e diagrammi: si torna in modalità libera
       handleClick(_view, _pos, event) {
         const target = event.target as HTMLElement | null
+        const anchor = target?.closest('a[href]') as HTMLAnchorElement | null
+        if (anchor && (event.ctrlKey || event.metaKey)) {
+          window.open(anchor.href, '_blank', 'noopener,noreferrer')
+          return true
+        }
+        
         if (target && !target.closest('.chess-tree-block-container, .chess-diagram-container')) {
           treeStore.deactivateTree()
         }
