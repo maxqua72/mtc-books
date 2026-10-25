@@ -52,7 +52,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
     const fileState = useFileState({ metadata, sectionIndex, zippedSectionsCache })
     const scanSources = { activeSectionId, activeSectionHtml, zippedSectionsCache }
     const { diagramLabels, diagramList, unresolvedDiagramRefs } = useDiagramIndex(sectionIndex, scanSources)
-    const generatedTocHtml = useGeneratedToc(sectionIndex, scanSources)
+    const generatedTocHtml = useGeneratedToc(sectionIndex, scanSources, metadata)
 
     // --- Getter ---
     const activeSectionInfo = computed(() =>

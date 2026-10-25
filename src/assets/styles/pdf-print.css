@@ -52,7 +52,7 @@ body {
 /* La sezione è l'unità base di conteggio */
 .book-section {
   /* Prende il valore dal tag style inline style="--chapter-index: X", con fallback a 1 */
-  counter-reset: chapter-count var(--chapter-index, 1) section-count 0 !important;
+  counter-reset: chapter-count var(--chapter-index, 1) section-count 0 diagram-count 0 !important;
   page-break-before: always;
   break-before: page;
 }

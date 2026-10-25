@@ -35,8 +35,17 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
       --variation-spacing: ${variation}mm;
     }
   `
+    // Numerazione spenta: stessa specificità delle regole di pdf-print.css ma più in basso, quindi vince
+    const noNumbering = store.metadata.showNumbering ? '' : `
+      .show-numbering h2::before, .show-numbering h3::before,
+      .book-print-container h2::before, .book-print-container h3::before {
+        content: none !important;
+      }`
+
     // Prima la tipografia condivisa con l'editor, poi le regole di stampa (nessuna proprietà in comune)
-    return `${variables}\n${typographyStyles}\n${pdfPrintStyles}`
+    //return `${variables}\n${typographyStyles}\n${pdfPrintStyles}`
+    return `${variables}\n${typographyStyles}\n${pdfPrintStyles}\n${noNumbering}`
+
   }
 
   /**
@@ -51,6 +60,10 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
     clone.querySelectorAll('.block-header, .diagram-actions-menu').forEach(el => el.remove())
     // Il numero del diagramma lo genera il CSS (::before): il testo del badge andrebbe in doppio
     clone.querySelectorAll('.badge-text').forEach(el => { el.textContent = '' })
+    // Riquadri commento vuoti (es. quello della mossa attiva): nel PDF forzerebbero un a-capo
+    clone.querySelectorAll('.move-comment-box').forEach(el => {
+      if (!el.textContent?.trim()) el.remove()
+    })
     return clone.innerHTML
   }
 
@@ -75,6 +88,10 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
 
   /** Capitolo attivo (o copertina, se è quella aperta) */
   const exportChapter = async () => {
+    if (store.activeSectionInfo?.type === 'index') {
+      alert("L'indice si esporta solo con il libro intero: i numeri di pagina si calcolano lì.")
+      return
+    }
     const pageSize = store.metadata.pageFormat || 'a4'
 
     if (store.activeSectionInfo?.type === 'cover') {

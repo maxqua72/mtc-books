@@ -2,12 +2,16 @@
 import { computed, type Ref } from 'vue'
 import { escapeHtml } from '../../utils/html'
 import { scanChapter, type ScanSources } from './sectionScan'
-import type { SectionIndexItem } from './types'
+import type { BookMetadata, SectionIndexItem } from './types'
 
 const FONT = 'font-family: Lora, Georgia, serif;'
 
-export function useGeneratedToc(sectionIndex: Ref<SectionIndexItem[]>, src: ScanSources) {
+export function useGeneratedToc(
+    sectionIndex: Ref<SectionIndexItem[]>, 
+    src: ScanSources, 
+    metadata: Ref<BookMetadata>) {
   return computed(() => {
+    const numbered = metadata.value.showNumbering
     const chapters = sectionIndex.value.filter(s => s.type === 'chapter')
 
     if (chapters.length === 0) {
@@ -35,12 +39,14 @@ export function useGeneratedToc(sectionIndex: Ref<SectionIndexItem[]>, src: Scan
         let fontWeight = 'bold'
 
         if (h.level === '1') {
-          numbering = `${mainCounter}. `
+          //numbering = `${mainCounter}. `
+          numbering = numbered ? `${mainCounter}. ` : ''
           paddingLeft = '0px'
           fontSize = '1.1rem'
         } else {
           subCounter++
-          numbering = `${mainCounter}.${subCounter} `
+          //numbering = `${mainCounter}.${subCounter} `
+          numbering = numbered ? `${mainCounter}.${subCounter} ` : ''
           paddingLeft = '20px'
           fontSize = '0.95rem'
           fontWeight = 'normal'
