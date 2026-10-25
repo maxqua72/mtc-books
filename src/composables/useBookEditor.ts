@@ -3,6 +3,8 @@ import { useEditor } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Focus from '@tiptap/extension-focus'
 import { TextStyle, Color } from '@tiptap/extension-text-style'
+import { EditorState } from '@tiptap/pm/state'
+import type { Editor } from '@tiptap/vue-3'
 import { nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useChessBookStore } from '../stores/chessBookStore'
 import { useChessTreeStore } from '../stores/chessTreeStore'
@@ -15,6 +17,20 @@ import { DiagramRef } from '../extensions/DiagramRef'
 import { isTreeClipMarker } from '../utils/treeClipboard'
 import { treeIdsInDoc } from '../utils/editorDoc'
 import { pasteTreeFromClipboard } from './useBlockInsertion'
+
+/** Azzera la cronologia annulla/ripristina: lo stato si ricrea con lo stesso documento e gli stessi plugin */
+const resetHistory = (ed: Editor) => {
+  const { view } = ed
+  view.updateState(EditorState.create({ doc: view.state.doc, plugins: view.state.plugins }))
+  // transazione vuota: riallinea la toolbar (stato dei pulsanti) senza toccare il documento
+  view.dispatch(view.state.tr.setMeta('addToHistory', false))
+}
+
+/** Carica un documento diverso nell'editor (capitolo, indice): non deve essere annullabile */
+const replaceContent = (ed: Editor, html: string, options?: { emitUpdate?: boolean }) => {
+  ed.commands.setContent(html, options)
+  resetHistory(ed)
+}
 
 const DEFAULT_CONTENT = `
   <h2>Capitolo 1 — Introduzione</h2>
@@ -87,7 +103,7 @@ export function useBookEditor() {
 
     // Indice: contenuto generato, editor di sola lettura (si autogestisce)
     if (section?.type === 'index') {
-      editor.value.commands.setContent(store.generatedTocHtml)
+      replaceContent(editor.value, store.generatedTocHtml)
       editor.value.setOptions({ editable: false })
       return
     }
@@ -100,10 +116,10 @@ export function useBookEditor() {
 
     // Capitolo vuoto: un h2 vuoto fa comparire subito il numero del capitolo, seguito da un paragrafo
     if (!store.activeSectionHtml || store.activeSectionHtml.trim() === '') {
-      editor.value.commands.setContent('<h2></h2><p></p>')
+      replaceContent(editor.value, '<h2></h2><p></p>')
       nextTick(() => editor.value?.commands.focus('start'))
     } else {
-      editor.value.commands.setContent(store.activeSectionHtml)
+      replaceContent(editor.value, store.activeSectionHtml)
     }
   }
 
@@ -112,7 +128,7 @@ export function useBookEditor() {
   watch(() => store.activeSectionHtml, (newHtml) => {
     if (!editor.value) return
     if (newHtml && editor.value.getHTML() !== newHtml) {
-      editor.value.commands.setContent(newHtml, { emitUpdate: false })
+      replaceContent(editor.value, newHtml, { emitUpdate: false })
     }
   })
 
@@ -133,7 +149,7 @@ export function useBookEditor() {
   watch(
     () => store.activeSectionInfo?.type === 'index' ? store.generatedTocHtml : null,
     (toc) => {
-      if (toc && editor.value) editor.value.commands.setContent(toc, { emitUpdate: false })
+      if (toc && editor.value) replaceContent(editor.value, toc, { emitUpdate: false })
     }
   )
 
@@ -145,8 +161,20 @@ export function useBookEditor() {
     }
   }
 
+  // Senza focus in un campo modificabile Ctrl+Z attiverebbe l'undo nativo del browser,
+// la cui cronologia sopravvive al cambio capitolo e punta a nodi DOM ormai staccati
+const blockStrayUndo = (e: KeyboardEvent) => {
+  if (!(e.ctrlKey || e.metaKey) || e.altKey) return
+  const key = e.key.toLowerCase()
+  if (key !== 'z' && key !== 'y') return
+  const target = e.target as HTMLElement | null
+  if (target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return
+  e.preventDefault()
+}
+
   onMounted(() => {
     window.addEventListener('request-editor-sync', syncEditorContent)
+    window.addEventListener('keydown', blockStrayUndo, true)
 
     // Libro senza sezioni all'avvio: se ne crea una di default
     if (store.sectionIndex.length === 0) {
@@ -157,6 +185,7 @@ export function useBookEditor() {
 
   onBeforeUnmount(() => {
     window.removeEventListener('request-editor-sync', syncEditorContent)
+    window.removeEventListener('keydown', blockStrayUndo, true)
   })
 
   return { editor, syncEditorContent }

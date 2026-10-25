@@ -28,16 +28,32 @@
       </aside>
 
     </div>
+        <!-- Seconda scheda: scritture bloccate per non sovrascrivere il lavoro dell'altra -->
+    <div v-if="!hasWriteLock"
+      class="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl border border-neutral-200 shadow-xl max-w-md w-full p-6 space-y-4">
+        <h3 class="text-lg font-semibold text-neutral-900">MTC Book è già aperto in un'altra scheda</h3>
+        <p class="text-sm text-neutral-600">
+          Lavorare su due schede contemporaneamente farebbe sovrascrivere il salvataggio dell'una all'altra.
+          Chiudi questa scheda, oppure usa questa e l'altra smetterà di salvare.
+        </p>
+        <div class="flex justify-end">
+          <button @click="takeOverThisTab"
+            class="bg-neutral-900 text-white px-4 py-2 text-sm font-medium rounded-lg hover:bg-neutral-800 transition cursor-pointer">
+            Usa questa scheda
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import AppHeader from './components/AppHeader.vue'
 import WelcomeDashboard from './components/WelcomeDashboard.vue'
 import BookOrganizer from './components/BookOrganizer.vue'
 import BookEditor from './components/BookEditor.vue'
-//import ChessBoard from './components/ChessBoard.vue'
 import ChessboardController from './components/ChessboardController.vue'
 import { useChessBookStore } from './stores/chessBookStore'
 import { useChessTreeStore } from './stores/chessTreeStore'
@@ -45,55 +61,139 @@ import { useChessTreeStore } from './stores/chessTreeStore'
 const bookStore = useChessBookStore()
 const treeStore = useChessTreeStore()
 
-let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
-let pendingSave = false
+const AUTOSAVE_DELAY = 800
+const RETRY_MAX_DELAY = 30_000
 
-// --- RIPRISTINO ALL'AVVIO ---
+// ---------------------------------------------------------------------------
+// Una sola scheda può scrivere: due schede sulla stessa IndexedDB si sovrascriverebbero
+// ---------------------------------------------------------------------------
+const LOCK_NAME = 'mtc-book-write'
+const hasWriteLock = ref(true)
+
+/** Il lock resta occupato finché la scheda è aperta. Con steal si prende a un'altra scheda. */
+function acquireWriteLock(steal = false): Promise<void> {
+  if (!('locks' in navigator)) return Promise.resolve()   // browser senza Web Locks: nessun controllo
+  return new Promise<void>((resolve) => {
+    navigator.locks
+      .request(LOCK_NAME, steal ? { steal: true } : { ifAvailable: true }, async (lock) => {
+        hasWriteLock.value = !!lock
+        resolve()
+        if (lock) await new Promise<never>(() => {})   // mai risolta: il lock cade alla chiusura della scheda
+      })
+      .catch(() => { hasWriteLock.value = false; resolve() })   // AbortError: un'altra scheda ce l'ha tolto
+  })
+}
+
+const takeOverThisTab = async () => {
+  await acquireWriteLock(true)
+  location.reload()   // si riparte da ciò che l'altra scheda ha scritto in IndexedDB
+}
+
+// ---------------------------------------------------------------------------
+// Autosave con contatore di revisioni
+// ---------------------------------------------------------------------------
+let dirtyRev = 0          // cresce a ogni modifica
+let savedRev = 0          // ultima revisione scritta con certezza
+let saving: Promise<void> | null = null
+let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
+let retryDelay = 0
+let quotaWarned = false
+
+const hasUnpersisted = () =>
+  hasWriteLock.value && bookStore.isBookLoaded && (dirtyRev !== savedRev || saving !== null)
+
+const scheduleSave = (delay: number) => {
+  if (autoSaveTimer) clearTimeout(autoSaveTimer)
+  autoSaveTimer = setTimeout(() => { void saveNow() }, delay)
+}
+
+async function saveNow(): Promise<void> {
+  if (autoSaveTimer) { clearTimeout(autoSaveTimer); autoSaveTimer = null }
+  if (saving) await saving   // una scrittura alla volta
+  if (!hasWriteLock.value || !bookStore.isBookLoaded || dirtyRev === savedRev) return
+
+  const rev = dirtyRev   // la fotografia dello stato si prende in modo sincrono all'inizio di persistToIndexedDB
+  bookStore.saveStatus = 'saving'
+  let failed = false
+
+  saving = (async () => {
+    try {
+      await bookStore.persistToIndexedDB({ refreshDirty: true })
+      savedRev = rev
+      retryDelay = 0
+    } catch (e) {
+      failed = true
+      console.error('[autosave]', e)
+      if ((e as DOMException)?.name === 'QuotaExceededError' && !quotaWarned) {
+        quotaWarned = true
+        alert('Spazio del browser esaurito: il lavoro non viene più salvato automaticamente. Usa «Salva Lavoro» per scaricare il file .mtcbook.')
+      }
+      retryDelay = Math.min(RETRY_MAX_DELAY, (retryDelay || 1000) * 2)
+    }
+  })()
+  await saving
+  saving = null
+
+  // «saved» solo se nel frattempo non è arrivato altro
+  bookStore.saveStatus = dirtyRev === savedRev ? 'saved' : 'unsaved'
+  if (failed) scheduleSave(retryDelay)
+  else if (dirtyRev !== savedRev) scheduleSave(AUTOSAVE_DELAY)
+}
+
+// ---------------------------------------------------------------------------
+// Uscita dalla pagina
+// ---------------------------------------------------------------------------
+// visibilitychange è l'unico evento affidabile su mobile; pagehide copre la chiusura.
+// activeSectionHtml è già aggiornato a ogni digitazione (onUpdate): non serve forzare la sincronizzazione.
+const onVisibility = () => { if (document.visibilityState === 'hidden') void saveNow() }
+const onPageHide = () => { void saveNow() }
+
+const onBeforeUnload = (e: BeforeUnloadEvent) => {
+  if (!hasUnpersisted()) return
+  void saveNow()   // se l'utente resta, il salvataggio parte comunque
+  e.preventDefault()
+  e.returnValue = ''
+}
+
 onMounted(async () => {
-  /*const bookRestored = await bookStore.restoreFromIndexedDB()
-  if (bookRestored) {
-    await treeStore.restoreFromIndexedDB()
-  }*/
+  document.addEventListener('visibilitychange', onVisibility)
+  window.addEventListener('pagehide', onPageHide)
+  window.addEventListener('beforeunload', onBeforeUnload)
+
+  await acquireWriteLock()
+  if (!hasWriteLock.value) return   // scheda secondaria: il riquadro blocca tutto, non si legge né si scrive
+
+  // Chiede al browser di non sfrattare IndexedDB (può essere negato: non è un errore)
+  void navigator.storage?.persist?.().catch(() => {})
+
   await bookStore.restoreFromIndexedDB()
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('visibilitychange', onVisibility)
+  window.removeEventListener('pagehide', onPageHide)
+  window.removeEventListener('beforeunload', onBeforeUnload)
+  if (autoSaveTimer) clearTimeout(autoSaveTimer)
 })
 
 // --- WATCHER GLOBALE UNIFICATO ---
 watch(
   [
-    () => bookStore.activeSectionHtml, // Modifica di anche 1 singolo carattere nell'editor
-    () => bookStore.metadata,           // Cambiamento di titolo, autore, margini, ecc.
-    () => bookStore.sectionIndex,       // Aggiunta, riordino o eliminazione capitoli
-    () => treeStore.trees,              // Nuove mosse, varianti, commenti o split sulla scacchiera
-    () => bookStore.coverModel          // testi, posizioni, inquadratura, immagine
+    () => bookStore.activeSectionHtml,
+    () => bookStore.metadata,
+    () => bookStore.sectionIndex,
+    () => treeStore.trees,
+    () => bookStore.coverModel
   ],
   () => {
-    // Sola lettura: niente autosave e nessuna modifica da segnalare (anche gli spostamenti tra capitoli fanno scattare il watcher)
-    if (bookStore.isLocked) return
+    // Sola lettura: niente autosave e nessuna modifica da segnalare
+    if (bookStore.isLocked || !hasWriteLock.value) return
 
-    // Appena l'utente modifica qualcosa, segnamo che ci sono modifiche pendenti
+    dirtyRev++
     bookStore.saveStatus = 'unsaved'
-    pendingSave = true
-
-    // Se l'utente sta digitando o facendo azioni rapide, annulla il timer precedente
-    if (autoSaveTimer) clearTimeout(autoSaveTimer)
-
-    // Scrittura su IndexedDB solo dopo 800ms di inattività. Il timer salva anche se nel frattempo
-    // il documento è stato bloccato: le modifiche fatte da sbloccato non devono andare perse.
-    autoSaveTimer = setTimeout(async () => {
-      if (!bookStore.isBookLoaded || !pendingSave) return
-      pendingSave = false
-      bookStore.saveStatus = 'saving'
-      try {
-        await bookStore.persistToIndexedDB({ refreshDirty: true })
-        bookStore.saveStatus = 'saved'
-      } catch (e) {
-        console.error(e)
-        bookStore.saveStatus = 'unsaved'
-        pendingSave = true
-      }
-    }, 800)
+    scheduleSave(AUTOSAVE_DELAY)   // il timer salva anche se nel frattempo il documento viene bloccato
   },
-  { deep: true } // Cruciale: ascolta anche le modifiche ad oggetti e array annidati
+  { deep: true }
 )
 </script>
 
