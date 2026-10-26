@@ -119,7 +119,7 @@ export function useBookEditor() {
           window.open(anchor.href, '_blank', 'noopener,noreferrer')
           return true
         }
-        
+
         if (target && !target.closest('.chess-tree-block-container, .chess-diagram-container')) {
           treeStore.deactivateTree()
         }
@@ -199,7 +199,8 @@ export function useBookEditor() {
   // Editor -> store, prima del salvataggio su file o dell'esportazione.
   // Con la copertina attiva l'editor di testo contiene un vecchio capitolo: non va sincronizzato.
   const syncEditorContent = () => {
-    if (editor.value && store.activeSectionInfo?.type !== 'cover') {
+    const type = store.activeSectionInfo?.type
+    if (editor.value && type !== 'cover' && type !== 'index') {
       store.activeSectionHtml = editor.value.getHTML()
     }
   }

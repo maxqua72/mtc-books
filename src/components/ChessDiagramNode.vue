@@ -194,7 +194,7 @@ const toggleOrFocusCaption = async () => {
   font-size: 0.75rem;
   text-align: center;
   color: #525252;
-  margin-top: 0.5rem;
+  margin-top: 0;
   font-style: italic;
   max-width: 360px;
   outline: none;

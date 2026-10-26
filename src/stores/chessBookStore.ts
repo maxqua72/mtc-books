@@ -79,6 +79,9 @@ export const useChessBookStore = defineStore('chessBook', () => {
         const id = activeSectionId.value
         if (!id) return
 
+        // L'indice è contenuto generato: non entra mai nella cache
+        if (activeSectionInfo.value?.type === 'index') return
+
         // La copertina non ha HTML né partite: si salva il suo modello
         if (activeSectionInfo.value?.type === 'cover') {
             if (cover.coverModel.value) {

@@ -9,16 +9,22 @@ const clampSpacing = (v: unknown, def: number) => {
   return Number.isFinite(n) ? Math.min(30, Math.max(0, n)) : def
 }
 
+const margin = (v: unknown, def: number) => {
+  if (v === '' || v === null || v === undefined) return def
+  const n = Number(v)
+  return Number.isFinite(n) ? Math.max(0, n) : def
+}
+
 export function usePageLayout() {
   const store = useChessBookStore()
 
   const pageSize = computed(() => getPageSizeCss(store.metadata.pageFormat))
 
   const margins = computed(() => ({
-    top: store.metadata.pageMarginTop || 25,
-    right: store.metadata.pageMarginRight || 20,
-    bottom: store.metadata.pageMarginBottom || 25,
-    left: store.metadata.pageMarginLeft || 20,
+    top: margin(store.metadata.pageMarginTop, 25),
+    right: margin(store.metadata.pageMarginRight, 20),
+    bottom: margin(store.metadata.pageMarginBottom, 25),
+    left: margin(store.metadata.pageMarginLeft, 20),
   }))
 
   const spacing = computed(() => ({

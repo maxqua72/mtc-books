@@ -31,6 +31,7 @@ export function useFileState({ metadata, sectionIndex, zippedSectionsCache }: Fi
 
     const sections = sectionIndex.value.map(item => {
       let body: unknown = null
+      if (item.type === 'index') return [item.id, item.type, item.title, null]
       try {
         const p = JSON.parse(zippedSectionsCache.value[item.id] || '{}')
         const html: string = typeof p.html === 'string' ? p.html : ''

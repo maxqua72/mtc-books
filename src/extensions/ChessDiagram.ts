@@ -11,7 +11,7 @@ import ChessDiagramNode from '../components/ChessDiagramNode.vue'
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     chessDiagram: {
-      insertChessDiagram: (attributes: { fen: string; flipped?: boolean; shapes?: BoardShape[] }) => ReturnType
+      insertChessDiagram: (attributes: { fen: string; flipped?: boolean; shapes?: BoardShape[]; caption?: string }) => ReturnType
     }
   }
 }
@@ -98,7 +98,7 @@ export const ChessDiagram = Node.create({
    * Genera l'HTML statico per Tiptap (usato durante .getHTML() e l'esportazione PDF).
    * Costruisce la scacchiera testuale in formato font direttamente dentro la struttura HTML.
    */
-   renderHTML({ node, HTMLAttributes }) {
+  renderHTML({ node, HTMLAttributes }) {
     const fen = HTMLAttributes.fen || ''
     const boardText = fenToBoardString(fen, !!node.attrs.flipped)
 
@@ -144,11 +144,12 @@ export const ChessDiagram = Node.create({
       insertChessDiagram: (options) => ({ chain }) => {
         if (!isValidFen(options.fen)) return false
         const shapes = cleanShapes(options.shapes)
+        const caption = options.caption?.trim()
         return chain()
           .insertContent({
             type: this.name,
             attrs: { fen: options.fen, flipped: !!options.flipped, shapes: shapes.length ? shapes : null },
-            content: [{ type: 'text', text: 'Posizione dopo la mossa.' }]
+            ...(caption ? { content: [{ type: 'text', text: caption }] } : {}),
           })
           .run()
       },

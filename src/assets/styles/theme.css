@@ -205,6 +205,7 @@ html[data-theme] {
   --r-fg: var(--t-main-fg, var(--t-text));
   --r-muted: var(--t-main-muted, var(--t-text-muted));
   background-color: var(--t-main-bg);
+  accent-color: var(--t-accent);   /* checkbox, radio e slider nativi seguono il tema */
 }
 
 /* --- Aree: sfondi (fuori da ogni layer, per prevalere sulle utility di Tailwind) --- */

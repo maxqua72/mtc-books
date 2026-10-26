@@ -9,7 +9,7 @@
       <div class="text-[11px]" :class="tree ? 'text-blue-700' : 'text-neutral-500'">{{ subtitle }}</div>
       <label v-if="tree && hasHeader"
         class="mt-1.5 flex items-center gap-1.5 text-[11px] text-blue-800 cursor-pointer select-none">
-        <input type="checkbox" :checked="!!tree.showHeader" @change="onToggleHeader" />
+        <input type="checkbox" :checked="!!tree.showHeader" :disabled="locked" @change="onToggleHeader" />
         Mostra intestazione nel documento
       </label>
     </div>
@@ -24,15 +24,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useChessTreeStore } from '../../stores/chessTreeStore'
+import { useChessBookStore } from '../../stores/chessBookStore'
 import { hasDisplayableHeader } from '../../utils/pgnHeader'
 
 const treeStore = useChessTreeStore()
+const bookStore = useChessBookStore()
 const tree = computed(() => treeStore.currentTree)
+const locked = computed(() => bookStore.isLocked)
 
 // L'interruttore compare solo se l'albero ha tag PGN da mostrare
 const hasHeader = computed(() => !!tree.value && hasDisplayableHeader(tree.value.header))
 const onToggleHeader = (event: Event) => {
-  if (tree.value) treeStore.setShowHeader(tree.value.id, (event.target as HTMLInputElement).checked)
+  if (tree.value && !locked.value) treeStore.setShowHeader(tree.value.id, (event.target as HTMLInputElement).checked)
 }
 
 const subtitle = computed(() => {
