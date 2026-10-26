@@ -4,11 +4,16 @@
 
     <!-- Scacchiera con i comandi di navigazione subito sotto -->
     <div class="flex flex-col items-center gap-3">
-      <ChessboardView ref="chessboardRef" :fen="treeStore.activeFen" :turn-color="currentTurnColor"
-        :dests="playableDests" :linked="!!treeStore.currentTree"
-        :orientation="treeStore.boardFlipped ? 'black' : 'white'" :shapes="nodeShapes"
-        @move="handlePhysicsMove" @shapes="onShapes" />
-      <ChessboardNavigation />
+      <div class="relative">
+        <ChessboardView ref="chessboardRef" :fen="treeStore.activeFen" :turn-color="currentTurnColor"
+          :dests="playableDests" :linked="!!treeStore.currentTree"
+          :orientation="treeStore.boardFlipped ? 'black' : 'white'" :shapes="nodeShapes"
+          @move="handlePhysicsMove" @shapes="onShapes" />
+        <ChessboardNavigation />
+        <PromotionPicker v-if="pendingPromotion" :color="pendingPromotion.color"
+          @choose="completePromotion" @cancel="cancelPromotion" />
+      </div>
+      
     </div>
 
     <ChessboardConsole :current-fen="treeStore.activeFen" :last-move="lastMoveNotation" @reset="resetBoard"
@@ -25,6 +30,7 @@ import type { Key } from 'chessground/types'
 import ChessboardView from './chessboard/ChessboardView.vue'
 import ChessboardConsole from './chessboard/ChessboardConsole.vue'
 import ChessboardNavigation from './chessboard/ChessboardNavigation.vue'
+import PromotionPicker from './chessboard/PromotionPicker.vue'
 
 import { useChessBookStore } from '../stores/chessBookStore'
 import { useChessTreeStore, type ChessMoveNode } from '../stores/chessTreeStore'
@@ -49,10 +55,22 @@ const formatNodeLabel = (node: ChessMoveNode) =>
 const isPointerOver = ref(false)
 
 const onKeydown = (e: KeyboardEvent) => {
-  if (!isPointerOver.value || e.ctrlKey || e.metaKey || e.altKey) return
+  if (e.ctrlKey || e.metaKey || e.altKey) return
 
   const target = e.target as HTMLElement | null
   if (target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return
+
+  // Scelta del pezzo di promozione: ha la precedenza sulla navigazione e vale anche col mouse fuori
+  if (pendingPromotion.value) {
+    const k = e.key.toLowerCase()
+    if (e.key === 'Escape') cancelPromotion()
+    else if (k.length === 1 && 'qrbn'.includes(k)) completePromotion(k as PromotionPiece)
+    else return
+    e.preventDefault()
+    return
+  }
+
+  if (!isPointerOver.value) return
 
   switch (e.key) {
     case 'ArrowLeft':  treeStore.goBack(); break
@@ -104,9 +122,41 @@ const playableDests = computed(() => {
 // Mossa fisica dell'utente:
 // - modalità albero: registrata nell'albero (o navigazione al nodo esistente se la mossa c'è già)
 // - modalità libera: registrata nella cronologia temporanea, che non viene mai salvata
+type PromotionPiece = 'q' | 'r' | 'b' | 'n'
+
+// Mossa di promozione in attesa della scelta del pezzo (la scacchiera mostra già il pedone sulla casella di arrivo)
+const pendingPromotion = ref<{ orig: Key; dest: Key; color: 'white' | 'black' } | null>(null)
+
+const isPromotionMove = (orig: Key, dest: Key) =>
+  chess.moves({ verbose: true }).some(m => m.from === orig && m.to === dest && !!m.promotion)
+
+// Mossa fisica dell'utente: una promozione apre prima la scelta del pezzo
 const handlePhysicsMove = (orig: Key, dest: Key) => {
+  if (isPromotionMove(orig, dest)) {
+    pendingPromotion.value = { orig, dest, color: currentTurnColor.value }
+    return
+  }
+  playMove(orig, dest)
+}
+
+const completePromotion = (piece: PromotionPiece) => {
+  const p = pendingPromotion.value
+  if (!p) return
+  pendingPromotion.value = null
+  playMove(p.orig, p.dest, piece)
+}
+
+const cancelPromotion = () => {
+  if (!pendingPromotion.value) return
+  pendingPromotion.value = null
+  chessboardRef.value?.resync()   // il pedone torna dov'era
+}
+
+// - modalità albero: registrata nell'albero (o navigazione al nodo esistente se la mossa c'è già)
+// - modalità libera: registrata nella cronologia temporanea, che non viene mai salvata
+const playMove = (orig: Key, dest: Key, promotion?: PromotionPiece) => {
   try {
-    const moveData = chess.move({ from: orig, to: dest, promotion: 'q' })
+    const moveData = chess.move({ from: orig, to: dest, promotion })
 
     // Sola lettura: nell'albero del documento si può solo seguire una mossa già presente
     if (bookStore.isLocked && treeStore.currentTree && !treeStore.findChildBySan(moveData.san)) {
@@ -131,6 +181,7 @@ const handlePhysicsMove = (orig: Key, dest: Key) => {
 
 // chess.js segue i cambi di FEN dovuti a navigazione, clic sulle mosse o reset
 watch(() => treeStore.activeFen, (newFen) => {
+  pendingPromotion.value = null   // la posizione è cambiata: la promozione in sospeso non vale più
   if (chess.fen() !== newFen) {
     try {
       chess.load(newFen)

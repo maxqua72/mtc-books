@@ -3,21 +3,17 @@
     <template v-if="nodes && nodes.length > 0">
       <slot :node="nodes[0]">
         <!-- 1. Mossa corrente (Marcata come contenteditable="false" per blindarla da Tiptap) -->
-        <span
-          class="chess-move-item" 
-          :class="{
-            'is-active': isNodeActive(nodes[0].id),
-            'is-main-move': !isVariantContext
-          }" 
-          contenteditable="false"
-          @click.stop="selectMove(nodes[0].id)"
-          tabindex="0"
-          @keydown.stop="handleMoveKeydown(nodes[0].id, $event)"
-        >
+        <span class="chess-move-item" :class="{
+          'is-active': isNodeActive(nodes[0].id),
+          'is-main-move': !isVariantContext
+        }" contenteditable="false" @click.stop="selectMove(nodes[0].id)" tabindex="0"
+          @keydown.stop="handleMoveKeydown(nodes[0].id, $event)">
           <span class="move-prefix">{{ getMovePrefix(nodes[0]) }}</span>
           <!-- <span class="move-san">{{ nodes[0].san }}</span> -->
           <!-- <span class="move-san" v-html="convertToChessFont(nodes[0].san)"></span> -->
-          <span class="move-san"><span v-if="sanParts(nodes[0].san).glyph" :class="sanParts(nodes[0].san).cls">{{ sanParts(nodes[0].san).glyph }}</span>{{ sanParts(nodes[0].san).rest }}</span>
+          <!-- <span class="move-san"><span v-if="sanParts(nodes[0].san).glyph" :class="sanParts(nodes[0].san).cls">{{ sanParts(nodes[0].san).glyph }}</span>{{ sanParts(nodes[0].san).rest }}</span> -->
+          <span class="move-san"><template v-for="(p, i) in sanParts(nodes[0].san)" :key="i"><span v-if="p.cls"
+                :class="p.cls">{{ p.text }}</span><template v-else>{{ p.text }}</template></template></span>
           <span v-if="nagText(nodes[0])" class="move-nag">{{ nagText(nodes[0]) }}</span>
         </span>
 
@@ -26,16 +22,9 @@
           :class="isVariantContext ? 'comment-inline' : 'comment-block'" @click.stop="activateThisTree(nodes[0].id)">
           <span
             :ref="(el) => { if (el) { commentRefs[nodes[0].id] = el as HTMLElement; applyEditable(el as HTMLElement) } }"
-            contenteditable="true"
-            class="comment-editable-text"
-            v-once
-            v-html="safeComment(nodes[0].comment)"
-            data-placeholder="Inserisci commento..."
-            @blur="onCommentBlur(nodes[0].id, $event)"
-            @keydown.enter="handleEnter"
-            @paste="handlePaste"
-            @keydown.stop
-          ></span>
+            contenteditable="true" class="comment-editable-text" v-once v-html="safeComment(nodes[0].comment)"
+            data-placeholder="Inserisci commento..." @blur="onCommentBlur(nodes[0].id, $event)"
+            @keydown.enter="handleEnter" @paste="handlePaste" @keydown.stop></span>
         </div>
 
         <!-- 3. VARIANTI ALTERNATIVE -->
@@ -43,27 +32,17 @@
           <div :class="!isVariantContext ? 'variant-block-break' : 'variant-inline-wrapper'">
             <template v-for="subTree in nodes.slice(1)" :key="subTree.id">
               <span class="bracket"> (</span>
-              <ChessMoveRenderer 
-                :nodes="[subTree]" 
-                :is-variant-context="true" 
-                :is-variant-root="true"
-                :after-block="false"
-                :tree-id="treeId" 
-              />
+              <ChessMoveRenderer :nodes="[subTree]" :is-variant-context="true" :is-variant-root="true"
+                :after-block="false" :tree-id="treeId" />
               <span class="bracket">)</span>
             </template>
           </div>
         </template>
 
         <!-- 4. RISPOSTA CONSECUTIVA -->
-        <ChessMoveRenderer 
-          v-if="nodes[0].children && nodes[0].children.length > 0" 
-          :nodes="nodes[0].children"
-          :is-variant-context="isVariantContext" 
-          :is-variant-root="false"
-          :after-block="!!(nodes[0].comment || nodes.length > 1)"
-          :tree-id="treeId" 
-        />
+        <ChessMoveRenderer v-if="nodes[0].children && nodes[0].children.length > 0" :nodes="nodes[0].children"
+          :is-variant-context="isVariantContext" :is-variant-root="false"
+          :after-block="!!(nodes[0].comment || nodes.length > 1)" :tree-id="treeId" />
       </slot>
     </template>
   </div>
@@ -234,13 +213,30 @@ const FIGURINES: Record<string, { cls: string; map: Record<string, string> }> = 
   }
 }
 
-// Restituisce testo, mai HTML: l'escape lo fa l'interpolazione di Vue
-const sanParts = (san: string) => {
+interface SanPart { text: string; cls: string }   // cls vuota = testo normale, altrimenti classe della figurina
+
+// Restituisce segmenti di testo, mai HTML: l'escape lo fa l'interpolazione di Vue.
+// Figurina per il pezzo iniziale (Nf3) e per il pezzo di promozione (e8=Q, exd1=N+)
+const sanParts = (san: string): SanPart[] => {
   const cfg = Object.hasOwn(FIGURINES, props.figurineType) ? FIGURINES[props.figurineType] : null
-  const glyph = cfg?.map[san.charAt(0)] ?? null
-  return glyph && cfg
-    ? { glyph, cls: cfg.cls, rest: san.slice(1) }
-    : { glyph: null, cls: '', rest: san }
+  if (!cfg) return [{ text: san, cls: '' }]
+
+  const parts: SanPart[] = []
+  let rest = san
+
+  const first = cfg.map[san.charAt(0)]
+  if (first) {
+    parts.push({ text: first, cls: cfg.cls })
+    rest = san.slice(1)
+  }
+
+  const promo = /^(.*=)([QRBN])(.*)$/.exec(rest)
+  if (promo) {
+    parts.push({ text: promo[1], cls: '' }, { text: cfg.map[promo[2]], cls: cfg.cls }, { text: promo[3], cls: '' })
+  } else {
+    parts.push({ text: rest, cls: '' })
+  }
+  return parts.filter(p => p.text !== '')
 }
 
 // Simboli di valutazione (!, ?, +=, ...): tabella e testo in utils/nags.ts
@@ -333,11 +329,11 @@ const nagText = (node: ChessMoveNode) => nagsToText(node.nags)
 /* Stile per The Good Companions (richiede più compensazione geometrica) */
 :deep(.tgc-figurine) {
   font-family: 'Chess The Good Companions', sans-serif;
-  font-size: 1.05em; /* Leggermente più piccolo per uniformarlo alle lettere */
+  font-size: 1.05em;
+  /* Leggermente più piccolo per uniformarlo alle lettere */
   line-height: 1;
   margin-right: 1px;
-  vertical-align: 1px; /* Lo spinge più in basso perché i glifi da diagramma tendono a "volare" */
+  vertical-align: 1px;
+  /* Lo spinge più in basso perché i glifi da diagramma tendono a "volare" */
 }
-
-
 </style>
