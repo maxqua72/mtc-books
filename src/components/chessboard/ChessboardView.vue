@@ -1,5 +1,5 @@
 <template>
-  <div class="chessboard-outer flex items-center justify-center bg-neutral-900 shadow-xl rounded-sm"
+  <div class="chessboard-outer flex items-center justify-center rounded-sm"
     :class="{ linked }">
     <!-- Div bersaglio di Chessground centrato al pixel -->
     <div 
