@@ -13,6 +13,7 @@ import { useFileState } from './book/useFileState'
 import { useDiagramIndex } from './book/useDiagramIndex'
 import { useGeneratedToc } from './book/useGeneratedToc'
 import { parseMtcBook, buildMtcBook, type BookAsset } from './book/mtcbookIO'
+import { scanChapter } from './book/sectionScan'
 
 // I tipi restano importabili da qui, come prima della divisione in moduli
 export type { SectionType, PageFormat, SaveStatus, SectionIndexItem, BookMetadata } from './book/types'
@@ -66,6 +67,16 @@ export const useChessBookStore = defineStore('chessBook', () => {
         const currentIndex = chapters.findIndex(s => s.id === activeSectionId.value)
         return currentIndex !== -1 ? currentIndex + 1 : 1
     })
+
+    /** id dei diagrammi presenti nei capitoli diversi da quello attivo (usa le analisi già in cache) */
+    function diagramIdsOutsideActive(): Set<string> {
+        const ids = new Set<string>()
+        for (const s of sectionIndex.value) {
+            if (s.type !== 'chapter' || s.id === activeSectionId.value) continue
+            for (const d of scanChapter(s.id, scanSources).diagrams) if (d.id) ids.add(d.id)
+        }
+        return ids
+    }
 
     // --- Azioni semplici (segnali) ---
     const updateActiveFen = (fen: string) => { activeFen.value = fen }
@@ -278,7 +289,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
 
         // Struttura del libro
         isBookLoaded, metadata, sectionIndex, activeSectionId, activeSectionHtml, zippedSectionsCache,
-        activeSectionInfo, currentChapterNumber, generatedTocHtml,
+        activeSectionInfo, currentChapterNumber, generatedTocHtml, diagramIdsOutsideActive,
         diagramLabels, diagramList, unresolvedDiagramRefs,
 
         // Operazioni

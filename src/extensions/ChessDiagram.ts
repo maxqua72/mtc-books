@@ -7,6 +7,7 @@ import { cleanShapes, type BoardShape } from '../utils/shapes'
 import { STANDARD_FEN } from '../utils/fen'
 import { newUuid } from '../utils/ids'
 import ChessDiagramNode from '../components/ChessDiagramNode.vue'
+import { useChessBookStore } from '../stores/chessBookStore'
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -165,6 +166,12 @@ export const ChessDiagram = Node.create({
         appendTransaction: (transactions, _oldState, newState) => {
           if (!transactions.some(tr => tr.docChanged)) return null
 
+          // Il confronto con gli altri capitoli serve solo quando arriva contenuto da fuori
+          const incoming = transactions.some(tr => ['paste', 'drop'].includes(tr.getMeta('uiEvent')))
+          let elsewhere: Set<string> | null = null
+          const usedElsewhere = (id: string) =>
+            incoming && (elsewhere ??= useChessBookStore().diagramIdsOutsideActive()).has(id)
+
           const seen = new Set<string>()
           const tr = newState.tr
           let modified = false
@@ -172,7 +179,7 @@ export const ChessDiagram = Node.create({
           newState.doc.descendants((node, pos) => {
             if (node.type.name !== this.name) return
             const id = node.attrs.id as string | null
-            if (!id || seen.has(id)) {
+            if (!id || seen.has(id) || usedElsewhere(id)) {
               tr.setNodeMarkup(pos, undefined, { ...node.attrs, id: generateDiagramId() })
               modified = true
             } else {
