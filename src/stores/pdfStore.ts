@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { downloadBlob } from '../utils/download'
 
 export interface ExportSection {
   id: string
@@ -9,22 +10,39 @@ export interface ExportSection {
   html: string
 }
 
+const CHAPTER_TIMEOUT_MS = 2 * 60_000
+const BOOK_TIMEOUT_MS = 10 * 60_000
+
 export const usePdfStore = defineStore('pdf', () => {
   const isGeneratingPdf = ref(false)
   const error = ref<string | null>(null)
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
 
-  // Helper privato per scaricare il Blob ricevuto dal backend
-  const downloadBlob = (blob: Blob, filename: string) => {
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = filename
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    window.URL.revokeObjectURL(url)
+  /** POST JSON al server PDF e restituisce il PDF; il timeout copre anche la lettura della risposta */
+  const requestPdf = async (path: string, body: unknown, timeoutMs: number, failureMessage: string): Promise<Blob> => {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeoutMs)
+    try {
+      const response = await fetch(`${API_BASE_URL}${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal
+      })
+      if (!response.ok) {
+        const detail = await response.text().catch(() => '')
+        throw new Error(`${failureMessage} ${detail}`.trim())
+      }
+      return await response.blob()
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        throw new Error(`Il server PDF non ha risposto entro ${Math.round(timeoutMs / 60_000)} minuti.`)
+      }
+      throw err
+    } finally {
+      clearTimeout(timer)
+    }
   }
 
   /**
@@ -40,25 +58,13 @@ export const usePdfStore = defineStore('pdf', () => {
     isGeneratingPdf.value = true
     error.value = null
 
-    console.log('[exportCurrentChapter] Exporting chapter ' + (payload.chapterNumber) + ' with title: ' + payload.title)
-
     try {
-      const response = await fetch(`${API_BASE_URL}/api/pdf/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          htmlContent: payload.htmlContent,
-          customCss: payload.customCss,
-          chapterNumber: payload.chapterNumber || 1,
-          pageSize: payload.pageSize || 'A4'
-        })
-      })
-
-      if (!response.ok) {
-        const detail = await response.text().catch(() => '')
-        throw new Error(`Errore nella generazione del capitolo PDF. ${detail}`.trim())
-      }
-      const blob = await response.blob()
+      const blob = await requestPdf('/api/pdf/generate', {
+        htmlContent: payload.htmlContent,
+        customCss: payload.customCss,
+        chapterNumber: payload.chapterNumber || 1,
+        pageSize: payload.pageSize || 'A4'
+      }, CHAPTER_TIMEOUT_MS, 'Errore nella generazione del capitolo PDF.')
       downloadBlob(blob, `${payload.title.toLowerCase().replace(/\s+/g, '_')}.pdf`)
     } catch (err: any) {
       console.error('[PDF Store] Errore capitolo:', err)
@@ -82,23 +88,12 @@ export const usePdfStore = defineStore('pdf', () => {
     error.value = null
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/pdf/generate-book`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sections: payload.sections,
-          customCss: payload.customCss,
-          bookTitle: payload.bookTitle,
-          pageSize: payload.pageSize || 'A4'
-        })
-      })
-
-      if (!response.ok) {
-        const detail = await response.text().catch(() => '')
-        throw new Error(`Errore nella generazione del libro completo. ${detail}`.trim())
-      }
-
-      const blob = await response.blob()
+      const blob = await requestPdf('/api/pdf/generate-book', {
+        sections: payload.sections,
+        customCss: payload.customCss,
+        bookTitle: payload.bookTitle,
+        pageSize: payload.pageSize || 'A4'
+      }, BOOK_TIMEOUT_MS, 'Errore nella generazione del libro completo.')
       downloadBlob(blob, `${payload.bookTitle.toLowerCase().replace(/\s+/g, '_')}_completo.pdf`)
     } catch (err: any) {
       console.error('[PDF Store] Errore libro completo:', err)

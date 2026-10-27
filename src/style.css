@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
-/* Importiamo i fogli di stile di Chessground dentro il flusso di Tailwind */
+/* Stili di Chessground dentro il flusso di Tailwind: tutti gli @import in cima al file */
 @import "chessground/assets/chessground.base.css";
 @import "chessground/assets/chessground.brown.css";
+@import "chessground/assets/chessground.cburnett.css";
 
 html, body, #app {
   margin: 0;
@@ -11,21 +12,6 @@ html, body, #app {
   height: 100%;
   background-color: #ffffff;
 }
-
-/* Applichiamo il tema dei pezzi standard di Lichess (Cburnett) */
-@import "chessground/assets/chessground.cburnett.css";
-
-/* Forzatura dello stile in Bianco e Nero Editoriale per la scacchiera */
-.cg-wrap {
-  background-color: #ffffff !important;
-}
-.square.dark {
-  background-color: #e5e7eb !important; /* Grigio chiaro gray-200 */
-}
-.square.last-move {
-  background-color: rgba(156, 163, 175, 0.4) !important; /* Grigio gray-400 trasparente */
-}
-
 
 @font-face {
   font-family: 'EB Garamond';

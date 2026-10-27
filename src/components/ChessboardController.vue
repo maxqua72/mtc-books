@@ -1,19 +1,18 @@
 <template>
-  <div class="w-[400px] flex flex-col items-center gap-6"
-    @mouseenter="isPointerOver = true" @mouseleave="isPointerOver = false">
+  <div class="w-[400px] flex flex-col items-center gap-3" @mouseenter="isPointerOver = true"
+    @mouseleave="isPointerOver = false">
 
     <!-- Scacchiera con i comandi di navigazione subito sotto -->
     <div class="flex flex-col items-center gap-3">
       <div class="relative">
         <ChessboardView ref="chessboardRef" :fen="treeStore.activeFen" :turn-color="currentTurnColor"
           :dests="playableDests" :linked="!!treeStore.currentTree"
-          :orientation="treeStore.boardFlipped ? 'black' : 'white'" :shapes="nodeShapes"
-          @move="handlePhysicsMove" @shapes="onShapes" />
-        <ChessboardNavigation />
-        <PromotionPicker v-if="pendingPromotion" :color="pendingPromotion.color"
-          @choose="completePromotion" @cancel="cancelPromotion" />
+          :orientation="treeStore.boardFlipped ? 'black' : 'white'" :shapes="nodeShapes" @move="handlePhysicsMove"
+          @shapes="onShapes" />
+        <PromotionPicker v-if="pendingPromotion" :color="pendingPromotion.color" @choose="completePromotion"
+          @cancel="cancelPromotion" />
       </div>
-      
+      <ChessboardNavigation />
     </div>
 
     <ChessboardConsole :current-fen="treeStore.activeFen" :last-move="lastMoveNotation" @reset="resetBoard"
@@ -73,12 +72,12 @@ const onKeydown = (e: KeyboardEvent) => {
   if (!isPointerOver.value) return
 
   switch (e.key) {
-    case 'ArrowLeft':  treeStore.goBack(); break
+    case 'ArrowLeft': treeStore.goBack(); break
     case 'ArrowRight': treeStore.goForward(); break
-    case 'ArrowUp':    treeStore.goToSibling(-1); break
-    case 'ArrowDown':  treeStore.goToSibling(1); break
-    case 'Home':       treeStore.goToStart(); break
-    case 'End':        treeStore.goToEnd(); break
+    case 'ArrowUp': treeStore.goToSibling(-1); break
+    case 'ArrowDown': treeStore.goToSibling(1); break
+    case 'Home': treeStore.goToStart(); break
+    case 'End': treeStore.goToEnd(); break
     default: return
   }
   if (treeStore.workingTree) e.preventDefault()   // senza nulla da navigare lo scroll resta libero
