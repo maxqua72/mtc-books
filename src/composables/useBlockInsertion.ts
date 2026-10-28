@@ -5,8 +5,13 @@ import { useChessBookStore } from '../stores/chessBookStore'
 import { useChessTreeStore } from '../stores/chessTreeStore'
 import { usePgnImportStore } from '../stores/pgnImportStore'
 import { findTreeBlockPos } from '../utils/editorDoc'
+import { canSplitAt } from '../utils/treeOps'
+import { resetHistory } from '../utils/editorHistory'
 
 type EditorRef = ShallowRef<Editor | undefined>
+
+const SPLIT_CONFIRM =
+  'Il blocco verrà diviso in questo punto. L’operazione non è annullabile: la cronologia di annulla/ripristina dell’editor verrà azzerata. Continuare?'
 
 /** Incolla l'albero copiato o tagliato (anche da un altro capitolo): nuovo albero indipendente, nel punto del cursore */
 export function pasteTreeFromClipboard() {
@@ -29,31 +34,40 @@ export function useBlockInsertion(editor: EditorRef) {
     pgnStore.addTrees([tree], 'end')
   }
 
-  // Toolbar "Dividi Blocco": spezza l'albero attivo nella mossa selezionata e inserisce il secondo blocco
-  const handleSplitTreeBlock = () => {
-    const ed = editor.value
-    const currentTreeId = treeStore.activeTreeId
-    const activeNodeId = treeStore.activeNodeId
-    if (!ed || !currentTreeId || !activeNodeId) return
+  /**
+   * Spezza l'albero in `nodeId` e inserisce, subito dopo il blocco, il diagramma (se c'è) e i nuovi blocchi.
+   * Non entra nella cronologia di ProseMirror, che viene azzerata: Ctrl+Z non può lasciare
+   * il primo blocco troncato con gli altri spariti.
+   */
+  const splitAndInsert = (ed: Editor, treeId: string, nodeId: string, diagram?: object): boolean => {
+    const block = findTreeBlockPos(ed.state.doc, treeId)
+    if (!block) return false
+    const newIds = treeStore.splitTree(treeId, nodeId)
+    if (!newIds) return false
 
-    const newTreeId = treeStore.splitTree(currentTreeId, activeNodeId)
-    if (!newTreeId) return
+    ed.chain().focus().insertContentAt(block.pos + block.size, [
+      ...(diagram ? [diagram] : []),
+      ...newIds.map(id => ({ type: 'chessTreeBlock', attrs: { treeId: id } })),
+      { type: 'paragraph' } // riga vuota per continuare a scrivere
+    ]).setMeta('addToHistory', false).run()
 
-    const block = findTreeBlockPos(ed.state.doc, currentTreeId)
-    if (!block) return
-
-    ed.chain()
-      .setTextSelection(block.pos + block.size)
-      .insertContent([
-        { type: 'chessTreeBlock', attrs: { treeId: newTreeId } },
-        { type: 'paragraph' } // riga vuota per continuare a scrivere
-      ])
-      .run()
-
+    resetHistory(ed)
     store.activeSectionHtml = ed.getHTML()
+    return true
   }
 
-  // "Inserisci Diagramma" dalla console: la posizione è sempre treeStore.activeFen; dove va nel documento dipende dalla modalità
+  // Toolbar "Dividi Blocco": taglio dopo la mossa selezionata (linea principale o variante), senza diagramma
+  const handleSplitTreeBlock = () => {
+    const ed = editor.value
+    const tree = treeStore.currentTree
+    const nodeId = treeStore.activeNodeId
+    if (!ed || !tree || !nodeId || store.isLocked) return
+    if (!canSplitAt(tree, nodeId)) return
+    if (!confirm(SPLIT_CONFIRM)) return
+    splitAndInsert(ed, tree.id, nodeId)
+  }
+
+  // "Inserisci Diagramma" dalla console: la posizione è sempre treeStore.activeFen
   watch(() => store.insertSignal, () => {
     const ed = editor.value
     if (!ed || store.activeSectionInfo?.type !== 'chapter') return
@@ -76,8 +90,6 @@ export function useBlockInsertion(editor: EditorRef) {
         type: 'chessDiagram',
         attrs: { fen: diagramFen, flipped: treeStore.boardFlipped, shapes: diagramShapes.length ? diagramShapes : null }
       }
-      const paragraph = { type: 'paragraph' }
-      const afterBlock = block.pos + block.size
       const node = treeStore.currentNode
 
       // Posizione iniziale di un albero con mosse: il diagramma precede il blocco
@@ -86,21 +98,15 @@ export function useBlockInsertion(editor: EditorRef) {
         return
       }
 
-      // Mossa in linea principale con mosse successive: si spezza l'albero in due
-      if (node && node.children.length > 0 && treeStore.isNodeInMainline(tree.rootNodes, node.id)) {
-        const newTreeId = treeStore.splitTree(tree.id, node.id)
-        if (newTreeId) {
-          ed.chain().focus().insertContentAt(afterBlock, [
-            diagram,
-            { type: 'chessTreeBlock', attrs: { treeId: newTreeId } },
-            paragraph
-          ]).run()
-          return
-        }
+      // Dopo la mossa selezionata c'è ancora qualcosa da stampare: l'albero si spezza lì
+      if (node && canSplitAt(tree, node.id)) {
+        if (!confirm(SPLIT_CONFIRM)) return
+        splitAndInsert(ed, tree.id, node.id, diagram)
+        return
       }
 
-      // Albero vuoto, ultima mossa o mossa in una variante: dopo il blocco, albero intatto
-      ed.chain().focus().insertContentAt(afterBlock, [diagram, paragraph]).run()
+      // Albero vuoto o niente da stampare dopo la mossa: dopo il blocco, albero intatto
+      ed.chain().focus().insertContentAt(block.pos + block.size, [diagram, { type: 'paragraph' }]).run()
     } catch (error) {
       console.error('Errore durante l\'inserimento del diagramma:', error)
     }

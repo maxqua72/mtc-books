@@ -51,7 +51,10 @@ export const useChessBookStore = defineStore('chessBook', () => {
     // --- Moduli specializzati ---
     const cover = useCover({ sectionIndex, activeSectionId, zippedSectionsCache, metadata })
     const fileState = useFileState({ metadata, sectionIndex, zippedSectionsCache })
-    const scanSources = { activeSectionId, activeSectionHtml, zippedSectionsCache }
+    const scanSources = {
+        activeSectionId, activeSectionHtml, zippedSectionsCache,
+        activeTrees: computed(() => useChessTreeStore().trees),
+    }
     const { diagramLabels, diagramList, unresolvedDiagramRefs } = useDiagramIndex(sectionIndex, scanSources)
     const generatedTocHtml = useGeneratedToc(sectionIndex, scanSources, metadata)
 

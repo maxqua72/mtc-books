@@ -5,7 +5,6 @@ import Focus from '@tiptap/extension-focus'
 import { TextStyle, Color } from '@tiptap/extension-text-style'
 import Highlight from '@tiptap/extension-highlight'
 import TextAlign from '@tiptap/extension-text-align'
-import { EditorState } from '@tiptap/pm/state'
 import type { Editor } from '@tiptap/vue-3'
 import { nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useChessBookStore } from '../stores/chessBookStore'
@@ -20,35 +19,10 @@ import { Indent } from '../extensions/Indent'
 import { isTreeClipMarker } from '../utils/treeClipboard'
 import { treeIdsInDoc } from '../utils/editorDoc'
 import { pasteTreeFromClipboard } from './useBlockInsertion'
+import { resetHistory } from '../utils/editorHistory'
+import { goToDiagram } from './useGoToDiagram'
 
-/** Azzera la cronologia annulla/ripristina: lo stato si ricrea con lo stesso documento e gli stessi plugin */
-/*
-const resetHistory = (ed: Editor) => {
-  const { view } = ed
-  view.updateState(EditorState.create({ doc: view.state.doc, plugins: view.state.plugins }))
-  // transazione vuota: riallinea la toolbar (stato dei pulsanti) senza toccare il documento
-  view.dispatch(view.state.tr.setMeta('addToHistory', false))
-}*/
-const resetHistory = (ed: Editor) => {
-  try {
-    const { view } = ed
-    view.updateState(EditorState.create({ doc: view.state.doc, plugins: view.state.plugins }))
-  } catch (e) {
-    console.warn('[editor] Impossibile azzerare la cronologia annulla/ripristina:', e)
-    return
-  }
 
-  // Riallinea la toolbar a node view già montate: un dispatch immediato farebbe emettere
-  // selectionUpdate a node view appena create e non ancora pronte (race intermittente)
-  requestAnimationFrame(() => {
-    if (ed.isDestroyed) return
-    try {
-      ed.view.dispatch(ed.view.state.tr.setMeta('addToHistory', false))
-    } catch (e) {
-      console.warn('[editor] Riallineamento della toolbar non riuscito:', e)
-    }
-  })
-}
 
 /** Carica un documento diverso nell'editor (capitolo, indice): non deve essere annullabile */
 const replaceContent = (ed: Editor, html: string, options?: { emitUpdate?: boolean }) => {
@@ -136,7 +110,7 @@ export function useBookEditor() {
         !treeIdsInDoc(editor.state.doc).includes(treeStore.activeTreeId)) {
         treeStore.deactivateTree()
       }
-    }
+    },
   })
 
   const loadSectionIntoEditor = (sectionId: string | null) => {
@@ -227,10 +201,17 @@ export function useBookEditor() {
     if ((e.target as HTMLElement | null)?.closest(TREE_BLOCK)) e.preventDefault()
   }
 
+    // Ctrl+clic su un riferimento dentro un commento (il commento non ha l'editor)
+  const onGoToDiagram = (e: Event) => {
+    const id = (e as CustomEvent<{ id?: string }>).detail?.id
+    if (id && editor.value) void goToDiagram(editor.value, id)
+  }
+
   onMounted(() => {
     window.addEventListener('request-editor-sync', syncEditorContent)
     window.addEventListener('keydown', blockStrayUndo, true)
     window.addEventListener('beforeinput', blockTreeHistoryInput, true)
+    window.addEventListener('go-to-diagram', onGoToDiagram)
 
     // Libro senza sezioni all'avvio: se ne crea una di default
     if (store.sectionIndex.length === 0) {
@@ -243,6 +224,7 @@ export function useBookEditor() {
     window.removeEventListener('request-editor-sync', syncEditorContent)
     window.removeEventListener('keydown', blockStrayUndo, true)
     window.removeEventListener('beforeinput', blockTreeHistoryInput, true)
+    window.removeEventListener('go-to-diagram', onGoToDiagram)
   })
 
   return { editor, syncEditorContent }

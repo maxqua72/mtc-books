@@ -4,7 +4,7 @@ import { STANDARD_FEN, isLegalFen, normalizeFen } from '../utils/fen'
 import { toggleNagInList } from '../utils/nags'
 import type { BoardShape } from '../utils/shapes'
 import { newId } from '../utils/ids'
-import { findNode, cloneTree, countNodes } from '../utils/treeOps'
+import { findNode, cloneTree, countNodes, splitPoints, variationDepth } from '../utils/treeOps'
 
 export interface ChessMoveNode {
   id: string
@@ -29,6 +29,10 @@ export interface ChessTree {
   showHeader?: boolean              // mostra l'intestazione nel documento
   parentTreeId?: string | null
   splitAtNodeId?: string | null
+  depthStart?: number        // parentesi già aperte all'inizio del blocco (continuazione di una variante)
+  closeParens?: number       // parentesi da chiudere alla fine del blocco
+  endNodeId?: string | null  // ultima mossa del blocco, se il testo continua nei blocchi successivi
+  openCount?: number         // quante varianti (le più esterne verso endNodeId) restano aperte
 }
 
 export type FenResult = 'ok' | 'invalid' | 'locked'
@@ -126,7 +130,7 @@ export const useChessTreeStore = defineStore('chessTree', {
       if (shapes.length) node.shapes = shapes.map(s => ({ ...s }))
       else delete node.shapes
     },
-    
+
     /** Crea (senza inserirlo nello store né attivarlo) un albero che parte da `fen` */
     buildTree(title: string, fen?: string): ChessTree {
       const from = fen ?? this.activeFen   // il default va nel corpo: nei parametri `this` non è tipizzato
@@ -290,7 +294,7 @@ export const useChessTreeStore = defineStore('chessTree', {
       // Modalità libera: le mosse vanno nella cronologia temporanea (creata alla prima mossa,
       // e ricreata dalla posizione corrente se supera il tetto di nodi)
       if (!this.currentTree &&
-          (!this.scratch || countNodes(this.scratch.rootNodes) >= SCRATCH_MAX_NODES)) {
+        (!this.scratch || countNodes(this.scratch.rootNodes) >= SCRATCH_MAX_NODES)) {
         this.startScratch(this.activeFen)
       }
 
@@ -404,32 +408,53 @@ export const useChessTreeStore = defineStore('chessTree', {
     },
 
     /**
-     * Spezza l'albero nel punto indicato (solo su mainline): le mosse successive diventano
-     * un nuovo albero che parte dalla FEN del nodo.
-     */
-    splitTree(treeId: string, nodeId: string): string | null {
-      const sourceTree = this.trees.find(t => t.id === treeId)
-      if (!sourceTree) return null
-      if (!this.isNodeInMainline(sourceTree.rootNodes, nodeId)) return null
+ * Spezza l'albero dopo la mossa indicata, anche in una variante (vedi splitPoints).
+ * Ogni blocco derivato riceve il livello di parentesi da cui parte (depthStart) e quante ne chiude (closeParens);
+ * il primo blocco lascia aperte le varianti che continuano nei blocchi successivi (endNodeId + openCount).
+ * Restituisce gli id dei nuovi alberi, nell'ordine di stampa.
+ */
+    splitTree(treeId: string, nodeId: string): string[] | null {
+      const source = this.trees.find(t => t.id === treeId)
+      // Un blocco con parentesi lasciate aperte non si divide di nuovo: l'ordine di stampa non tornerebbe
+      if (!source || source.endNodeId) return null
+      const points = splitPoints(source.rootNodes, nodeId)
+      if (points.length === 0) return null
 
-      const splitNode = findNode(sourceTree.rootNodes, nodeId)
-      if (!splitNode || splitNode.children.length === 0) return null
+      const baseDepth = source.depthStart ?? 0
+      const depths = points.map(p => variationDepth(source.rootNodes, p.id))   // prima di staccare i nodi
+      // La coda del testo originale finisce nell'ultimo blocco: gli passa anche le chiusure che aveva il sorgente
+      const lastClose = depths[depths.length - 1] + (source.closeParens ?? 0)
 
-      const detachedChildren = [...splitNode.children]
-      splitNode.children = []
-      detachedChildren.forEach(child => { child.parentId = null })
+      const created = points.map((point, i): ChessTree => {
+        const roots = point.children
+        point.children = []
+        roots.forEach(r => { r.parentId = null })
+        const depthStart = baseDepth + depths[i]
+        const closeParens = i < points.length - 1 ? depths[i] - depths[i + 1] : lastClose
+        return {
+          id: newId('tree'),
+          title: `${source.title} (Cont.${points.length > 1 ? ` ${i + 1}` : ''})`,
+          startingFen: point.fen,
+          rootNodes: roots,
+          activeNodeId: null,
+          parentTreeId: source.id,
+          splitAtNodeId: point.id,
+          ...(depthStart ? { depthStart } : {}),
+          ...(closeParens ? { closeParens } : {}),
+        }
+      })
+      this.trees.push(...created)
 
-      const newTree: ChessTree = {
-        id: newId('tree'),
-        title: `${sourceTree.title} (Cont.)`,
-        startingFen: splitNode.fen,
-        rootNodes: detachedChildren,
-        activeNodeId: null,
-        parentTreeId: sourceTree.id,
-        splitAtNodeId: nodeId,
+      // Il primo blocco finisce in T: le varianti che la contengono restano aperte
+      delete source.closeParens
+      if (depths[0] > 0) {
+        source.endNodeId = nodeId
+        source.openCount = depths[0]
       }
-      this.trees.push(newTree)
-      return newTree.id
+
+      if (this.activeTreeId === treeId) this.setActiveNode(nodeId)
+      else if (source.activeNodeId && !findNode(source.rootNodes, source.activeNodeId)) source.activeNodeId = nodeId
+      return created.map(t => t.id)
     },
 
     /** Rimuove gli alberi non presenti nel capitolo (chiamata al salvataggio) */

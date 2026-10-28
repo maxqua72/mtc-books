@@ -1,5 +1,6 @@
 <template>
-    <div ref="root" class="th-toolbar border-b border-neutral-200 px-2 py-1 bg-neutral-50 flex items-start gap-1 shrink-0">
+    <div ref="root"
+        class="th-toolbar border-b border-neutral-200 px-2 py-1 bg-neutral-50 flex items-start gap-1 shrink-0">
         <span v-if="locked" class="text-xs font-medium text-neutral-500 px-1 h-7 flex items-center select-none">
             <i class="fa-solid fa-lock text-[10px] w-4"></i> Sola lettura</span>
 
@@ -15,9 +16,11 @@
                 <button :class="[btn, editor.isActive('italic') ? on : off]" title="Corsivo (Ctrl+I)"
                     @click="editor.chain().focus().toggleItalic().run()"><i class="fa-solid fa-italic"></i></button>
                 <button :class="[btn, editor.isActive('underline') ? on : off]" title="Sottolineato (Ctrl+U)"
-                    @click="editor.chain().focus().toggleUnderline().run()"><i class="fa-solid fa-underline"></i></button>
+                    @click="editor.chain().focus().toggleUnderline().run()"><i
+                        class="fa-solid fa-underline"></i></button>
                 <button :class="[btn, editor.isActive('highlight') ? on : off]" title="Evidenzia"
-                    @click="editor.chain().focus().toggleHighlight().run()"><i class="fa-solid fa-highlighter"></i></button>
+                    @click="editor.chain().focus().toggleHighlight().run()"><i
+                        class="fa-solid fa-highlighter"></i></button>
 
                 <!-- Colore del testo -->
                 <div class="flex items-center">
@@ -25,7 +28,8 @@
                         class="relative p-1.5 rounded text-xs font-bold transition min-w-[28px] text-center cursor-pointer text-neutral-600 hover:bg-neutral-200"
                         title="Colore del testo">
                         <span class="block leading-none">A</span>
-                        <span class="block h-[3px] mt-0.5 rounded-sm" :style="{ backgroundColor: currentTextColor }"></span>
+                        <span class="block h-[3px] mt-0.5 rounded-sm"
+                            :style="{ backgroundColor: currentTextColor }"></span>
                         <input type="color" :value="currentTextColor"
                             @input="setTextColor(($event.target as HTMLInputElement).value)"
                             class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
@@ -48,7 +52,8 @@
                             class="w-full text-xs border border-neutral-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-500" />
                         <p v-if="linkError" class="text-[11px] text-red-600 mt-1">{{ linkError }}</p>
                         <p v-else-if="editor.state.selection.empty && !editor.isActive('link')"
-                            class="text-[11px] text-neutral-500 mt-1">Nessun testo selezionato: verrà inserito l'indirizzo come testo.</p>
+                            class="text-[11px] text-neutral-500 mt-1">Nessun testo selezionato: verrà inserito
+                            l'indirizzo come testo.</p>
                         <div class="flex justify-between items-center mt-2">
                             <button v-if="editor.isActive('link')" @click="removeLink(close)"
                                 class="text-[11px] font-semibold text-red-600 hover:underline">
@@ -70,15 +75,18 @@
                     <template #default="{ close }">
                         <button role="menuitem" :class="item" @mousedown.prevent
                             @click="editor.chain().focus().setParagraph().run(); close()">
-                            <i class="fa-solid fa-check w-3 text-[10px]" :class="{ invisible: !editor.isActive('paragraph') }"></i>
+                            <i class="fa-solid fa-check w-3 text-[10px]"
+                                :class="{ invisible: !editor.isActive('paragraph') }"></i>
                             Testo normale
                         </button>
                         <button role="menuitem" :class="item" @mousedown.prevent @click="setHeading(2); close()">
-                            <i class="fa-solid fa-check w-3 text-[10px]" :class="{ invisible: !editor.isActive('heading', { level: 2 }) }"></i>
+                            <i class="fa-solid fa-check w-3 text-[10px]"
+                                :class="{ invisible: !editor.isActive('heading', { level: 2 }) }"></i>
                             <span class="font-bold text-sm">Titolo 1</span>
                         </button>
                         <button role="menuitem" :class="item" @mousedown.prevent @click="setHeading(3); close()">
-                            <i class="fa-solid fa-check w-3 text-[10px]" :class="{ invisible: !editor.isActive('heading', { level: 3 }) }"></i>
+                            <i class="fa-solid fa-check w-3 text-[10px]"
+                                :class="{ invisible: !editor.isActive('heading', { level: 3 }) }"></i>
                             <span class="font-bold">Titolo 2</span>
                         </button>
                     </template>
@@ -105,8 +113,9 @@
 
                 <!-- Allineamento: quattro pulsanti se c'è spazio, un solo menu se la finestra si restringe -->
                 <template v-if="!compact">
-                    <button v-for="a in ALIGNS" :key="a.value" :class="[btn, editor.isActive({ textAlign: a.value }) ? on : off]"
-                        :title="a.label" @click="editor.chain().focus().setTextAlign(a.value).run()">
+                    <button v-for="a in ALIGNS" :key="a.value"
+                        :class="[btn, editor.isActive({ textAlign: a.value }) ? on : off]" :title="a.label"
+                        @click="editor.chain().focus().setTextAlign(a.value).run()">
                         <i :class="['fa-solid', a.icon]"></i>
                     </button>
                 </template>
@@ -138,7 +147,11 @@
 
                 <button @click="emit('splitTreeBlock')" :disabled="!canSplitBlock"
                     class="h-7 px-2 rounded text-xs font-medium text-neutral-600 hover:bg-neutral-200 transition flex items-center gap-1.5 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                    :title="canSplitBlock ? 'Dividi il blocco mosse nel punto selezionato' : 'Seleziona una mossa della linea principale per dividere il blocco'">
+                    :title="!canSplitBlock
+                        ? 'Seleziona una mossa con qualcosa da stampare dopo di essa per dividere il blocco'
+                        : splitInVariation
+                            ? 'Dividi in questa mossa della variante: la sua continuazione e il ritorno alla linea madre vanno in nuovi blocchi (non annullabile)'
+                            : 'Dividi il blocco mosse nel punto selezionato (non annullabile)'">
                     <i class="fa-solid fa-scissors"></i><span>Dividi Blocco</span>
                 </button>
 
@@ -148,7 +161,8 @@
                     <i class="fa-solid fa-clipboard"></i><span>Incolla Blocco</span>
                 </button>
 
-                <ToolbarMenu :title="bookStore.diagramList.length ? 'Inserisci un riferimento a un diagramma' : 'Nessun diagramma nel libro'"
+                <ToolbarMenu
+                    :title="bookStore.diagramList.length ? 'Inserisci un riferimento a un diagramma' : 'Nessun diagramma nel libro'"
                     :disabled="bookStore.diagramList.length === 0" panel-class="w-72 max-h-72 overflow-y-auto">
                     <template #button>
                         <i class="fa-solid fa-arrow-up-right-from-square"></i>
@@ -156,7 +170,7 @@
                     </template>
                     <template #default="{ close }">
                         <button v-for="d in bookStore.diagramList" :key="d.id" role="menuitem" @mousedown.prevent
-                            @click="insertRef(d.id); close()"
+                            @click="insertRef(d); close()"
                             class="w-full text-left px-3 py-1.5 text-xs hover:bg-neutral-100 flex gap-2 items-baseline">
                             <span class="font-bold tabular-nums text-neutral-900 shrink-0">{{ d.label }}</span>
                             <span class="text-neutral-500 truncate">{{ d.caption || 'Senza didascalia' }}</span>
@@ -198,6 +212,8 @@ import type { Editor } from '@tiptap/vue-3'
 import { useChessTreeStore } from '../stores/chessTreeStore'
 import { useChessBookStore } from '../stores/chessBookStore'
 import ToolbarMenu from './toolbar/ToolbarMenu.vue'
+import { canSplitAt } from '../utils/treeOps'
+import { insertDiagramRefInComment } from '../utils/diagramRefs'
 
 const props = defineProps<{
     editor: Editor,
@@ -332,18 +348,23 @@ const removeLink = (close: () => void) => {
 // ---------------------------------------------------------------------------
 // Riferimenti a diagrammi, divisione blocco
 // ---------------------------------------------------------------------------
-const insertRef = (id: string) => {
-    props.editor.chain().focus().insertDiagramRef(id).run()
+const insertRef = (d: { id: string; label: string }) => {
+    // Se il cursore è in un commento di mossa, il riferimento va lì; altrimenti nel testo
+    if (insertDiagramRefInComment(d.id, d.label)) return
+    props.editor.chain().focus().insertDiagramRef(d.id).run()
 }
 
-// Abilitato solo se c'è una mossa attiva appartenente alla mainline
+// Abilitato se dopo la mossa attiva (anche in una variante) c'è ancora qualcosa da stampare
 const canSplitBlock = computed(() => {
-    const currentTreeId = treeStore.activeTreeId
-    const activeNodeId = treeStore.activeNodeId
-    if (!currentTreeId || !activeNodeId) return false
-
-    const sourceTree = treeStore.trees.find(t => t.id === currentTreeId)
-    return sourceTree ? treeStore.isNodeInMainline(sourceTree.rootNodes, activeNodeId) : false
+    const tree = treeStore.currentTree
+    const nodeId = treeStore.activeNodeId
+    return !!tree && !!nodeId && canSplitAt(tree, nodeId)
+})
+const splitInVariation = computed(() => {
+    const tree = treeStore.currentTree
+    const nodeId = treeStore.activeNodeId
+    return !!tree && !!nodeId &&
+        ((tree.depthStart ?? 0) > 0 || !treeStore.isNodeInMainline(tree.rootNodes, nodeId))
 })
 
 // ---------------------------------------------------------------------------
@@ -376,6 +397,7 @@ const setTextColor = (value: string) => props.editor.chain().focus().setColor(va
     margin-right: 6px;
     border-right: 1px solid var(--color-neutral-300, #d4d4d4);
 }
+
 .tb-group:last-child {
     border-right: 0;
     margin-right: 0;

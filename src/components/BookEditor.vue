@@ -1,16 +1,16 @@
 <template>
-    <div class="th-frame flex-1 bg-white border border-neutral-200 rounded-xl flex flex-col shadow-sm overflow-hidden relative">
+    <div
+        class="th-frame flex-1 bg-white border border-neutral-200 rounded-xl flex flex-col shadow-sm overflow-hidden relative">
 
         <PdfLoadingOverlay v-if="overlay" v-bind="overlay" />
 
-        <EditorToolbar v-if="editor" v-show="!isCoverActive" :editor="editor" :zoom="zoomOption"
-            @update:zoom="setZoom" @insert-tree-block="insertNewChessTreeBlock"
-            @split-tree-block="handleSplitTreeBlock" @paste-tree-block="pasteTreeFromClipboard" />
+        <EditorToolbar v-if="editor" v-show="!isCoverActive" :editor="editor" :zoom="zoomOption" @update:zoom="setZoom"
+            @insert-tree-block="insertNewChessTreeBlock" @split-tree-block="handleSplitTreeBlock"
+            @paste-tree-block="pasteTreeFromClipboard" />
 
         <!-- Copertina: una pagina fissa, non un documento di testo -->
         <CoverEditor v-if="isCoverActive && store.coverModel" v-model="coverProxy" class="flex-1 min-h-0"
-            :inert="store.isLocked ? '' : undefined"
-            :image-url="store.coverImageUrl" :page-width-mm="coverPageMm.width"
+            :inert="store.isLocked ? '' : undefined" :image-url="store.coverImageUrl" :page-width-mm="coverPageMm.width"
             :page-height-mm="coverPageMm.height" @pick-image="onPickCoverImage"
             @remove-image="store.removeCoverImage()" />
 
@@ -214,7 +214,8 @@ const handleCanvasClick = (event: MouseEvent) => {
 }
 
 .tiptap {
-    display: flow-root;   /* contiene i diagrammi a margine */
+    display: flow-root;
+    /* contiene i diagrammi a margine */
     width: 100%;
     max-width: 100%;
     word-break: break-word;
@@ -290,5 +291,9 @@ const handleCanvasClick = (event: MouseEvent) => {
     font: 600 11px ui-sans-serif, system-ui, sans-serif;
     text-align: center;
     user-select: none;
+}
+
+.tiptap .diagram-ref.is-broken {
+    background-color: #b91c1c !important;
 }
 </style>

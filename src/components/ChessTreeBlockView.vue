@@ -1,12 +1,15 @@
 <template>
-  <node-view-wrapper class="chess-tree-block-container" :class="{ 'is-active-tree': isActive,  'is-pgn-target': !!pgnBadge }" @mousedown="onMouseDown"
+  <node-view-wrapper class="chess-tree-block-container"
+    :class="{ 'is-active-tree': isActive, 'is-pgn-target': !!pgnBadge }" @mousedown="onMouseDown"
     @click="activateTree">
     <div v-if="pgnBadge" class="pgn-target-badge" contenteditable="false">{{ pgnBadge }}</div>
     <!-- Header comandi stile Gmail: compare in posizione assoluta solo all'hover del blocco -->
     <div class="block-header">
       <span class="game-title">📊 {{ currentTree?.title || 'Albero di mosse' }}</span>
-      <button v-if="!locked" @click.stop="insertParagraph('before')" class="action-btn" title="Inserisci un paragrafo sopra">¶↑</button>
-      <button v-if="!locked" @click.stop="insertParagraph('after')" class="action-btn" title="Inserisci un paragrafo sotto">¶↓</button>
+      <button v-if="!locked" @click.stop="insertParagraph('before')" class="action-btn"
+        title="Inserisci un paragrafo sopra">¶↑</button>
+      <button v-if="!locked" @click.stop="insertParagraph('after')" class="action-btn"
+        title="Inserisci un paragrafo sotto">¶↓</button>
       <button v-if="currentTree" @click.stop="copyBlock" class="action-btn"
         :title="copied ? 'Copiato' : 'Copia l\'albero (poi Ctrl+V o «Incolla albero»)'">
         <i :class="['fa-solid', copied ? 'fa-check' : 'fa-copy']"></i>
@@ -41,7 +44,11 @@
       </div>
 
       <!-- Altrimenti avvia il ciclo ricorsivo di notazione -->
-      <ChessMoveRenderer v-else :nodes="currentTree.rootNodes" :tree-id="props.node.attrs.treeId" />
+      <template v-else>
+        <ChessMoveRenderer :key="currentTree.rootNodes[0].id" :nodes="currentTree.rootNodes"
+          :tree-id="props.node.attrs.treeId" :is-variant-context="variantContext" :open-ids="openIds" />
+        <span v-if="closers" class="tree-closers">{{ closers }}</span>
+      </template>
     </div>
   </node-view-wrapper>
 </template>
@@ -54,6 +61,7 @@ import { usePgnImportStore } from '../stores/pgnImportStore'
 import { useChessBookStore } from '../stores/chessBookStore'
 import ChessMoveRenderer from './ChessMoveRenderer.vue'
 import { getHeaderView } from '../utils/pgnHeader'
+import { variationRootsOnPath } from '../utils/treeOps'
 import { writeTreeClipMarker } from '../utils/treeClipboard'
 import { useInsertParagraph } from '../composables/useInsertParagraph'
 
@@ -90,6 +98,20 @@ const headerView = computed(() => {
   const tree = currentTree.value
   return tree?.showHeader ? getHeaderView(tree.header) : null
 })
+
+// Blocco che continua una variante: le mosse si stampano come variante (senza grassetto)
+const variantContext = computed(() => (currentTree.value?.depthStart ?? 0) > 0)
+
+// Varianti rimaste aperte alla fine del blocco (la parentesi si chiude in un blocco successivo)
+const NO_IDS: ReadonlySet<string> = new Set()
+const openIds = computed<ReadonlySet<string>>(() => {
+  const tree = currentTree.value
+  if (!tree?.endNodeId || !tree.openCount) return NO_IDS
+  return new Set(variationRootsOnPath(tree.rootNodes, tree.endNodeId).slice(0, tree.openCount))
+})
+
+// Parentesi che questo blocco chiude: aperte in un blocco precedente
+const closers = computed(() => ')'.repeat(currentTree.value?.closeParens ?? 0))
 
 const onMouseDown = (event: MouseEvent) => {
   const wrapper = event.currentTarget as HTMLElement
@@ -153,7 +175,7 @@ watch(
 
 <style scoped>
 .chess-tree-block-container {
-    /* Padding (6px) e bordo (1px) stanno dentro il riquadro: li sottraiamo
+  /* Padding (6px) e bordo (1px) stanno dentro il riquadro: li sottraiamo
      perché lo spazio visibile coincida con quello del PDF, dove non ci sono */
   margin-top: max(0px, calc(var(--variation-spacing, 4mm) - 7px));
   margin-bottom: max(0px, calc(var(--variation-spacing, 4mm) - 7px));
@@ -304,6 +326,7 @@ watch(
   font-family: Lora, Georgia, Cambria, serif;
   user-select: none;
 }
+
 .tph-main {
   display: flex;
   justify-content: space-between;
@@ -313,9 +336,21 @@ watch(
   font-size: 11pt;
   color: #171717;
 }
-.tph-result { white-space: nowrap; }
-.tph-event { font-size: 9.5pt; color: #525252; }
-.tph-opening { font-size: 9.5pt; font-style: italic; color: #525252; }
+
+.tph-result {
+  white-space: nowrap;
+}
+
+.tph-event {
+  font-size: 9.5pt;
+  color: #525252;
+}
+
+.tph-opening {
+  font-size: 9.5pt;
+  font-style: italic;
+  color: #525252;
+}
 
 /* REGOLA PER LA STAMPA / ESPORTAZIONE PDF:
    Annulla completamente i margini negativi, i padding e nasconde l'interfaccia dell'hover */
@@ -336,5 +371,7 @@ watch(
   .block-header {
     display: none !important;
   }
+
+  .tree-closers { font-weight: normal; color: #111827; }
 }
 </style>

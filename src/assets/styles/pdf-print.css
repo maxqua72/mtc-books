@@ -368,13 +368,6 @@ body {
   content: "" !important;
 }
 
-/* --- RIFERIMENTI A DIAGRAMMI perché nel PDF il riferimento sia testo normale --- */
-.diagram-ref {
-  color: inherit !important;
-  font-weight: inherit !important;
-  background: none !important;
-  outline: none !important;
-}
 
 /* --- DIAGRAMMI A MARGINE: il testo che segue scorre accanto --- */
 .chess-diagram-container[data-align="left"],

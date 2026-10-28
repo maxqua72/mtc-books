@@ -16,12 +16,35 @@ const MAX_DEPTH = 2000
 // Commenti delle mosse: solo formattazione minima, nessun attributo
 // ---------------------------------------------------------------------------
 const COMMENT_CONFIG = {
-  ALLOWED_TAGS: ['b', 'strong', 'i', 'em', 'u', 'sub', 'sup', 'br'],
-  ALLOWED_ATTR: [] as string[],
+  ALLOWED_TAGS: ['b', 'strong', 'i', 'em', 'u', 'sub', 'sup', 'br', 'span'],
+  ALLOWED_ATTR: ['data-type', 'data-target-id', 'class', 'contenteditable'],
+  ALLOW_DATA_ATTR: false,
 }
+const DIAGRAM_REF_ID = /^[\w-]{1,80}$/
 
-export const sanitizeCommentHtml = (html: unknown): string =>
-  typeof html === 'string' && html ? DOMPurify.sanitize(html, COMMENT_CONFIG) : ''
+export const sanitizeCommentHtml = (html: unknown): string => {
+  if (typeof html !== 'string' || !html) return ''
+  const fragment = DOMPurify.sanitize(html, { ...COMMENT_CONFIG, RETURN_DOM_FRAGMENT: true }) as unknown as DocumentFragment
+
+  fragment.querySelectorAll('span').forEach(span => {
+    const id = span.getAttribute('data-target-id') ?? ''
+    if (span.getAttribute('data-type') === 'diagram-ref' && DIAGRAM_REF_ID.test(id)) {
+      // Forma canonica: solo questi attributi, contenuto = solo testo (l'etichetta si riallinea dal renderer)
+      for (const attr of Array.from(span.attributes)) span.removeAttribute(attr.name)
+      span.setAttribute('class', 'diagram-ref')
+      span.setAttribute('data-type', 'diagram-ref')
+      span.setAttribute('data-target-id', id)
+      span.setAttribute('contenteditable', 'false')
+      span.textContent = span.textContent ?? ''
+    } else {
+      span.replaceWith(...Array.from(span.childNodes))
+    }
+  })
+
+  const holder = document.createElement('div')
+  holder.appendChild(fragment)
+  return holder.innerHTML
+}
 
 // ---------------------------------------------------------------------------
 // FEN: controllo strutturale (la legalità la verifica chess.js al caricamento)
@@ -153,6 +176,12 @@ export function sanitizeTrees(raw: unknown): ChessTree[] {
 
     const header = cleanHeader(t.header)
 
+    const smallInt = (v: unknown) => (Number.isInteger(v) && (v as number) > 0 && (v as number) <= 50 ? (v as number) : 0)
+    const depthStart = smallInt(t.depthStart)
+    const closeParens = smallInt(t.closeParens)
+    const openCount = smallInt(t.openCount)
+    const endNodeId = openCount && ctx.ids.has(t.endNodeId) ? (t.endNodeId as string) : null
+
     out.push({
       id: t.id,
       title: (typeof t.title === 'string' ? t.title : '').slice(0, 200) || 'Albero',
@@ -161,7 +190,10 @@ export function sanitizeTrees(raw: unknown): ChessTree[] {
       rootNodes,
       activeNodeId: ctx.ids.has(t.activeNodeId) ? t.activeNodeId : null,
       parentTreeId: safeOptId(t.parentTreeId),
-      splitAtNodeId: safeOptId(t.splitAtNodeId)
+      splitAtNodeId: safeOptId(t.splitAtNodeId),
+      ...(depthStart ? { depthStart } : {}),
+      ...(closeParens ? { closeParens } : {}),
+      ...(endNodeId ? { endNodeId, openCount } : {}),
     })
   }
   return out

@@ -187,3 +187,20 @@
 .book-text-engine [data-indent="4"], .tiptap [data-indent="4"] { margin-left: 32mm !important; }
 .book-text-engine [data-indent="5"], .tiptap [data-indent="5"] { margin-left: 40mm !important; }
 .book-text-engine [data-indent="6"], .tiptap [data-indent="6"] { margin-left: 48mm !important; }
+
+/* --- Riferimenti ai diagrammi: testo bianco su fondo nero (editor, commenti e PDF) --- */
+.book-text-engine .diagram-ref,
+.tiptap .diagram-ref {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important;
+    font-size: 0.85em !important;
+    font-weight: 700 !important;
+    font-style: normal !important;
+    padding: 0.1em 0.4em !important;
+    border-radius: 2px;
+    white-space: nowrap;
+    text-indent: 0;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+}

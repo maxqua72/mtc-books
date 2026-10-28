@@ -21,28 +21,29 @@
         <div v-if="nodes[0].comment || (isNodeActive(nodes[0].id) && !locked)" class="move-comment-box"
           :class="isVariantContext ? 'comment-inline' : 'comment-block'" @click.stop="activateThisTree(nodes[0].id)">
           <span
-            :ref="(el) => { if (el) { commentRefs[nodes[0].id] = el as HTMLElement; applyEditable(el as HTMLElement) } }"
+            :ref="(el) => { if (el) { commentRefs[nodes[0].id] = el as HTMLElement; applyEditable(el as HTMLElement); refreshRefs(el as HTMLElement) } }"
             contenteditable="true" class="comment-editable-text" v-once v-html="safeComment(nodes[0].comment)"
             data-placeholder="Inserisci commento..." @blur="onCommentBlur(nodes[0].id, $event)"
-            @keydown.enter="handleEnter" @paste="handlePaste" @keydown.stop></span>
+            @keydown.enter="handleEnter" @paste="handlePaste" @keydown.stop @click="onCommentClick"></span>
         </div>
 
         <!-- 3. VARIANTI ALTERNATIVE -->
         <template v-if="nodes.length > 1">
           <div :class="!isVariantContext ? 'variant-block-break' : 'variant-inline-wrapper'">
-            <template v-for="subTree in nodes.slice(1)" :key="subTree.id">
+            <template v-for="subTree in orderedVariants" :key="subTree.id">
               <span class="bracket"> (</span>
               <ChessMoveRenderer :nodes="[subTree]" :is-variant-context="true" :is-variant-root="true"
-                :after-block="false" :tree-id="treeId" />
-              <span class="bracket">)</span>
+                :after-block="false" :tree-id="treeId" :open-ids="openIds" />
+              <span v-if="!openIds.has(subTree.id)" class="bracket">)</span>
             </template>
           </div>
         </template>
 
         <!-- 4. RISPOSTA CONSECUTIVA -->
-        <ChessMoveRenderer v-if="nodes[0].children && nodes[0].children.length > 0" :nodes="nodes[0].children"
-          :is-variant-context="isVariantContext" :is-variant-root="false"
-          :after-block="!!(nodes[0].comment || nodes.length > 1)" :tree-id="treeId" />
+        <ChessMoveRenderer v-if="nodes[0].children && nodes[0].children.length > 0" :key="nodes[0].children[0].id"
+          :nodes="nodes[0].children" :is-variant-context="isVariantContext" :is-variant-root="false"
+          :after-block="!!(nodes[0].comment || nodes.length > 1)" :tree-id="treeId" :open-ids="openIds" />
+
       </slot>
     </template>
   </div>
@@ -55,6 +56,9 @@ import type { ChessMoveNode } from '../stores/chessTreeStore'
 import { computed, reactive, watch } from 'vue'
 import { sanitizeCommentHtml } from '../utils/sanitize'
 import { nagsToText } from '../utils/nags'
+import { refreshDiagramRefs } from '../utils/diagramRefs'
+import { requestGoToDiagram } from '../composables/useGoToDiagram'
+
 
 interface Props {
   nodes: ChessMoveNode[]
@@ -63,27 +67,54 @@ interface Props {
   afterBlock?: boolean
   treeId: string
   figurineType?: string // Deve essere presente qui come opzionale con il "?"
+  openIds?: ReadonlySet<string>   // radici di variante la cui parentesi chiude non si stampa (il testo continua nel blocco dopo)
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isVariantContext: false,
   isVariantRoot: false,
   afterBlock: false,
-  figurineType: 'goodcompanions' // Il valore di default ora combacia perfettamente
+  figurineType: 'goodcompanions', // Il valore di default ora combacia perfettamente
+  openIds: () => new Set<string>(),
 })
 
 const treeStore = useChessTreeStore()
-const locked = computed(() => useChessBookStore().isLocked)   // sola lettura: commenti non modificabili
+const bookStore = useChessBookStore()
+const locked = computed(() => bookStore.isLocked)   // sola lettura: commenti non modificabili
 const commentRefs = reactive<Record<string, HTMLElement>>({})
 
 // Il commento ha v-once (per non perdere il cursore): l'attributo contenteditable va aggiornato a mano
 const applyEditable = (el: HTMLElement) => el.setAttribute('contenteditable', locked.value ? 'false' : 'true')
 watch(locked, () => Object.values(commentRefs).forEach(applyEditable))
+
+// Numero e stato dei riferimenti nei commenti: il commento ha v-once, quindi si riallinea a mano
+const refreshRefs = (el: HTMLElement) => refreshDiagramRefs(el, bookStore.diagramLabels)
+watch(() => bookStore.diagramLabels, () => Object.values(commentRefs).forEach(refreshRefs), { flush: 'post' })
+
+// Ctrl/Cmd+clic su un riferimento: vai al diagramma
+const onCommentClick = (event: MouseEvent) => {
+  if (!event.ctrlKey && !event.metaKey) return
+  const ref = (event.target as HTMLElement).closest<HTMLElement>('span[data-type="diagram-ref"]')
+  const id = ref?.getAttribute('data-target-id')
+  if (!id) return
+  event.preventDefault()
+  event.stopPropagation()
+  requestGoToDiagram(id)
+}
+
+
 const safeComment = (comment: string | null) => sanitizeCommentHtml(comment)
 
 
 const myTree = computed(() => {
   return treeStore.trees.find(t => t.id === props.treeId)
+})
+
+// Le varianti rimaste aperte vanno per ultime: dopo di loro il blocco finisce
+const orderedVariants = computed(() => {
+  const rest = props.nodes.slice(1)
+  if (props.openIds.size === 0) return rest
+  return [...rest.filter(n => !props.openIds.has(n.id)), ...rest.filter(n => props.openIds.has(n.id))]
 })
 
 const isNodeActive = (nodeId: string) => {
