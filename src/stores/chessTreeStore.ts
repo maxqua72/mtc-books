@@ -4,7 +4,7 @@ import { STANDARD_FEN, isLegalFen, normalizeFen } from '../utils/fen'
 import { toggleNagInList } from '../utils/nags'
 import type { BoardShape } from '../utils/shapes'
 import { newId } from '../utils/ids'
-import { findNode, cloneTree, countNodes, splitPoints, variationDepth, canMergeInto, printedEnd } from '../utils/treeOps'
+import { findNode, cloneTree, countNodes, splitPoints, variationDepth, canMergeInto, printedEnd, renumberFrom } from '../utils/treeOps'
 
 export interface ChessMoveNode {
   id: string
@@ -472,6 +472,9 @@ export const useChessTreeStore = defineStore('chessTree', {
       const k = variationDepth(a.rootNodes, end.id)   // varianti che A lasciava aperte
       const wasActiveB = this.activeTreeId === b.id
       const activeInB = wasActiveB ? this.activeNodeId : null
+
+      // Alberi indipendenti: i contatori di B possono differire da quelli di A
+      if (end.fen !== b.startingFen) renumberFrom(end.fen, b.rootNodes)
 
       end.children = b.rootNodes
       b.rootNodes.forEach(r => { r.parentId = end.id })

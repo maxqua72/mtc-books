@@ -2,6 +2,7 @@
 import type { ChessMoveNode, ChessTree } from '../stores/chessTreeStore'
 import { newId } from './ids'
 import { samePosition } from './fen'
+import { Chess } from 'chess.js'
 
 /** Cerca un nodo per id (visita iterativa: nessun rischio di stack overflow su alberi profondi) */
 export const findNode = (nodes: ChessMoveNode[] | undefined, id: string): ChessMoveNode | null => {
@@ -135,8 +136,15 @@ export const printedEnd = (tree: ChessTree): ChessMoveNode | null => {
   return node ?? null
 }
 
-/** B continua A: nasce da una sua divisione, parte dalla posizione in cui A finisce e allo stesso livello di parentesi */
-export const canMergeInto = (a: ChessTree, b: ChessTree): boolean => {
+/** Ultima mossa della linea principale */
+export const mainLineEnd = (tree: ChessTree): ChessMoveNode | null => {
+  let node: ChessMoveNode | undefined = tree.rootNodes[0]
+  while (node && node.children.length > 0) node = node.children[0]
+  return node ?? null
+}
+
+/** B nasce da una divisione di A, parte dove A finisce e allo stesso livello di parentesi */
+const continuesSplit = (a: ChessTree, b: ChessTree): boolean => {
   if (b.parentTreeId !== a.id || !b.splitAtNodeId) return false
   const end = printedEnd(a)
   if (!end || end.id !== b.splitAtNodeId) return false
@@ -144,13 +152,37 @@ export const canMergeInto = (a: ChessTree, b: ChessTree): boolean => {
   return (a.depthStart ?? 0) + variationDepth(a.rootNodes, end.id) === (b.depthStart ?? 0)
 }
 
-/** Primo blocco, dopo A nel documento, che si può unire ad A */
+/** Alberi indipendenti: B riparte dalla posizione in cui finisce la linea principale di A, con A senza parentesi in sospeso */
+const joinsAtMainLineEnd = (a: ChessTree, b: ChessTree): boolean => {
+  if (a.endNodeId || a.closeParens) return false
+  const end = mainLineEnd(a)
+  return !!end && samePosition(end.fen, b.startingFen) && (a.depthStart ?? 0) === (b.depthStart ?? 0)
+}
+
+export const canMergeInto = (a: ChessTree, b: ChessTree): boolean =>
+  a.id !== b.id && (continuesSplit(a, b) || joinsAtMainLineEnd(a, b))
+
+/** Blocco, dopo A nel documento, che si può unire ad A (derivato da A, oppure il blocco immediatamente successivo) */
 export const findMergeableChild = (a: ChessTree, trees: ChessTree[], docTreeIds: string[]): ChessTree | null => {
   const from = docTreeIds.indexOf(a.id)
   if (from < 0) return null
-  for (const id of docTreeIds.slice(from + 1)) {
-    const t = trees.find(x => x.id === id)
-    if (t && canMergeInto(a, t)) return t
+  const following = docTreeIds.slice(from + 1)
+    .map(id => trees.find(t => t.id === id))
+    .filter((t): t is ChessTree => !!t)
+  return following.find(t => continuesSplit(a, t))
+    ?? (following[0] && joinsAtMainLineEnd(a, following[0]) ? following[0] : null)
+}
+
+/** Ricalcola numero, colore e FEN dei nodi rigiocando le mosse da `fen` (visita iterativa) */
+export const renumberFrom = (fen: string, nodes: ChessMoveNode[]): void => {
+  const stack = nodes.map(n => ({ n, parentFen: fen }))
+  while (stack.length) {
+    const { n, parentFen } = stack.pop()!
+    const chess = new Chess(parentFen)
+    n.color = chess.turn()
+    n.moveNumber = chess.moveNumber()
+    chess.move(n.san)
+    n.fen = chess.fen()
+    for (const c of n.children) stack.push({ n: c, parentFen: n.fen })
   }
-  return null
 }

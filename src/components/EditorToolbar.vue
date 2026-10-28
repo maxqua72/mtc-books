@@ -159,7 +159,7 @@
                     class="h-7 px-2 rounded text-xs font-medium text-neutral-600 hover:bg-neutral-200 transition flex items-center gap-1.5 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                     :title="mergeTarget
                         ? `Unisci il blocco «${mergeTarget.title}» a questo (non annullabile)`
-                        : 'Seleziona un blocco derivato da una divisione e seguito dal blocco che lo continua'">
+                        : 'Seleziona un blocco seguito da un blocco che lo continua (derivato da una divisione, oppure che parte dalla posizione in cui finisce la linea principale)'">
                     <i class="fa-solid fa-object-group"></i><span>Unisci Blocchi</span>
                 </button>
 
