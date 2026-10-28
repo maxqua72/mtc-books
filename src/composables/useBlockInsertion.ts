@@ -4,14 +4,16 @@ import type { Editor } from '@tiptap/vue-3'
 import { useChessBookStore } from '../stores/chessBookStore'
 import { useChessTreeStore } from '../stores/chessTreeStore'
 import { usePgnImportStore } from '../stores/pgnImportStore'
-import { findTreeBlockPos } from '../utils/editorDoc'
-import { canSplitAt } from '../utils/treeOps'
+import { findTreeBlockPos, treeIdsInDoc } from '../utils/editorDoc'
+import { canSplitAt, findMergeableChild } from '../utils/treeOps'
 import { resetHistory } from '../utils/editorHistory'
 
 type EditorRef = ShallowRef<Editor | undefined>
 
 const SPLIT_CONFIRM =
   'Il blocco verrà diviso in questo punto. L’operazione non è annullabile: la cronologia di annulla/ripristina dell’editor verrà azzerata. Continuare?'
+const MERGE_CONFIRM =
+  'I due blocchi verranno uniti in uno solo. L’operazione non è annullabile: la cronologia di annulla/ripristina dell’editor verrà azzerata. Continuare?'
 
 /** Incolla l'albero copiato o tagliato (anche da un altro capitolo): nuovo albero indipendente, nel punto del cursore */
 export function pasteTreeFromClipboard() {
@@ -67,6 +69,24 @@ export function useBlockInsertion(editor: EditorRef) {
     splitAndInsert(ed, tree.id, nodeId)
   }
 
+  // Toolbar "Unisci Blocchi": il blocco attivo assorbe il blocco che lo continua
+  const handleMergeTreeBlock = () => {
+    const ed = editor.value
+    const a = treeStore.currentTree
+    if (!ed || !a || store.isLocked) return
+    const b = findMergeableChild(a, treeStore.trees, treeIdsInDoc(ed.state.doc))
+    if (!b) return
+    const blockB = findTreeBlockPos(ed.state.doc, b.id)
+    if (!blockB) return
+    if (!confirm(MERGE_CONFIRM)) return
+
+    ed.chain().deleteRange({ from: blockB.pos, to: blockB.pos + blockB.size })
+      .setMeta('addToHistory', false).run()
+    if (!treeStore.mergeTrees(a.id, b.id)) return
+    resetHistory(ed)
+    store.activeSectionHtml = ed.getHTML()
+  }
+
   // "Inserisci Diagramma" dalla console: la posizione è sempre treeStore.activeFen
   watch(() => store.insertSignal, () => {
     const ed = editor.value
@@ -112,5 +132,5 @@ export function useBlockInsertion(editor: EditorRef) {
     }
   })
 
-  return { insertNewChessTreeBlock, handleSplitTreeBlock }
+  return { insertNewChessTreeBlock, handleSplitTreeBlock, handleMergeTreeBlock  }
 }

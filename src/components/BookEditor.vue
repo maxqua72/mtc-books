@@ -6,7 +6,8 @@
 
         <EditorToolbar v-if="editor" v-show="!isCoverActive" :editor="editor" :zoom="zoomOption" @update:zoom="setZoom"
             @insert-tree-block="insertNewChessTreeBlock" @split-tree-block="handleSplitTreeBlock"
-            @paste-tree-block="pasteTreeFromClipboard" />
+            @paste-tree-block="pasteTreeFromClipboard"
+            @merge-tree-block="handleMergeTreeBlock" />
 
         <!-- Copertina: una pagina fissa, non un documento di testo -->
         <CoverEditor v-if="isCoverActive && store.coverModel" v-model="coverProxy" class="flex-1 min-h-0"
@@ -56,7 +57,7 @@ const pdfStore = usePdfStore()
 const { editor } = useBookEditor()
 const layout = usePageLayout()
 const { cssVars } = layout
-const { insertNewChessTreeBlock, handleSplitTreeBlock } = useBlockInsertion(editor)
+const { insertNewChessTreeBlock, handleSplitTreeBlock, handleMergeTreeBlock } = useBlockInsertion(editor)
 useTreePlacement(editor)
 
 // --- Zoom ---

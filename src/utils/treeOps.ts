@@ -1,6 +1,7 @@
 // Operazioni pure sugli alberi di mosse (prima dentro chessTreeStore.ts e pgnImport.ts)
 import type { ChessMoveNode, ChessTree } from '../stores/chessTreeStore'
 import { newId } from './ids'
+import { samePosition } from './fen'
 
 /** Cerca un nodo per id (visita iterativa: nessun rischio di stack overflow su alberi profondi) */
 export const findNode = (nodes: ChessMoveNode[] | undefined, id: string): ChessMoveNode | null => {
@@ -121,3 +122,35 @@ export const variationDepth = (rootNodes: ChessMoveNode[], id: string): number =
 /** Dopo la mossa c'è qualcosa da stampare e il blocco può essere diviso */
 export const canSplitAt = (tree: ChessTree, nodeId: string): boolean =>
   !tree.endNodeId && splitPoints(tree.rootNodes, nodeId).length > 0
+
+/** Ultima mossa stampata dal blocco: fine della linea principale, o della variante rimasta aperta più interna */
+export const printedEnd = (tree: ChessTree): ChessMoveNode | null => {
+  let node: ChessMoveNode | undefined = tree.rootNodes[0]
+  if (tree.endNodeId && tree.openCount) {
+    const roots = variationRootsOnPath(tree.rootNodes, tree.endNodeId).slice(0, tree.openCount)
+    const innermost = roots.length ? findNode(tree.rootNodes, roots[roots.length - 1]) : null
+    node = innermost ?? undefined
+  }
+  while (node && node.children.length > 0) node = node.children[0]
+  return node ?? null
+}
+
+/** B continua A: nasce da una sua divisione, parte dalla posizione in cui A finisce e allo stesso livello di parentesi */
+export const canMergeInto = (a: ChessTree, b: ChessTree): boolean => {
+  if (b.parentTreeId !== a.id || !b.splitAtNodeId) return false
+  const end = printedEnd(a)
+  if (!end || end.id !== b.splitAtNodeId) return false
+  if (!samePosition(end.fen, b.startingFen)) return false
+  return (a.depthStart ?? 0) + variationDepth(a.rootNodes, end.id) === (b.depthStart ?? 0)
+}
+
+/** Primo blocco, dopo A nel documento, che si può unire ad A */
+export const findMergeableChild = (a: ChessTree, trees: ChessTree[], docTreeIds: string[]): ChessTree | null => {
+  const from = docTreeIds.indexOf(a.id)
+  if (from < 0) return null
+  for (const id of docTreeIds.slice(from + 1)) {
+    const t = trees.find(x => x.id === id)
+    if (t && canMergeInto(a, t)) return t
+  }
+  return null
+}

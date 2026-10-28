@@ -155,6 +155,14 @@
                     <i class="fa-solid fa-scissors"></i><span>Dividi Blocco</span>
                 </button>
 
+                <button @click="emit('mergeTreeBlock')" :disabled="!mergeTarget"
+                    class="h-7 px-2 rounded text-xs font-medium text-neutral-600 hover:bg-neutral-200 transition flex items-center gap-1.5 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                    :title="mergeTarget
+                        ? `Unisci il blocco «${mergeTarget.title}» a questo (non annullabile)`
+                        : 'Seleziona un blocco derivato da una divisione e seguito dal blocco che lo continua'">
+                    <i class="fa-solid fa-object-group"></i><span>Unisci Blocchi</span>
+                </button>
+
                 <button @mousedown.prevent @click="emit('pasteTreeBlock')" :disabled="!treeStore.clipboard"
                     class="h-7 px-2 rounded text-xs font-medium text-neutral-600 hover:bg-neutral-200 transition flex items-center gap-1.5 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                     :title="treeStore.clipboard ? `Incolla l'albero «${treeStore.clipboard.tree.title}» nel punto del cursore` : 'Copia o taglia prima un albero di mosse'">
@@ -212,8 +220,9 @@ import type { Editor } from '@tiptap/vue-3'
 import { useChessTreeStore } from '../stores/chessTreeStore'
 import { useChessBookStore } from '../stores/chessBookStore'
 import ToolbarMenu from './toolbar/ToolbarMenu.vue'
-import { canSplitAt } from '../utils/treeOps'
+import { canSplitAt, findMergeableChild } from '../utils/treeOps'
 import { insertDiagramRefInComment } from '../utils/diagramRefs'
+import { treeIdsInDoc } from '../utils/editorDoc'
 
 const props = defineProps<{
     editor: Editor,
@@ -225,6 +234,7 @@ const emit = defineEmits<{
     (e: 'splitTreeBlock'): void
     (e: 'pasteTreeBlock'): void
     (e: 'update:zoom', zoom: string): void
+    (e: 'mergeTreeBlock'): void
 }>()
 
 const treeStore = useChessTreeStore()
@@ -365,6 +375,12 @@ const splitInVariation = computed(() => {
     const nodeId = treeStore.activeNodeId
     return !!tree && !!nodeId &&
         ((tree.depthStart ?? 0) > 0 || !treeStore.isNodeInMainline(tree.rootNodes, nodeId))
+})
+// Blocco che continua quello attivo e si può riunire a esso
+const mergeTarget = computed(() => {
+    const tree = treeStore.currentTree
+    if (!tree || locked.value) return null
+    return findMergeableChild(tree, treeStore.trees, treeIdsInDoc(props.editor.state.doc))
 })
 
 // ---------------------------------------------------------------------------

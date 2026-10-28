@@ -4,7 +4,7 @@ import { STANDARD_FEN, isLegalFen, normalizeFen } from '../utils/fen'
 import { toggleNagInList } from '../utils/nags'
 import type { BoardShape } from '../utils/shapes'
 import { newId } from '../utils/ids'
-import { findNode, cloneTree, countNodes, splitPoints, variationDepth } from '../utils/treeOps'
+import { findNode, cloneTree, countNodes, splitPoints, variationDepth, canMergeInto, printedEnd } from '../utils/treeOps'
 
 export interface ChessMoveNode {
   id: string
@@ -455,6 +455,53 @@ export const useChessTreeStore = defineStore('chessTree', {
       if (this.activeTreeId === treeId) this.setActiveNode(nodeId)
       else if (source.activeNodeId && !findNode(source.rootNodes, source.activeNodeId)) source.activeNodeId = nodeId
       return created.map(t => t.id)
+    },
+
+        /**
+     * Unisce B ad A: i nodi di B si riattaccano sotto l'ultima mossa stampata da A e B sparisce.
+     * Le parentesi si ricalcolano: parte di quelle che A lasciava aperte può chiudersi qui,
+     * il resto resta aperto per il blocco successivo.
+     */
+    mergeTrees(aId: string, bId: string): boolean {
+      const a = this.trees.find(t => t.id === aId)
+      const b = this.trees.find(t => t.id === bId)
+      if (!a || !b || !canMergeInto(a, b)) return false
+      const end = printedEnd(a)
+      if (!end) return false
+
+      const k = variationDepth(a.rootNodes, end.id)   // varianti che A lasciava aperte
+      const wasActiveB = this.activeTreeId === b.id
+      const activeInB = wasActiveB ? this.activeNodeId : null
+
+      end.children = b.rootNodes
+      b.rootNodes.forEach(r => { r.parentId = end.id })
+
+      if (b.endNodeId) {
+        a.endNodeId = b.endNodeId
+        a.openCount = k + (b.openCount ?? 0)
+        delete a.closeParens
+      } else {
+        const rest = k - (b.closeParens ?? 0)
+        if (rest > 0) {
+          a.endNodeId = end.id
+          a.openCount = rest
+          delete a.closeParens
+        } else {
+          delete a.endNodeId
+          delete a.openCount
+          if (rest < 0) a.closeParens = -rest
+          else delete a.closeParens
+        }
+      }
+
+      this.trees.forEach(t => { if (t.parentTreeId === b.id) t.parentTreeId = a.id })
+      this.trees = this.trees.filter(t => t.id !== b.id)
+
+      if (wasActiveB) {
+        this.activeTreeId = a.id
+        this.setActiveNode(activeInB)
+      }
+      return true
     },
 
     /** Rimuove gli alberi non presenti nel capitolo (chiamata al salvataggio) */
