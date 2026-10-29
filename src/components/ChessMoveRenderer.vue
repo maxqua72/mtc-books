@@ -24,7 +24,8 @@
             :ref="(el) => { if (el) { commentRefs[nodes[0].id] = el as HTMLElement; applyEditable(el as HTMLElement); refreshRefs(el as HTMLElement) } }"
             contenteditable="true" class="comment-editable-text" v-once v-html="safeComment(nodes[0].comment)"
             data-placeholder="Inserisci commento..." @blur="onCommentBlur(nodes[0].id, $event)"
-            @keydown.enter="handleEnter" @paste="handlePaste" @keydown.stop @click="onCommentClick"></span>
+            @keydown.enter="handleEnter" @paste="handlePaste" @keydown.stop @click="onCommentClick"
+            @input="onCommentInput" @copy="onCommentCopy" @cut="onCommentCopy"></span>
         </div>
 
         <!-- 3. VARIANTI ALTERNATIVE -->
@@ -58,6 +59,9 @@ import { sanitizeCommentHtml } from '../utils/sanitize'
 import { nagsToText } from '../utils/nags'
 import { refreshDiagramRefs } from '../utils/diagramRefs'
 import { requestGoToDiagram } from '../composables/useGoToDiagram'
+import { FIGURINES, findPieceLetters } from '../utils/figurines'
+import { applyFigurines, plainFigurineHtml, selectionPlainText } from '../utils/figurines'
+
 
 
 interface Props {
@@ -88,7 +92,34 @@ const applyEditable = (el: HTMLElement) => el.setAttribute('contenteditable', lo
 watch(locked, () => Object.values(commentRefs).forEach(applyEditable))
 
 // Numero e stato dei riferimenti nei commenti: il commento ha v-once, quindi si riallinea a mano
-const refreshRefs = (el: HTMLElement) => refreshDiagramRefs(el, bookStore.diagramLabels)
+//const refreshRefs = (el: HTMLElement) => refreshDiagramRefs(el, bookStore.diagramLabels)
+const refreshRefs = (el: HTMLElement) => {
+  refreshDiagramRefs(el, bookStore.diagramLabels)
+  applyFigurines(el)
+}
+
+// Mentre si digita: le mosse complete diventano figurine (non durante la composizione IME)
+/*const onCommentInput = (e: Event) => {
+  if (!(e as InputEvent).isComposing) applyFigurines(e.currentTarget as HTMLElement)
+}*/
+
+const onCommentInput = (e: Event) => {
+  if ((e as InputEvent).isComposing) return
+  const el = e.currentTarget as HTMLElement
+  if (!el.querySelector('span.fig') && findPieceLetters(el.textContent ?? '').length === 0) return
+  applyFigurines(el)
+}
+
+// Copia e taglia: negli appunti vanno le lettere, non i glifi del font
+const onCommentCopy = (e: ClipboardEvent) => {
+  const text = selectionPlainText()
+  if (!text) return
+  e.clipboardData?.setData('text/plain', text)
+  e.preventDefault()
+  if (e.type === 'cut' && !locked.value) document.execCommand('delete')
+}
+
+
 watch(() => bookStore.diagramLabels, () => Object.values(commentRefs).forEach(refreshRefs), { flush: 'post' })
 
 // Ctrl/Cmd+clic su un riferimento: vai al diagramma
@@ -182,7 +213,9 @@ const onCommentBlur = (nodeId: string, event: FocusEvent) => {
   if (!targetNode) return
 
   // Si salva sempre la versione sanificata, mai l'innerHTML grezzo
-  const clean = target.innerText.trim() === '' ? '' : sanitizeCommentHtml(target.innerHTML)
+  //const clean = target.innerText.trim() === '' ? '' : sanitizeCommentHtml(target.innerHTML)
+  // si salva SEMPRE senza figurine
+  const clean = target.innerText.trim() === '' ? '' : sanitizeCommentHtml(plainFigurineHtml(target))
   targetNode.comment = clean || null
 }
 
@@ -232,7 +265,7 @@ const getMovePrefix = (node: ChessMoveNode): string => {
 
   return ''
 }
-
+/*
 const FIGURINES: Record<string, { cls: string; map: Record<string, string> }> = {
   cases: {
     cls: 'chess-cases-figurine',
@@ -243,7 +276,7 @@ const FIGURINES: Record<string, { cls: string; map: Record<string, string> }> = 
     map: { K: '0', Q: 'G', R: 'W', B: 'm', N: '©' }
   }
 }
-
+*/
 interface SanPart { text: string; cls: string }   // cls vuota = testo normale, altrimenti classe della figurina
 
 // Restituisce segmenti di testo, mai HTML: l'escape lo fa l'interpolazione di Vue.

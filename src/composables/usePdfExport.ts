@@ -8,6 +8,7 @@ import { treeIdsInDoc } from '../utils/editorDoc'
 import type { PageLayout } from './usePageLayout'
 import typographyStyles from '../assets/styles/book-typography.css?raw'
 import pdfPrintStyles from '../assets/styles/pdf-print.css?raw'
+import { figurinizeHtml } from '../utils/figurines'
 
 type EditorRef = ShallowRef<Editor | undefined>
 
@@ -171,7 +172,8 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
 
         let html = ''
         if (section.type === 'index') {
-          html = store.generatedTocHtml
+          //html = store.generatedTocHtml
+          html = figurinizeHtml(store.generatedTocHtml)
         } else if (section.type === 'cover') {
           html = await store.buildCoverHtml(section.id)
         } else {

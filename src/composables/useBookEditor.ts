@@ -16,11 +16,13 @@ import { ProtectChessNodes } from '../extensions/ProtectChessNodes'
 import { PgnInsertMarker } from '../extensions/PgnInsertMarker'
 import { DiagramRef } from '../extensions/DiagramRef'
 import { Indent } from '../extensions/Indent'
+import { Figurines } from '../extensions/Figurines'
 import { isTreeClipMarker } from '../utils/treeClipboard'
 import { treeIdsInDoc } from '../utils/editorDoc'
 import { pasteTreeFromClipboard } from './useBlockInsertion'
 import { resetHistory } from '../utils/editorHistory'
 import { goToDiagram } from './useGoToDiagram'
+
 
 
 
@@ -71,7 +73,8 @@ export function useBookEditor() {
       ChessTreeBlock,
       ProtectChessNodes,
       DiagramRef,
-      PgnInsertMarker,
+      PgnInsertMarker, 
+      Figurines
     ],
     editorProps: {
       attributes: {
