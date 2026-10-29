@@ -186,3 +186,51 @@ export const renumberFrom = (fen: string, nodes: ChessMoveNode[]): void => {
     for (const c of n.children) stack.push({ n: c, parentFen: n.fen })
   }
 }
+
+// ---------------------------------------------------------------------------
+// Riordino delle varianti: la linea principale è sempre children[0] (rootNodes[0] alla radice),
+// quindi promuovere o abbassare significa riordinare i fratelli. id, FEN, numero, colore,
+// commenti, NAG e frecce restano dov'erano: dipendono dal padre, non dalla posizione.
+// ---------------------------------------------------------------------------
+
+/** Linea da far salire: il nodo o l'antenato più vicino che ha una mossa alternativa prima di sé */
+export const promoteTarget = (rootNodes: ChessMoveNode[], id: string): NodeLocation | null =>
+  findLine(rootNodes, id, l => l.index > 0)
+
+/** Linea da far scendere: il nodo o l'antenato più vicino che ha una mossa alternativa dopo di sé */
+export const demoteTarget = (rootNodes: ChessMoveNode[], id: string): NodeLocation | null =>
+  findLine(rootNodes, id, l => l.index < l.siblings.length - 1)
+
+/** Scambia il nodo con il fratello precedente (-1) o successivo (+1), sul posto. false = già al limite. */
+export const moveSibling = (loc: NodeLocation, delta: 1 | -1): boolean => {
+  const to = loc.index + delta
+  if (to < 0 || to >= loc.siblings.length) return false
+  loc.siblings.splice(loc.index, 1)
+  loc.siblings.splice(to, 0, loc.node)
+  return true
+}
+
+/** Porta in prima posizione la linea del nodo a ogni livello di annidamento. Restituisce quante varianti ha spostato. */
+export const makeMainLine = (rootNodes: ChessMoveNode[], id: string): number => {
+  let moved = 0
+  for (;;) {
+    const loc = promoteTarget(rootNodes, id)
+    if (!loc) return moved
+    loc.siblings.splice(loc.index, 1)
+    loc.siblings.unshift(loc.node)
+    moved++
+  }
+}
+
+/**
+ * Perché l'albero non si può riordinare (null = si può).
+ * Gli alberi divisi (splitTree) memorizzano parentesi aperte e punti di taglio che dipendono
+ * dall'ordine dei fratelli: finché non si uniscono i blocchi, il riordino è bloccato.
+ */
+export const reorderBlockedReason = (tree: ChessTree, trees: ChessTree[]): string | null => {
+  const split = tree.endNodeId || tree.closeParens || tree.depthStart || tree.parentTreeId || tree.splitAtNodeId
+  if (split || trees.some(t => t.parentTreeId === tree.id)) {
+    return 'Albero diviso in più blocchi: unisci prima i blocchi per riordinare le varianti.'
+  }
+  return null
+}

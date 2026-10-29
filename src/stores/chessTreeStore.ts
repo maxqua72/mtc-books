@@ -4,7 +4,10 @@ import { STANDARD_FEN, isLegalFen, normalizeFen } from '../utils/fen'
 import { toggleNagInList } from '../utils/nags'
 import type { BoardShape } from '../utils/shapes'
 import { newId } from '../utils/ids'
-import { findNode, cloneTree, countNodes, splitPoints, variationDepth, canMergeInto, printedEnd, renumberFrom } from '../utils/treeOps'
+import {
+  findNode, cloneTree, countNodes, splitPoints, variationDepth, canMergeInto, printedEnd, renumberFrom,
+  promoteTarget, demoteTarget, moveSibling, makeMainLine, reorderBlockedReason
+} from '../utils/treeOps'
 
 export interface ChessMoveNode {
   id: string
@@ -36,6 +39,16 @@ export interface ChessTree {
 }
 
 export type FenResult = 'ok' | 'invalid' | 'locked'
+
+/** ok = riordinato; noop = niente da spostare; blocked = albero diviso in più blocchi */
+export type ReorderResult = 'ok' | 'noop' | 'blocked'
+
+/** Stato dei comandi di riordino per la mossa attiva (usato da console e tooltip) */
+export interface VariationMoves {
+  blocked: string | null           // motivo per cui il riordino è vietato, se lo è
+  promote: ChessMoveNode | null    // radice della linea che salirebbe di un posto (e di «Rendi principale»)
+  demote: ChessMoveNode | null     // radice della linea che scenderebbe di un posto
+}
 
 // Tetto di nodi della cronologia temporanea: oltre, riparte dalla posizione corrente
 const SCRATCH_MAX_NODES = 2000
@@ -96,6 +109,17 @@ export const useChessTreeStore = defineStore('chessTree', {
       if (!tree) return []
       if (this.activeNodeId === null) return tree.rootNodes
       return this.currentNode?.children ?? []
+    },
+
+    /** Cosa possono fare Promuovi / Rendi principale / Abbassa con la mossa attiva */
+    variationMoves(): VariationMoves {
+      const tree = this.currentTree
+      if (!tree || !this.activeNodeId) return { blocked: null, promote: null, demote: null }
+      return {
+        blocked: reorderBlockedReason(tree, this.trees),
+        promote: promoteTarget(tree.rootNodes, this.activeNodeId)?.node ?? null,
+        demote: demoteTarget(tree.rootNodes, this.activeNodeId)?.node ?? null,
+      }
     },
 
     /** Mosse alternative alla stessa altezza del nodo attivo (incluso il nodo stesso) */
@@ -358,6 +382,32 @@ export const useChessTreeStore = defineStore('chessTree', {
       siblings.splice(index, 1)
       if (activeWasInside) this.setActiveNode(target.parentId)
       return true
+    },
+
+    /** La linea della mossa attiva sale di un posto tra le alternative (la prima diventa principale) */
+    promoteVariation(): ReorderResult {
+      const tree = this.currentTree
+      if (!tree || !this.activeNodeId) return 'noop'
+      if (reorderBlockedReason(tree, this.trees)) return 'blocked'
+      const loc = promoteTarget(tree.rootNodes, this.activeNodeId)
+      return loc && moveSibling(loc, -1) ? 'ok' : 'noop'
+    },
+
+    /** La linea della mossa attiva scende di un posto (la principale diventa variante) */
+    demoteVariation(): ReorderResult {
+      const tree = this.currentTree
+      if (!tree || !this.activeNodeId) return 'noop'
+      if (reorderBlockedReason(tree, this.trees)) return 'blocked'
+      const loc = demoteTarget(tree.rootNodes, this.activeNodeId)
+      return loc && moveSibling(loc, 1) ? 'ok' : 'noop'
+    },
+
+    /** La linea della mossa attiva diventa principale a ogni livello di annidamento */
+    makeMainLine(): ReorderResult {
+      const tree = this.currentTree
+      if (!tree || !this.activeNodeId) return 'noop'
+      if (reorderBlockedReason(tree, this.trees)) return 'blocked'
+      return makeMainLine(tree.rootNodes, this.activeNodeId) > 0 ? 'ok' : 'noop'
     },
 
     isNodeDescendantOf(childId: string | null, parentId: string): boolean {

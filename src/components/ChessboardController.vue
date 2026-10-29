@@ -17,7 +17,8 @@
 
     <ChessboardConsole :current-fen="treeStore.activeFen" :last-move="lastMoveNotation" @reset="resetBoard"
       @insert-diagram="insertDiagramIntoText" @delete-branch="deleteActiveBranch" @update-fen="handleManualFenUpdate"
-      @new-tree="newTreeHere" @clear-shapes="clearShapes" />
+      @new-tree="newTreeHere" @clear-shapes="clearShapes" @promote-variation="promoteVariation"
+      @make-main-line="makeMainLine" @demote-variation="demoteVariation" />
   </div>
 </template>
 
@@ -222,6 +223,12 @@ const insertDiagramIntoText = () => {
 const deleteActiveBranch = () => {
   if (treeStore.activeNodeId && !bookStore.isLocked) treeStore.deleteBranch(treeStore.activeNodeId)
 }
+
+// Riordino delle varianti: la selezione non cambia (gli id dei nodi restano gli stessi).
+// Un albero diviso in blocchi viene rifiutato dallo store (la console disabilita già i pulsanti).
+const promoteVariation = () => { if (!bookStore.isLocked) treeStore.promoteVariation() }
+const makeMainLine = () => { if (!bookStore.isLocked) treeStore.makeMainLine() }
+const demoteVariation = () => { if (!bookStore.isLocked) treeStore.demoteVariation() }
 
 // FEN incollato: posizione libera, oppure posizione iniziale di un albero vuoto
 const handleManualFenUpdate = (newFen: string) => {

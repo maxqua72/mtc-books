@@ -54,6 +54,16 @@
         Elimina Variante
       </button>
 
+      <!-- Riordino delle varianti: agisce sulla linea che contiene la mossa selezionata -->
+      <div v-if="showReorder" class="w-full flex gap-2">
+        <button @click="emit('promoteVariation')" :disabled="!canPromote" :title="promoteTitle"
+          class="reorder-btn"><i class="fa-solid fa-arrow-up"></i> Promuovi</button>
+        <button @click="emit('makeMainLine')" :disabled="!canPromote" :title="mainTitle"
+          class="reorder-btn"><i class="fa-solid fa-angles-up"></i> Rendi principale</button>
+        <button @click="emit('demoteVariation')" :disabled="!canDemote" :title="demoteTitle"
+          class="reorder-btn"><i class="fa-solid fa-arrow-down"></i> Abbassa</button>
+      </div>
+
       <button v-if="!tree || fenLocked" @click="emit('newTree')" :disabled="!inChapter || locked"
         class="w-full py-2 bg-white hover:bg-neutral-50 text-neutral-700 rounded text-xs transition font-semibold border border-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed">
         + Nuovo albero da questa posizione
@@ -83,6 +93,9 @@ const emit = defineEmits<{
   (e: 'updateFen', newFen: string): void
   (e: 'newTree'): void
   (e: 'clearShapes'): void
+  (e: 'promoteVariation'): void
+  (e: 'makeMainLine'): void
+  (e: 'demoteVariation'): void
 }>()
 
 const treeStore = useChessTreeStore()
@@ -97,6 +110,27 @@ const inChapter = computed(() => bookStore.activeSectionInfo?.type === 'chapter'
 // Sola lettura: l'albero del documento non si modifica; la posizione libera e la navigazione restano attive
 const locked = computed(() => bookStore.isLocked)
 
+// Riordino varianti: la riga compare solo se la mossa attiva ha qualcosa da spostare;
+// se l'albero è diviso in blocchi i pulsanti restano visibili ma disabilitati, con il motivo nel tooltip
+const moves = computed(() => treeStore.variationMoves)
+const showReorder = computed(() => !!tree.value && !!treeStore.activeNodeId && !locked.value
+  && (!!moves.value.promote || !!moves.value.demote))
+const canPromote = computed(() => !!moves.value.promote && !moves.value.blocked)
+const canDemote = computed(() => !!moves.value.demote && !moves.value.blocked)
+const moveLabel = (n: { moveNumber: number; color: 'w' | 'b'; san: string }) =>
+  `${n.moveNumber}${n.color === 'w' ? '.' : '...'} ${n.san}`
+const reorderTitle = (target: typeof moves.value.promote, text: (label: string) => string, none: string) =>
+  moves.value.blocked ?? (target ? text(moveLabel(target)) : none)
+const promoteTitle = computed(() => reorderTitle(moves.value.promote,
+  l => `Promuovi ${l}: sale di un posto tra le alternative (la prima diventa linea principale)`,
+  'La mossa è già nella linea principale'))
+const mainTitle = computed(() => reorderTitle(moves.value.promote,
+  l => `Rendi principale la linea di ${l}, a ogni livello di annidamento`,
+  'La mossa è già nella linea principale'))
+const demoteTitle = computed(() => reorderTitle(moves.value.demote,
+  l => `Abbassa ${l}: scende di un posto (la principale diventa variante)`,
+  'Nessuna alternativa dopo questa linea'))
+
 // I simboli si assegnano alla mossa attiva di un albero del documento
 const showNags = computed(() => !!tree.value && !!treeStore.currentNode && !locked.value)
 const activeNags = computed(() => treeStore.currentNode?.nags ?? [])
@@ -105,3 +139,20 @@ const toggleNag = (code: number) => {
   if (id) treeStore.toggleNag(id, code)
 }
 </script>
+
+<style scoped>
+.reorder-btn {
+  flex: 1;
+  padding: 0.4rem 0.25rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--color-neutral-300, #d4d4d4);
+  background: var(--color-neutral-50, #fafafa);
+  color: var(--color-neutral-700, #404040);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.reorder-btn:hover:not(:disabled) { background: var(--color-neutral-100, #f5f5f5); }
+.reorder-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+</style>
