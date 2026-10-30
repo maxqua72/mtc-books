@@ -1,12 +1,6 @@
 <template>
-  <div @click="emit('select')"
-    :draggable="draggable"
-    @dragstart="emit('dragStart')"
-    @dragend="emit('dragEnd')"
-    @dragover.prevent="emit('dragOver')"
-    @dragleave="emit('dragLeave')"
-    @drop="emit('drop')"
-    :class="[
+  <div @click="emit('select')" :draggable="draggable" @dragstart="emit('dragStart')" @dragend="emit('dragEnd')"
+    @dragover.prevent="emit('dragOver')" @dragleave="emit('dragLeave')" @drop="emit('drop')" :class="[
       'group flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition cursor-pointer relative',
       active ? 'bg-neutral-900 text-white' : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900',
       draggable ? 'cursor-grab active:cursor-grabbing' : '',
@@ -15,11 +9,10 @@
 
     <div class="flex items-center gap-2 truncate">
       <!-- Icona di trascinamento visibile al passaggio del mouse sui capitoli -->
-      <span v-if="draggable" 
-        :class="[
-          'opacity-0 group-hover:opacity-100 mr-0.5 cursor-grab transition-opacity',
-          active ? 'text-neutral-400' : 'text-neutral-400'
-        ]">
+      <span v-if="draggable" :class="[
+        'opacity-0 group-hover:opacity-100 mr-0.5 cursor-grab transition-opacity',
+        active ? 'text-neutral-400' : 'text-neutral-400'
+      ]">
         <i class="fa-solid fa-grip-vertical text-[10px]"></i>
       </span>
 
@@ -27,30 +20,35 @@
       <span class="shrink-0 flex items-center justify-center w-4 text-center">
         <i :class="iconClass"></i>
       </span>
-      
+
       <span class="truncate">{{ section.title }}</span>
     </div>
 
     <!-- Azioni rapide al passaggio del mouse -->
-    <div v-if="!locked" 
+    <div v-if="!locked"
       class="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity pl-1 shrink-0">
+
+      <!-- Opzioni del capitolo -->
+      <button v-if="section.type === 'chapter'" @click.stop="emit('options')" :class="[
+        'w-5 h-5 flex items-center justify-center rounded text-[10px] transition-colors',
+        active ? 'hover:bg-neutral-800 text-neutral-300 hover:text-white' : 'hover:bg-neutral-200 text-neutral-500 hover:text-neutral-900'
+      ]" title="Opzioni del capitolo">
+        <i class="fa-solid fa-sliders text-[9px]"></i>
+      </button>
+
       <!-- Rinomina -->
-      <button @click.stop="emit('rename')" 
-        :class="[
-          'w-5 h-5 flex items-center justify-center rounded text-[10px] transition-colors',
-          active ? 'hover:bg-neutral-800 text-neutral-300 hover:text-white' : 'hover:bg-neutral-200 text-neutral-500 hover:text-neutral-900'
-        ]" 
-        title="Rinomina voce indice">
+      <button @click.stop="emit('rename')" :class="[
+        'w-5 h-5 flex items-center justify-center rounded text-[10px] transition-colors',
+        active ? 'hover:bg-neutral-800 text-neutral-300 hover:text-white' : 'hover:bg-neutral-200 text-neutral-500 hover:text-neutral-900'
+      ]" title="Rinomina voce indice">
         <i class="fa-solid fa-pen text-[9px]"></i>
       </button>
-      
+
       <!-- Elimina -->
-      <button @click.stop="emit('remove')" 
-        :class="[
-          'w-5 h-5 flex items-center justify-center rounded text-[10px] transition-colors',
-          active ? 'hover:bg-neutral-800 text-red-400 hover:text-red-300' : 'hover:bg-neutral-200 text-neutral-500 hover:text-red-600'
-        ]" 
-        title="Elimina sezione">
+      <button @click.stop="emit('remove')" :class="[
+        'w-5 h-5 flex items-center justify-center rounded text-[10px] transition-colors',
+        active ? 'hover:bg-neutral-800 text-red-400 hover:text-red-300' : 'hover:bg-neutral-200 text-neutral-500 hover:text-red-600'
+      ]" title="Elimina sezione">
         <i class="fa-solid fa-trash text-[9px]"></i>
       </button>
     </div>
@@ -77,6 +75,7 @@ const emit = defineEmits<{
   (e: 'dragOver'): void
   (e: 'dragLeave'): void
   (e: 'drop'): void
+  (e: 'options'): void
 }>()
 
 // Solo i capitoli si riordinano, e solo se il documento non è in sola lettura

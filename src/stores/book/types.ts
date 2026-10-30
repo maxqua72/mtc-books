@@ -7,6 +7,7 @@ export interface SectionIndexItem {
   id: string
   type: SectionType
   title: string
+  syncTitle?: boolean   // solo capitoli: false = il nome non segue il primo titolo (assente = segue)
 }
 
 export interface BookMetadata {

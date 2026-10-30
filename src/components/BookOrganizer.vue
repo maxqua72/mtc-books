@@ -21,17 +21,13 @@
 
         <!-- Elenco Sezioni (Indice Strutturale) -->
         <div class="flex-1 overflow-y-auto p-2 space-y-0.5">
-            <SectionListItem v-for="(section, index) in store.sectionIndex" :key="section.id"
-                :section="section" :active="store.activeSectionId === section.id" :locked="locked"
-                :drop-class="dnd.dropClass(index, section)"
-                @select="handleSectionClick(section.id)"
-                @rename="promptRename(section)"
-                @remove="deleteSection(section, index)"
-                @drag-start="dnd.onDragStart(index)"
-                @drag-end="dnd.onDragEnd()"
-                @drag-over="dnd.onDragOver(index)"
-                @drag-leave="dnd.onDragLeave(index)"
-                @drop="dnd.onDrop(index)" />
+            <SectionListItem v-for="(section, index) in store.sectionIndex" :key="section.id" :section="section"
+                :active="store.activeSectionId === section.id" :locked="locked"
+                :drop-class="dnd.dropClass(index, section)" @select="handleSectionClick(section.id)"
+                @rename="promptRename(section)" @remove="deleteSection(section, index)"
+                @drag-start="dnd.onDragStart(index)" @drag-end="dnd.onDragEnd()" @drag-over="dnd.onDragOver(index)"
+                @drag-leave="dnd.onDragLeave(index)" @drop="dnd.onDrop(index)"
+                @options="optionsSectionId = section.id" />
         </div>
 
         <!-- Aggiungi sezioni -->
@@ -55,6 +51,8 @@
 
     <!-- Il modale sta fuori dal tag aside -->
     <BookPropertiesModal :is-open="isPropsOpen" @close="isPropsOpen = false" />
+    <ChapterOptionsModal :is-open="!!optionsSectionId" :section-id="optionsSectionId"
+        @close="optionsSectionId = null" />
 </template>
 
 
@@ -64,6 +62,8 @@ import { useChessBookStore, type SectionType, type SectionIndexItem } from '../s
 import { useSectionDragDrop } from '../composables/useSectionDragDrop'
 import BookPropertiesModal from './BookPropertiesModal.vue'
 import SectionListItem from './SectionListItem.vue'
+import ChapterOptionsModal from './ChapterOptionsModal.vue'
+const optionsSectionId = ref<string | null>(null)
 
 const store = useChessBookStore()
 const isPropsOpen = ref(false)
@@ -114,7 +114,14 @@ const addSection = (type: SectionType) => {
 const promptRename = (section: SectionIndexItem) => {
     if (locked.value) return
     const newTitle = prompt(`Inserisci il nuovo nome identificativo per l'indice:`, section.title)
-    if (newTitle && newTitle.trim()) section.title = newTitle.trim()
+    if (!newTitle || !newTitle.trim()) return
+
+    if (section.type === 'chapter') {
+        if (section.syncTitle !== false &&
+            !confirm('Il nome di questo capitolo segue il primo titolo. Rinominandolo, il collegamento verrà disattivato. Continuare?')) return
+        section.syncTitle = false
+    }
+    section.title = newTitle.trim()
 }
 
 const deleteSection = async (section: SectionIndexItem, index: number) => {

@@ -6,6 +6,7 @@ import { TextStyle, Color } from '@tiptap/extension-text-style'
 import Highlight from '@tiptap/extension-highlight'
 import TextAlign from '@tiptap/extension-text-align'
 import type { Editor } from '@tiptap/vue-3'
+import type { Node as PMNode } from '@tiptap/pm/model'
 import { nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useChessBookStore } from '../stores/chessBookStore'
 import { useChessTreeStore } from '../stores/chessTreeStore'
@@ -73,7 +74,7 @@ export function useBookEditor() {
       ChessTreeBlock,
       ProtectChessNodes,
       DiagramRef,
-      PgnInsertMarker, 
+      PgnInsertMarker,
       Figurines
     ],
     editorProps: {
@@ -106,6 +107,9 @@ export function useBookEditor() {
     // Durante la digitazione lo store riceve l'HTML aggiornato (base dell'autosave)
     onUpdate({ editor }) {
       store.activeSectionHtml = editor.getHTML()
+      if (store.activeSectionInfo?.type === 'chapter' && !store.isLocked) {
+        store.applyHeadingTitle(store.activeSectionId!, firstH2Text(editor.state.doc))
+      }
     },
     // Se l'albero attivo non è più nel documento (cancellazione, undo, cambio capitolo) si torna in modalità libera
     onTransaction({ editor, transaction }) {
@@ -204,7 +208,7 @@ export function useBookEditor() {
     if ((e.target as HTMLElement | null)?.closest(TREE_BLOCK)) e.preventDefault()
   }
 
-    // Ctrl+clic su un riferimento dentro un commento (il commento non ha l'editor)
+  // Ctrl+clic su un riferimento dentro un commento (il commento non ha l'editor)
   const onGoToDiagram = (e: Event) => {
     const id = (e as CustomEvent<{ id?: string }>).detail?.id
     if (id && editor.value) void goToDiagram(editor.value, id)
@@ -231,4 +235,17 @@ export function useBookEditor() {
   })
 
   return { editor, syncEditorContent }
+}
+
+/** Testo del primo Titolo 1 (h2) del documento */
+const firstH2Text = (doc: PMNode): string => {
+  let text: string | null = null
+  doc.descendants((node) => {
+    if (text !== null) return false
+    if (node.type.name === 'heading' && node.attrs.level === 2) {
+      text = node.textContent
+      return false
+    }
+  })
+  return (text as string | null) ?? ''
 }

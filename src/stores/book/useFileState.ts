@@ -45,7 +45,7 @@ export function useFileState({ metadata, sectionIndex, zippedSectionsCache }: Fi
           })
         body = { html, trees, cover: p.cover ?? null }
       } catch { body = null }
-      return [item.id, item.type, item.title, body]
+      return [item.id, item.type, item.title, item.syncTitle !== false, body]
     })
     return JSON.stringify([meta, sections])
   }

@@ -173,6 +173,31 @@ export const useChessBookStore = defineStore('chessBook', () => {
         return id
     }
 
+    /** Testo del primo Titolo 1 (h2) del capitolo; '' se manca. Per i capitoli non aperti legge la cache. */
+    function firstHeadingTitle(sectionId: string): string {
+        return scanChapter(sectionId, scanSources).headings.find(h => h.level === '1')?.text ?? ''
+    }
+
+    /** Porta il nome del capitolo al testo del titolo, se il collegamento è attivo. Un titolo vuoto non cancella il nome. */
+    function applyHeadingTitle(sectionId: string, headingText: string) {
+        const item = sectionIndex.value.find(s => s.id === sectionId)
+        if (!item || item.type !== 'chapter' || item.syncTitle === false) return
+        const title = headingText.replace(/\s+/g, ' ').trim().slice(0, 200)
+        if (title && item.title !== title) item.title = title
+    }
+
+    /** Opzione del capitolo: il nome segue (true) o no (false) il primo titolo. Riattivandola, il nome si riallinea subito. */
+    function setSyncTitle(sectionId: string, value: boolean) {
+        const item = sectionIndex.value.find(s => s.id === sectionId)
+        if (!item || item.type !== 'chapter' || fileState.isLocked.value) return
+        if (value) {
+            delete item.syncTitle
+            applyHeadingTitle(sectionId, firstHeadingTitle(sectionId))
+        } else {
+            item.syncTitle = false
+        }
+    }
+
     // --- Persistenza locale (IndexedDB) ---
 
     /** Salva tutto in IndexedDB. Con refreshDirty ricalcola anche lo stato della copia su disco. */
@@ -297,6 +322,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
 
         // Operazioni
         changeActiveSection, createNewSection, syncActiveSectionToCache,
+        applyHeadingTitle, setSyncTitle,
         startNewBook, loadMtcBook, exportMtcBook,
 
         // Salvataggio e ripristino
