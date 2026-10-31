@@ -1,7 +1,27 @@
 import { Router, Request, Response } from 'express';
 import { generatePdfFromHtml, generateFullBookPdf } from '../services/pdfEngine.js';
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 
 export const pdfRouter = Router();
+
+// Solo con PDF_CAPTURE_DIR impostata: salva il corpo di ogni richiesta, per i test di regressione
+const CAPTURE_DIR = process.env.PDF_CAPTURE_DIR;
+if (CAPTURE_DIR) {
+  pdfRouter.use(async (req, _res, next) => {
+    if (req.method === 'POST') {
+      try {
+        await mkdir(CAPTURE_DIR, { recursive: true });
+        const name = `${Date.now()}_${req.path.replace(/\W+/g, '_')}.json`;
+        await writeFile(path.join(CAPTURE_DIR, name), JSON.stringify(req.body));
+        console.log(`[CAPTURE] ${name}`);
+      } catch (e) {
+        console.error('[CAPTURE] errore:', e);
+      }
+    }
+    next();
+  });
+}
 
 /**
  * Header Content-Disposition valido anche con titoli come "Capitolo 1 — Introduzione":
