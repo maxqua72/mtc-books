@@ -1,5 +1,6 @@
 import { renderPdf, type RenderHooks } from './render.js'
 import type { PdfRenderer } from './types.js'
+import type { ExportSection } from '@mtc/shared'
 
 export interface ChapterRequest {
   htmlContent: string
@@ -8,13 +9,7 @@ export interface ChapterRequest {
   pageSize?: string
 }
 
-export interface SectionItem {
-  id: string
-  title: string
-  type: string
-  chapterNumber: number
-  html: string
-}
+export type SectionItem = ExportSection
 
 export interface BookRequest {
   sections: SectionItem[]

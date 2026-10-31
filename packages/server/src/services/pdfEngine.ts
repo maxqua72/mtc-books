@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { createPdfEngine, type BookRequest, type ChapterRequest } from '../core/api.js'
+import { createPdfEngine, type BookRequest, type ChapterRequest } from '@mtc/pdf-core'
 import { createPlaywrightRenderer } from '../adapters/playwright/playwrightRenderer.js'
 import { getFontCss } from './pdfFonts.js'
 

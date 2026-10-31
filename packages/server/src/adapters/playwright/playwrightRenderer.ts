@@ -1,5 +1,5 @@
 import { chromium, type Browser, type Page } from 'playwright'
-import type { PdfPage, PdfRenderer } from '../../core/types.js'
+import type { PdfPage, PdfRenderer } from '@mtc/pdf-core'
 
 let browserPromise: Promise<Browser> | null = null
 

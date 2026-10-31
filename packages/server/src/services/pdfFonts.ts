@@ -37,7 +37,7 @@ const FORMATS: Record<string, { mime: string; format: string }> = {
   '.woff2': { mime: 'font/woff2', format: 'woff2' },
 };
 
-const fontsDir = () => process.env.PDF_FONTS_DIR || path.resolve(process.cwd(), 'assets/fonts');
+const fontsDir = () => process.env.PDF_FONTS_DIR || path.resolve(process.cwd(), '../app/src/assets/fonts');
 
 async function loadFontCss(dir: string): Promise<{ css: string; missing: string[] }> {
   const entries = await fs.readdir(dir);
