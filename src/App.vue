@@ -28,7 +28,7 @@
       </aside>
 
     </div>
-        <!-- Seconda scheda: scritture bloccate per non sovrascrivere il lavoro dell'altra -->
+    <!-- Seconda scheda: scritture bloccate per non sovrascrivere il lavoro dell'altra -->
     <div v-if="!hasWriteLock"
       class="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
       <div class="bg-white rounded-xl border border-neutral-200 shadow-xl max-w-md w-full p-6 space-y-4">
@@ -57,6 +57,7 @@ import BookEditor from './components/BookEditor.vue'
 import ChessboardController from './components/ChessboardController.vue'
 import { useChessBookStore } from './stores/chessBookStore'
 import { useChessTreeStore } from './stores/chessTreeStore'
+import { platform } from './platform'
 
 const bookStore = useChessBookStore()
 const treeStore = useChessTreeStore()
@@ -67,20 +68,13 @@ const RETRY_MAX_DELAY = 30_000
 // ---------------------------------------------------------------------------
 // Una sola scheda può scrivere: due schede sulla stessa IndexedDB si sovrascriverebbero
 // ---------------------------------------------------------------------------
-const LOCK_NAME = 'mtc-book-write'
 const hasWriteLock = ref(true)
 
-/** Il lock resta occupato finché la scheda è aperta. Con steal si prende a un'altra scheda. */
-function acquireWriteLock(steal = false): Promise<void> {
-  if (!('locks' in navigator)) return Promise.resolve()   // browser senza Web Locks: nessun controllo
-  return new Promise<void>((resolve) => {
-    navigator.locks
-      .request(LOCK_NAME, steal ? { steal: true } : { ifAvailable: true }, async (lock) => {
-        hasWriteLock.value = !!lock
-        resolve()
-        if (lock) await new Promise<never>(() => {})   // mai risolta: il lock cade alla chiusura della scheda
-      })
-      .catch(() => { hasWriteLock.value = false; resolve() })   // AbortError: un'altra scheda ce l'ha tolto
+/** Con steal si prende il lock a un'altra scheda; resta occupato finché la scheda è aperta. */
+async function acquireWriteLock(steal = false): Promise<void> {
+  hasWriteLock.value = await platform.session.acquireWriteLock({
+    steal,
+    onLost: () => { hasWriteLock.value = false },   // un'altra scheda ce l'ha tolto
   })
 }
 
@@ -164,7 +158,7 @@ onMounted(async () => {
   if (!hasWriteLock.value) return   // scheda secondaria: il riquadro blocca tutto, non si legge né si scrive
 
   // Chiede al browser di non sfrattare IndexedDB (può essere negato: non è un errore)
-  void navigator.storage?.persist?.().catch(() => {})
+  void navigator.storage?.persist?.().catch(() => { })
 
   await bookStore.restoreFromIndexedDB()
 })

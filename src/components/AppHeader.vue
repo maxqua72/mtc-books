@@ -20,9 +20,7 @@
         Nuovo
       </button>
 
-      <!-- Input nascosto per caricare il file -->
-      <input type="file" ref="fileInput" accept=".mtcbook" class="hidden" @change="handleOpenFile" />
-      <button @click="triggerFileSelect"
+      <button @click="handleOpenFile"
         class="px-3.5 py-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer">
         Apri...
       </button>
@@ -77,6 +75,5 @@ import ExportSplitButton from './ExportSplitButton.vue'
 
 const store = useChessBookStore()
 const isSettingsOpen = ref(false)
-const fileInput = ref<HTMLInputElement | null>(null)
-const { triggerFileSelect, handleNewBook, handleOpenFile, handleSaveFile } = useBookFileActions(fileInput)
+const { handleNewBook, handleOpenFile, handleSaveFile } = useBookFileActions()
 </script>
