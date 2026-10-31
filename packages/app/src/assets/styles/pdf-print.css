@@ -1,0 +1,463 @@
+/* src/assets/styles/pdf-print.css */
+
+@page {
+  size: A4;
+  margin: var(--page-margin-top) var(--page-margin-right) var(--page-margin-bottom) var(--page-margin-left) !important;
+}
+
+
+
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #ffffff;
+}
+
+/* Assicura che il contenitore principale rispetti la larghezza e non azzeri i margini */
+
+
+* {
+  box-sizing: border-box !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+.tiptap-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.tiptap-container {
+  /* counter-reset: chapter-count var(--chapter-index) section-count 0 !important; */
+  box-shadow: none !important;
+  border: none !important;
+  margin: 0 !important;
+  background-color: #ffffff !important;
+  padding: var(--page-margin-top) var(--page-margin-right) var(--page-margin-bottom) var(--page-margin-left) !important;
+  width: var(--page-width) !important;
+  max-width: var(--page-width) !important;
+  min-width: var(--page-width) !important;
+  min-height: auto !important;
+  height: auto !important;
+  transform: none !important;
+}
+
+.tiptap-container {
+  counter-reset: chapter-count var(--chapter-index, 1) section-count 0 !important;
+}
+
+/* --- REGOLA UNIFICATA PER TUTTI I PDF --- */
+
+/* La sezione è l'unità base di conteggio */
+.book-section {
+  /* Prende il valore dal tag style inline style="--chapter-index: X", con fallback a 1 */
+  counter-reset: chapter-count var(--chapter-index, 1) section-count 0 diagram-count 0 !important;
+  page-break-before: always;
+  break-before: page;
+}
+
+/* La prima sezione del documento non deve avere l'interruzione di pagina prima */
+.book-print-container > .book-section:first-child {
+  page-break-before: avoid;
+  break-before: avoid;
+}
+
+/* Rimuovi completamente counter-reset da .book-print-container e .tiptap-container */
+.book-print-container,
+.tiptap-container {
+  counter-reset: none !important;
+}
+/* ----- */
+
+/* Tipografia di base (font, paragrafi, titoli, spaziatura prima dei blocchi): book-typography.css,
+   anteposto a questo file e condiviso con l'editor. Qui restano le regole del solo PDF. */
+
+/* Paragrafi: font esplicito oltre a quello ereditato, e display */
+.book-text-engine p, .tiptap p {
+  font-family: Lora,Georgia, Cambria, serif !important;
+  color: #171717 !important;
+  font-size: 11pt !important;
+  line-height: 1.5 !important;
+  display: block !important;
+}
+
+.book-text-engine h2, .tiptap h2 { 
+  padding: 0 !important;
+  font-family: Lora,Georgia, serif !important; 
+  page-break-inside: avoid !important; 
+  break-inside: avoid !important; 
+}
+
+.tiptap > div > h2:first-child,
+.book-text-engine h2:first-child,
+.tiptap h2:first-child {
+  margin-top: 0 !important; 
+}
+
+.book-text-engine h3, .tiptap h3 { 
+  font-family: Lora,Georgia, serif !important; 
+  page-break-inside: avoid !important; 
+  break-inside: avoid !important; 
+}
+
+/* --- CHESS DIAGRAM STYLES --- */
+
+.chess-diagram-container { 
+  display: flex !important; 
+  align-items: center !important; 
+  justify-content: center !important;
+  margin-top: var(--diagram-spacing, 5mm) !important;
+  margin-bottom: var(--diagram-spacing, 5mm) !important;
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+.chess-diagram-container {
+  counter-increment: diagram-count;
+}
+
+
+
+.board-wrapper {
+  position: relative !important;
+  display: inline-block !important;
+}
+
+
+
+/* RIGHE SCACCHIERA PERFETTE SENZA DISTACCO */
+.chess-pure-text {
+  font-family: 'Chess Merida', serif !important;
+  font-size: var(--diagram-size, 20px) !important;
+  line-height: 1.0 !important; /* CORRETTO: A 1.0 le righe non si staccano */
+  letter-spacing: 0px !important;
+  white-space: pre !important;
+  color: #000000 !important;
+  display: block !important;
+  background: transparent !important;
+  text-align: center !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+/* Nasconde la toolbar delle azioni dell'editor */
+.diagram-actions-menu {
+  display: none !important;
+}
+
+/* Badge Numero Diagramma (es. 1.1) */
+.diagram-number-badge {
+  position: absolute !important;
+  top: calc(var(--diagram-size, 20px) * 1.07) !important;
+  right: 100% !important;
+  margin-right: 10px !important;
+  width: auto !important;
+  min-width: 24px !important;
+  background-color: #000000 !important;
+  padding: 0 7px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  display: block !important;
+}
+
+.diagram-number-badge .badge-text {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  line-height: 24px !important;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: calc(var(--diagram-size) * 0.8) !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  text-align: center !important;
+  margin: 0 0 0 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+.diagram-number-badge .badge-text::before {
+  content: counter(chapter-count) "." counter(diagram-count);
+}
+
+/* Indicatore del tratto (Pallino Bianco/Nero) */
+.turn-indicator {
+  position: absolute !important;
+  top: calc(var(--diagram-size, 20px) * 2.5) !important;
+  right: 100% !important;
+  margin-right: 10px !important;
+  width: calc(var(--diagram-size, 20px) * 0.8);
+  height: calc(var(--diagram-size, 20px) * 0.8);
+  border-radius: 50% !important;
+  box-sizing: border-box !important;
+}
+
+.turn-indicator.white {
+  background-color: #ffffff !important;
+  border: 2px solid #000000 !important;
+}
+
+.turn-indicator.black {
+  background-color: #000000 !important;
+  border: 2px solid #000000 !important;
+}
+
+/* Didascalia */
+.diagram-caption,
+.diagram-caption.is-editing,
+.diagram-caption:focus,
+.diagram-caption:hover {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  font-family: Lora,Georgia, Cambria, serif !important;
+  font-size: 9.5pt !important;
+  color: #525252 !important;
+  font-style: italic !important;
+  text-align: center !important;
+  margin-top: 0 !important;
+  padding: 0 !important;
+}
+
+.diagram-caption p,
+.diagram-caption div {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* CHESS TREE BLOCK */
+.chess-tree-block-container {
+  border: none !important;
+  border-radius: 6px !important;
+  margin: var(--variation-spacing, 4mm) 0 !important;
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+.block-header .delete-btn {
+  display: none !important;
+}
+
+.comment-input {
+  border: none !important;
+  pointer-events: none !important;
+}
+
+.move-comment-box.is-empty {
+  display: none !important;
+}
+
+.show-numbering h2::before,
+.book-print-container h2::before { 
+  content: counter(chapter-count) ". " !important; 
+}
+.show-numbering h3::before,
+.book-print-container h3::before { 
+  counter-increment: section-count !important;
+  content: counter(chapter-count) "." counter(section-count) " " !important;
+}
+.is-structural-page h2::before, 
+.is-structural-page h3::before { 
+  content: none !important; 
+}
+
+
+
+/* ==========================================================================
+   STILI PER ALBERO MOSSE, FIGURINE E COMMENTI (Export PDF)
+   ========================================================================== */
+
+/* Contenitore principale dell'albero mosse */
+.chess-tree-render-container {
+  display: contents !important;
+}
+
+/* Stile per i singoli elementi mossa */
+.chess-move-item {
+  padding: 0 2px !important;
+  display: inline !important;
+  user-select: none !important;
+}
+
+.chess-move-item.is-main-move {
+  font-weight: bold !important;
+  color: #111827 !important;
+}
+
+/* Prefisso della mossa e testo SAN */
+.move-prefix, 
+.move-san {
+  display: inline !important;
+}
+
+/* --- FIGURINE SCACCHISTICHE --- */
+
+/* Chess Cases */
+.figurine-font {
+  font-family: 'Chess Cases', sans-serif !important;
+  font-weight: normal !important;
+  font-style: normal !important;
+  font-size: 1.2em !important;
+  line-height: 1 !important;
+  margin-right: 1px !important;
+}
+
+.chess-cases-figurine {
+  font-family: 'Chess Cases', sans-serif !important;
+  font-weight: normal !important;
+  font-style: normal !important;
+  font-size: 1.15em !important;
+  line-height: 1 !important;
+  margin-right: 0px !important;
+  vertical-align: -3px !important;
+}
+
+/* The Good Companions */
+.tgc-figurine {
+  font-family: 'Chess The Good Companions', sans-serif !important;
+  font-weight: normal !important;
+  font-style: normal !important;
+  font-size: 1.05em !important;
+  line-height: 1 !important;
+  margin-right: 1px !important;
+  vertical-align: 1px !important;
+}
+
+/* Parentesi per varianti */
+.bracket {
+  font-weight: normal !important;
+  color: #111827 !important;
+}
+
+/* --- COMMENTI E BLOCCHI DI TESTO --- */
+
+.move-comment-box {
+  color: #374151 !important;
+  display: inline !important;
+}
+
+.comment-block,
+.variant-block-break {
+  display: block !important;
+  margin: 0.2rem 0 0.2rem 0rem !important;
+  font-family: Lora, Georgia, Cambria, serif !important;
+  line-height: 1.4 !important;
+  text-indent: 0 !important;
+}
+
+.comment-inline,
+.variant-inline-wrapper {
+  display: inline !important;
+  padding: 0 4px !important;
+}
+
+/* Pulisce l'area di testo editabile da stili di editing (niente bordi o sfondi) */
+.comment-editable-text {
+  display: inline !important;
+  outline: none !important;
+  border-bottom: none !important; /* Rimuove il bordo tratteggiato dell'editor */
+  background: transparent !important;
+  white-space: pre-wrap !important;
+}
+
+/* Nasconde eventuali placeholder se un commento è vuoto durante la stampa PDF */
+.comment-editable-text:empty::before {
+  content: "" !important;
+}
+
+
+/* --- DIAGRAMMI A MARGINE: il testo che segue scorre accanto --- */
+.chess-diagram-container[data-align="left"],
+.chess-diagram-container[data-align="right"] {
+  display: block !important;
+  width: max-content !important;
+  margin-top: 0 !important;
+  break-inside: avoid !important;
+}
+.chess-diagram-container[data-align="left"] {
+  float: left !important;
+  margin-right: var(--diagram-side-gap, 6mm) !important;
+}
+.chess-diagram-container[data-align="right"] {
+  float: right !important;
+  margin-left: var(--diagram-side-gap, 6mm) !important;
+}
+.chess-diagram-container[data-align="left"] .diagram-caption,
+.chess-diagram-container[data-align="right"] .diagram-caption {
+  width: 0 !important;
+  min-width: 100% !important;
+}
+
+/* Ogni sezione contiene i propri float: un diagramma non esce dal capitolo */
+.book-section {
+  display: flow-root;
+}
+
+.pgn-insert-marker,
+.pgn-target-badge {
+  display: none !important;
+}
+
+.move-nag {
+  display: inline !important;
+}
+
+/* ==========================================================================
+   COPERTINA: una sola pagina, a pieno foglio, senza margini
+   ========================================================================== */
+@page cover {
+  margin: 0 !important;
+}
+
+.cover-section {
+  page: cover;
+  break-before: page;
+  break-inside: avoid;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+/* Se la copertina è la prima sezione, nessuna interruzione prima */
+.book-print-container > .book-section:first-child .cover-section {
+  break-before: avoid;
+}
+
+.cover-page { overflow: hidden !important; break-inside: avoid; }
+.cover-text { margin: 0 !important; }
+.cover-image { max-width: none !important; }
+
+/* ==========================================================================
+   INTESTAZIONE DELL'ALBERO (tag PGN: giocatori, evento, apertura)
+   ========================================================================== */
+.tree-pgn-header {
+  margin: 0 0 2mm 0 !important;
+  padding: 0 0 1.5mm 0 !important;
+  border-bottom: 0.3mm solid #171717 !important;
+  font-family: Lora, Georgia, Cambria, serif !important;
+  break-inside: avoid !important;
+  break-after: avoid !important;
+}
+
+.tree-pgn-header .tph-main {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: baseline !important;
+  gap: 4mm !important;
+  font-size: 11pt !important;
+  font-weight: bold !important;
+  color: #171717 !important;
+}
+
+.tree-pgn-header .tph-result { white-space: nowrap !important; }
+
+.tree-pgn-header .tph-event,
+.tree-pgn-header .tph-opening {
+  font-size: 9.5pt !important;
+  color: #525252 !important;
+}
+
+.tree-pgn-header .tph-opening { font-style: italic !important; }

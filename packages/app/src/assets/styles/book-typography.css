@@ -1,0 +1,230 @@
+/* ==========================================================================
+   TIPOGRAFIA DEL LIBRO: regole identiche per l'editor e per il PDF.
+
+   Chi lo usa:
+   - editor: import in components/BookEditor.vue
+   - PDF:    import ?raw in composables/usePdfExport.ts, anteposto a pdf-print.css
+
+   Nell'editor la radice ha sia .book-text-engine sia .tiptap; nel PDF c'è solo
+   .book-text-engine (il contenuto è la copia del DOM dentro .book-print-container).
+   Per questo ogni selettore elenca entrambe le classi.
+
+   In questo file vanno SOLO proprietà con lo stesso valore nei due contesti.
+   Quello che vale per uno solo resta nel suo file:
+   - editor: BookEditor.vue (zoom, foglio, contatori, cursore, colore di h3)
+   - PDF:    pdf-print.css (break-inside, display, contatori, margini di pagina)
+   ========================================================================== */
+
+/* Testo di base. --t-sheet-text esiste solo nell'editor (temi); nel PDF vale il valore di ripiego. */
+.book-text-engine,
+.tiptap {
+    font-family: Lora, Georgia, Cambria, serif !important;
+    font-size: 11pt !important;
+    line-height: 1.5 !important;
+    color: var(--t-sheet-text, #171717) !important;
+}
+
+.book-text-engine p,
+.tiptap p {
+    margin-top: 0 !important;
+    margin-bottom: var(--paragraph-spacing, 4.5mm) !important;
+    padding: 0 !important;
+}
+
+.book-text-engine h2,
+.tiptap h2 {
+    font-size: 24pt !important;
+    line-height: 1.2 !important;
+    font-weight: bold !important;
+    margin-top: 0 !important;
+    margin-bottom: 6mm !important;
+    color: var(--t-sheet-text, #171717) !important;
+}
+
+.book-text-engine h3,
+.tiptap h3 {
+    font-size: 15pt !important;
+    line-height: 19pt !important;
+    font-weight: bold !important;
+    margin-top: 18pt !important;
+    margin-bottom: 9pt !important;
+}
+
+/* I titoli non si infilano accanto a un diagramma a margine */
+.book-text-engine h2,
+.book-text-engine h3,
+.tiptap h2,
+.tiptap h3 {
+    clear: both;
+}
+
+/* Prima di un diagramma centrato o di una partita lo spazio è esattamente quello del blocco:
+   il margine del paragrafo non si somma e non collassa con quello del blocco.
+   Prima di un diagramma a margine (sinistra/destra) il paragrafo mantiene il suo spazio. */
+.book-text-engine p:has(+ .chess-diagram-container:not([data-align="left"]):not([data-align="right"])),
+.book-text-engine p:has(+ .chess-tree-block-container),
+.tiptap p:has(+ .chess-diagram-container:not([data-align="left"]):not([data-align="right"])),
+.tiptap p:has(+ .chess-tree-block-container) {
+    margin-bottom: 0 !important;
+}
+
+/* Elenchi: il preflight di Tailwind azzera list-style e padding nell'editor,
+   quindi si dichiarano esplicitamente (stessi valori in editor e PDF). */
+   /*
+.book-text-engine ul,
+.tiptap ul {
+    list-style-type: disc !important;
+    list-style-position: outside !important;
+    padding-left: 6mm !important;
+    margin-top: 0 !important;
+    margin-bottom: var(--paragraph-spacing, 4.5mm) !important;
+}
+
+.book-text-engine ul ul,
+.tiptap ul ul {
+    list-style-type: circle !important;
+    margin-bottom: 0 !important;
+}
+
+.book-text-engine ul ul ul,
+.tiptap ul ul ul {
+    list-style-type: square !important;
+}
+
+.book-text-engine li,
+.tiptap li {
+    display: list-item !important;
+    margin: 0 0 1.5mm 0 !important;
+    padding: 0 !important;
+}
+
+
+.book-text-engine li > p,
+.tiptap li > p {
+    margin-bottom: 0 !important;
+}
+*/
+/* ==========================================================================
+   DA AGGIUNGERE IN FONDO A book-typography.css
+   Se avevi già incollato il blocco "Elenchi" della risposta precedente, sostituiscilo con questo.
+   ========================================================================== */
+
+/* --- Elenchi puntati e numerati (il preflight di Tailwind azzera list-style e padding nell'editor) --- */
+.book-text-engine ul,
+.tiptap ul,
+.book-text-engine ol,
+.tiptap ol {
+    list-style-position: outside !important;
+    padding-left: 6mm !important;
+    margin-top: 0 !important;
+    margin-bottom: var(--paragraph-spacing, 4.5mm) !important;
+}
+
+.book-text-engine ol,
+.tiptap ol {
+    padding-left: 7mm !important;   /* i numeri a due cifre ("10.") hanno bisogno di più spazio */
+}
+
+.book-text-engine ul,           .tiptap ul           { list-style-type: disc !important; }
+.book-text-engine ul ul,        .tiptap ul ul        { list-style-type: circle !important; }
+.book-text-engine ul ul ul,     .tiptap ul ul ul     { list-style-type: square !important; }
+.book-text-engine ol,           .tiptap ol           { list-style-type: decimal !important; }
+.book-text-engine ol ol,        .tiptap ol ol        { list-style-type: lower-alpha !important; }
+.book-text-engine ol ol ol,     .tiptap ol ol ol     { list-style-type: lower-roman !important; }
+
+/* Un elenco annidato non aggiunge spazio sotto di sé: lo spazio lo dà l'elenco più esterno */
+.book-text-engine li > ul, .book-text-engine li > ol,
+.tiptap li > ul,           .tiptap li > ol {
+    margin-bottom: 0 !important;
+}
+
+.book-text-engine li,
+.tiptap li {
+    display: list-item !important;
+    margin: 0 0 1.5mm 0 !important;
+    padding: 0 !important;
+}
+
+/* Tiptap mette un <p> dentro ogni <li>: niente spazio del paragrafo normale */
+.book-text-engine li > p,
+.tiptap li > p {
+    margin-bottom: 0 !important;
+}
+
+/* Elenco prima di un diagramma centrato o di un blocco albero: lo spazio è quello del blocco */
+.book-text-engine ul:has(+ .chess-diagram-container:not([data-align="left"]):not([data-align="right"])),
+.book-text-engine ol:has(+ .chess-diagram-container:not([data-align="left"]):not([data-align="right"])),
+.book-text-engine ul:has(+ .chess-tree-block-container),
+.book-text-engine ol:has(+ .chess-tree-block-container),
+.tiptap ul:has(+ .chess-diagram-container:not([data-align="left"]):not([data-align="right"])),
+.tiptap ol:has(+ .chess-diagram-container:not([data-align="left"]):not([data-align="right"])),
+.tiptap ul:has(+ .chess-tree-block-container),
+.tiptap ol:has(+ .chess-tree-block-container) {
+    margin-bottom: 0 !important;
+}
+
+/* --- Evidenziato --- */
+.book-text-engine mark,
+.tiptap mark {
+    background-color: #fff176 !important;
+    color: inherit !important;
+    padding: 0 !important;
+}
+
+/* --- Link (il preflight li rende privi di sottolineatura).
+   Gli ancoraggi interni (#...) sono quelli dell'indice nel PDF: restano come sono. --- */
+.book-text-engine a[href]:not([href^="#"]),
+.tiptap a[href]:not([href^="#"]) {
+    color: var(--t-link, #1d4ed8) !important;
+    text-decoration: underline !important;
+    text-underline-offset: 2px;
+}
+
+/* --- Rientro (data-indent, vedi extensions/Indent.ts) --- */
+.book-text-engine [data-indent="1"], .tiptap [data-indent="1"] { margin-left: 8mm !important; }
+.book-text-engine [data-indent="2"], .tiptap [data-indent="2"] { margin-left: 16mm !important; }
+.book-text-engine [data-indent="3"], .tiptap [data-indent="3"] { margin-left: 24mm !important; }
+.book-text-engine [data-indent="4"], .tiptap [data-indent="4"] { margin-left: 32mm !important; }
+.book-text-engine [data-indent="5"], .tiptap [data-indent="5"] { margin-left: 40mm !important; }
+.book-text-engine [data-indent="6"], .tiptap [data-indent="6"] { margin-left: 48mm !important; }
+
+/* --- Riferimenti ai diagrammi: testo bianco su fondo nero (editor, commenti e PDF) --- */
+.book-text-engine .diagram-ref,
+.tiptap .diagram-ref {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important;
+    font-size: 0.85em !important;
+    font-weight: 700 !important;
+    font-style: normal !important;
+    padding: 0.1em 0.4em !important;
+    border-radius: 2px;
+    white-space: nowrap;
+    text-indent: 0;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+}
+
+/* --- Figurine nel testo (mosse in notazione inglese) --- */
+.fig-hidden { display: none !important; }
+
+.book-text-engine .tgc-figurine,
+.tiptap .tgc-figurine {
+    font-family: 'Chess The Good Companions', sans-serif !important;
+    font-weight: normal !important;
+    font-style: normal !important;
+    font-size: 1.05em;
+    line-height: 1;
+    margin-right: 1px;
+    vertical-align: 1px;
+}
+
+.book-text-engine .chess-cases-figurine,
+.tiptap .chess-cases-figurine {
+    font-family: 'Chess Cases', sans-serif !important;
+    font-weight: normal !important;
+    font-style: normal !important;
+    font-size: 1.15em;
+    line-height: 1;
+    vertical-align: -3px;
+}
