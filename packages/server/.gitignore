@@ -1,0 +1,53 @@
+# --- Compilazione TypeScript ---
+# Esclude la cartella di output (definita nel tuo package.json come dist/)
+dist/
+build/
+
+# --- Dipendenze ---
+# Esclude i pacchetti scaricati da npm
+node_modules/
+
+# --- Playwright ---
+# Esclude i browser scaricati localmente o i report dei test di Playwright
+.auth/
+playwright-report/
+blob-report/
+test-results/
+
+# --- Variabili d'Ambiente e Segreti ---
+# Esclude i file di configurazione locali contenenti chiavi segrete o credenziali
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# --- Log di Sistema ed Errori ---
+# Esclude i file di log generati da Node.js e npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# --- File di Sistema Operativo ---
+# Esclude file invisibili creati da macOS e Windows nelle cartelle
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- IDE e Editor (Incluso VS Code) ---
+# Se usi i Workspace di VS Code per gestire i progetti, è bene escludere le configurazioni locali della finestra
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+regression/
