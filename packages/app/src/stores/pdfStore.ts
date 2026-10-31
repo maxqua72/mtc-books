@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { platform } from '../platform'
-import type { BookPdfRequest, ChapterPdfRequest } from '../shared/pdf'
+import type { BookPdfRequest, ChapterPdfRequest } from '@mtc/shared'
 
 // Riesportato: usePdfExport lo importa ancora da qui
-export type { ExportSection } from '../shared/pdf'
+export type { ExportSection } from '@mtc/shared'
 
 export const usePdfStore = defineStore('pdf', () => {
   const isGeneratingPdf = ref(false)

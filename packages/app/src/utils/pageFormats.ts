@@ -1,16 +1,10 @@
-// Unica fonte per i formati di pagina del libro (lato client).
-// Prima c'erano tabelle separate in cover.ts e BookEditor.vue (mm, stringhe CSS e px).
-// Il server (pdfEngine.ts) ha ancora la sua tabella: si allinea nella fase dedicata.
+// Formati di pagina del libro (lato client). La tabella dei millimetri sta in @mtc/shared.
+import { PAGE_FORMATS_MM, type PageSizeMm } from '@mtc/shared'
+
+export { PAGE_FORMATS_MM }
+export type { PageSizeMm }
 
 export const MM_TO_PX = 96 / 25.4
-
-export interface PageSizeMm { width: number; height: number }
-
-export const PAGE_FORMATS_MM: Record<string, PageSizeMm> = {
-  a4: { width: 210, height: 297 },
-  'crown-quarto': { width: 189, height: 246 },
-  'b-format': { width: 129, height: 198 },
-}
 
 export const getPageSizeMm = (format?: string): PageSizeMm =>
   PAGE_FORMATS_MM[format || 'a4'] ?? PAGE_FORMATS_MM.a4

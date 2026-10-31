@@ -1,5 +1,5 @@
 {
-  "name": "mtc-books",
+  "name": "@mtc/app",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -26,7 +26,8 @@
     "dompurify": "^3.4.17",
     "jszip": "^3.10.1",
     "pinia": "^3.0.4",
-    "vue": "^3.5.39"
+    "vue": "^3.5.39",
+    "@mtc/shared": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.2",

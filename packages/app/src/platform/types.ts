@@ -1,6 +1,4 @@
-import type { PlatformCapabilities } from '../shared/capabilities'
-import type { BookPdfRequest, ChapterPdfRequest } from '../shared/pdf'
-
+import type { PlatformCapabilities, BookPdfRequest, ChapterPdfRequest } from '@mtc/shared'
 export interface PdfPlatform {
   exportChapter(req: ChapterPdfRequest): Promise<void>
   exportBook(req: BookPdfRequest): Promise<void>
