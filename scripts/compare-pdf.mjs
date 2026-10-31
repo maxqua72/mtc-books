@@ -9,7 +9,8 @@ async function pagesText(file) {
     const content = await (await doc.getPage(p)).getTextContent();
     pages.push(content.items.map(i => ('str' in i ? i.str : '')).join('').replace(/\s+/g, ' ').trim());
   }
-  await doc.destroy();
+  //await doc.destroy();
+  await doc.cleanup(); 
   return pages;
 }
 
