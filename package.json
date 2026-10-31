@@ -1,0 +1,16 @@
+{
+    "name": "mtc-books-monorepo",
+    "private": true,
+    "version": "1.0.0",
+    "packageManager": "pnpm@10.34.9",
+    "engines": {
+        "node": ">=22.12"
+    },
+    "scripts": {
+        "dev:app": "pnpm --filter @mtc/app dev",
+        "dev:server": "pnpm --filter @mtc/server dev",
+        "typecheck": "pnpm -r --if-present typecheck",
+        "build": "pnpm -r --if-present build",
+        "check:boundaries": "node scripts/check-boundaries.mjs"
+    }
+}
