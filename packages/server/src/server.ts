@@ -18,7 +18,7 @@ app.use(express.urlencoded({ limit: MAX_BODY_SIZE, extended: true }));
 app.use('/api', pdfRouter);
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({ status: 'OK', service: 'MTC Books PDF Service' });
 });
 

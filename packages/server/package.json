@@ -5,29 +5,29 @@
   "main": "dist/server.js",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "tsup",
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
-    "typecheck": "tsc --noEmit",
-    "build": "tsup"
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@mtc/pdf-core": "workspace:*",
+    "@mtc/shared": "workspace:*",
     "cors": "^2.8.6",
     "dotenv": "^18.0.4",
     "express": "^5.2.1",
-    "playwright": "^1.63.0",
-    "@mtc/pdf-core": "workspace:*",
-    "@mtc/shared": "workspace:*"
+    "playwright": "^1.63.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.3",
+    "pdfjs-dist": "^6.4.299",
+    "tsup": "^9.0.0",
     "tsx": "^4.23.15",
-    "typescript": "^7.0.2",
-    "pdfjs-dist": "^6.4.299"
+    "typescript": "^7.0.2"
   }
 }

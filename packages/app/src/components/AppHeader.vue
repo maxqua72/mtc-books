@@ -5,7 +5,7 @@
       <img :src="logo" alt="MTC Book" class="w-auto h-10 object-contain" />
       <span class="text-md font-black text-neutral-950 tracking-tight uppercase">MTC Book</span>
       <span class="text-xs bg-neutral-100 text-neutral-500 px-2 py-0.5 rounded font-mono border border-neutral-200">
-        v1.0.0
+        v{{ appVersion }}
       </span>
 
       <div class="h-4 w-[1px] bg-neutral-200 mx-1"></div>
@@ -73,6 +73,7 @@ import SettingsModal from './SettingsModal.vue'
 import SaveStatusIndicator from './SaveStatusIndicator.vue'
 import ExportSplitButton from './ExportSplitButton.vue'
 
+const appVersion = __APP_VERSION__
 const store = useChessBookStore()
 const isSettingsOpen = ref(false)
 const { handleNewBook, handleOpenFile, handleSaveFile } = useBookFileActions()
