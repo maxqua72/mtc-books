@@ -1,4 +1,7 @@
 export { createPdfEngine } from './api.js'
 export type { ChapterRequest, BookRequest, SectionItem, PdfEngineDeps } from './api.js'
 export type { PdfPage, PdfRenderer, PdfOptions } from './types.js'
+export type { PdfStage } from './render.js'
 export { pdfPageOptions } from './pageFormats.js'
+export { buildFontCss } from './fonts.js'
+export type { FontFormat } from './fonts.js'

@@ -17,4 +17,6 @@ export interface PdfPage {
 /** Apre una pagina isolata, esegue il lavoro e la chiude sempre (anche in caso di errore) */
 export interface PdfRenderer {
   withPage<T>(job: (page: PdfPage) => Promise<T>): Promise<T>
+  /** Testo di ogni pagina del PDF (frammenti uniti, senza separatori), in ordine di pagina */
+  extractPageTexts(pdf: Uint8Array): Promise<string[]>
 }

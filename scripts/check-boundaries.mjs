@@ -4,7 +4,7 @@ import { extname, join } from 'node:path'
 const RULES = {
   app: ['node:', 'electron', 'playwright', 'express', '@mtc/pdf-core', '@mtc/server'],
   shared: ['node:', 'electron', 'playwright', 'vue', 'pinia', '@mtc/'],
-  'pdf-core': ['electron', 'playwright', 'node:fs', '@mtc/app', '@mtc/server'],
+  'pdf-core': ['electron', 'playwright', 'node:fs', '@mtc/app', '@mtc/server','pdfjs-dist'],
   server: ['electron', '@mtc/app'],
   desktop: ['@mtc/app', '@mtc/server'],
 }

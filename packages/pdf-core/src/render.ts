@@ -1,7 +1,9 @@
 import { buildFullDocumentHtml } from './documentHtml.js'
 import { pdfPageOptions } from './pageFormats.js'
-import { fillTocPages, prepareToc, readHeadingPages } from './toc.js'
+import { fillTocPages, findHeadingPages, prepareToc } from './toc.js'
 import type { PdfOptions, PdfRenderer } from './types.js'
+
+export type PdfStage = 'loading' | 'toc' | 'final'
 
 export interface RenderRequest {
   sectionsHtml: string
@@ -16,6 +18,7 @@ export interface RenderRequest {
 export interface RenderHooks {
   /** Per ispezionare l'HTML inviato a Chromium (il core non scrive su disco) */
   onDebugHtml?: (name: string, html: string) => Promise<void>
+  onProgress?: (stage: PdfStage) => void
 }
 
 /** Unico percorso di rendering, usato dal capitolo singolo e dal libro intero */
@@ -24,7 +27,7 @@ export async function renderPdf(renderer: PdfRenderer, req: RenderRequest, hooks
   await hooks.onDebugHtml?.(req.debugName, fullHtml)
 
   return renderer.withPage(async (page) => {
-    // Il contenuto è autosufficiente (font e immagini sono data URI): basta il caricamento semplice
+    hooks.onProgress?.('loading')
     await page.setContent(fullHtml)
 
     await page.evaluate(async () => {
@@ -43,8 +46,9 @@ export async function renderPdf(renderer: PdfRenderer, req: RenderRequest, hooks
     if (req.withToc) {
       const tocEntries = await prepareToc(page)
       if (tocEntries > 0) {
+        hooks.onProgress?.('toc')
         const firstPass = await page.pdf(pdfOptions)
-        const pages = await readHeadingPages(firstPass)
+        const pages = findHeadingPages(await renderer.extractPageTexts(firstPass))
         if (pages.size === 0) console.warn('[PDF ENGINE] Nessun marcatore trovato nel PDF: indice senza numeri.')
         else console.log(`[PDF ENGINE] Indice: trovate ${pages.size} pagine di titoli.`)
         await fillTocPages(page, pages)
@@ -53,6 +57,7 @@ export async function renderPdf(renderer: PdfRenderer, req: RenderRequest, hooks
       }
     }
 
+    hooks.onProgress?.('final')
     return page.pdf(pdfOptions)
   })
 }

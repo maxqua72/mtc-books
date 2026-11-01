@@ -1,4 +1,5 @@
 import { chromium, type Browser, type Page } from 'playwright'
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs'
 import type { PdfPage, PdfRenderer } from '@mtc/pdf-core'
 
 let browserPromise: Promise<Browser> | null = null
@@ -27,6 +28,24 @@ const wrap = (page: Page): PdfPage => ({
   pdf: (options) => page.pdf(options as any),
 })
 
+/** Testo di ogni pagina del PDF (frammenti uniti, senza separatori), in ordine di pagina */
+async function extractPageTexts(pdf: Uint8Array): Promise<string[]> {
+  const loadingTask = pdfjs.getDocument({ data: new Uint8Array(pdf), verbosity: 0 })
+  try {
+    const doc = await loadingTask.promise
+    const out: string[] = []
+    for (let p = 1; p <= doc.numPages; p++) {
+      const page = await doc.getPage(p)
+      const content = await page.getTextContent()
+      out.push(content.items.map((item: any) => ('str' in item ? item.str : '')).join(''))
+      page.cleanup()
+    }
+    return out
+  } finally {
+    await loadingTask.destroy()
+  }
+}
+
 export function createPlaywrightRenderer(): PdfRenderer {
   return {
     async withPage(job) {
@@ -38,5 +57,6 @@ export function createPlaywrightRenderer(): PdfRenderer {
         await context.close() // chiude anche la pagina
       }
     },
+    extractPageTexts,
   }
 }

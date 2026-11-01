@@ -26,7 +26,8 @@ export interface PdfEngineDeps extends RenderHooks {
 
 export function createPdfEngine(deps: PdfEngineDeps) {
   const render = async (req: Omit<Parameters<typeof renderPdf>[1], 'fontCss'>) =>
-    renderPdf(deps.renderer, { ...req, fontCss: await deps.getFontCss() }, { onDebugHtml: deps.onDebugHtml })
+    renderPdf(deps.renderer, { ...req, fontCss: await deps.getFontCss() },
+  { onDebugHtml: deps.onDebugHtml, onProgress: deps.onProgress })
 
   return {
     /** PDF di un singolo capitolo */

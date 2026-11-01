@@ -1,4 +1,4 @@
-import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs'
+
 import type { PdfPage } from './types.js'
 
 /** Assegna un id ai titoli, ci mette un marcatore invisibile e rende cliccabili le voci dell'indice */
@@ -36,34 +36,17 @@ export async function prepareToc(page: PdfPage): Promise<number> {
   })
 }
 
-/** Legge dal PDF in che pagina (1 = prima pagina) compare il marcatore di ogni titolo */
-export async function readHeadingPages(pdf: Uint8Array): Promise<Map<number, number>> {
-  // ← incolla qui IDENTICO il corpo di readHeadingPages
-  //   l'unica riga che cambia è:  getDocument({ data: new Uint8Array(pdf), verbosity: 0 })
-  const loadingTask = pdfjs.getDocument({ data: new Uint8Array(pdf), verbosity: 0 });
-    try {
-      const doc = await loadingTask.promise;
-      const result = new Map<number, number>();
-  
-      for (let p = 1; p <= doc.numPages; p++) {
-        const page = await doc.getPage(p);
-        const content = await page.getTextContent();
-        // Il marcatore può essere spezzato in più frammenti: si unisce tutto e si tolgono gli spazi
-        const text = content.items
-          .map((item: any) => ('str' in item ? item.str : ''))
-          .join('')
-          .replace(/\s+/g, '');
-  
-        for (const m of text.matchAll(/\[\[TOC(\d+)\]\]/g)) {
-          const n = Number(m[1]);
-          if (!result.has(n)) result.set(n, p);
-        }
-        page.cleanup();
-      }
-      return result;
-    } finally {
-      await loadingTask.destroy();
+/** Da testo per pagina a "titolo n → pagina" (1 = prima). Il marcatore può essere spezzato in frammenti: si tolgono gli spazi. */
+export function findHeadingPages(pageTexts: string[]): Map<number, number> {
+  const result = new Map<number, number>()
+  pageTexts.forEach((raw, i) => {
+    const text = raw.replace(/\s+/g, '')
+    for (const m of text.matchAll(/\[\[TOC(\d+)\]\]/g)) {
+      const n = Number(m[1])
+      if (!result.has(n)) result.set(n, i + 1)
     }
+  })
+  return result
 }
 
 export async function fillTocPages(page: PdfPage, pages: Map<number, number>) {
