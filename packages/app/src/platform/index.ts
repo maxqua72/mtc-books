@@ -1,7 +1,8 @@
 import type { Platform } from './types'
 import { createWebPlatform } from './web'
+import { createDesktopPlatform } from './desktop'
 
-// Fase 4: qui si sceglierà l'adattatore desktop se il preload di Electron è presente
-export const platform: Platform = createWebPlatform()
+// Unico punto in cui si distingue la piattaforma: il preload di Electron espone window.mtcDesktop
+export const platform: Platform = window.mtcDesktop ? createDesktopPlatform() : createWebPlatform()
 export const capabilities = platform.capabilities
 export type { Platform } from './types'

@@ -33,5 +33,6 @@ export const webFiles: FilesPlatform = {
 
   async saveBook(blob, suggestedName) {
     downloadBlob(blob, suggestedName)
+    return true
   }
 }

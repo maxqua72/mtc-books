@@ -58,6 +58,7 @@ import ChessboardController from './components/ChessboardController.vue'
 import { useChessBookStore } from './stores/chessBookStore'
 import { useChessTreeStore } from './stores/chessTreeStore'
 import { platform } from './platform'
+import { useBookFileActions } from './composables/useBookFileActions'
 
 const bookStore = useChessBookStore()
 const treeStore = useChessTreeStore()
@@ -141,6 +142,7 @@ async function saveNow(): Promise<void> {
 // activeSectionHtml è già aggiornato a ogni digitazione (onUpdate): non serve forzare la sincronizzazione.
 const onVisibility = () => { if (document.visibilityState === 'hidden') void saveNow() }
 const onPageHide = () => { void saveNow() }
+let unsubscribeExternalOpen: (() => void) | null = null
 
 const onBeforeUnload = (e: BeforeUnloadEvent) => {
   if (!hasUnpersisted()) return
@@ -161,6 +163,10 @@ onMounted(async () => {
   void navigator.storage?.persist?.().catch(() => { })
 
   await bookStore.restoreFromIndexedDB()
+
+  const { openPicked } = useBookFileActions()
+  await bookStore.restoreFromIndexedDB()
+  unsubscribeExternalOpen = platform.files.onExternalOpen?.(openPicked) ?? null
 })
 
 onBeforeUnmount(() => {
@@ -168,6 +174,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('pagehide', onPageHide)
   window.removeEventListener('beforeunload', onBeforeUnload)
   if (autoSaveTimer) clearTimeout(autoSaveTimer)
+  unsubscribeExternalOpen?.()
 })
 
 // --- WATCHER GLOBALE UNIFICATO ---

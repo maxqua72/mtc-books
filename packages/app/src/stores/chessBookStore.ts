@@ -14,6 +14,7 @@ import { useDiagramIndex } from './book/useDiagramIndex'
 import { useGeneratedToc } from './book/useGeneratedToc'
 import { parseMtcBook, buildMtcBook, type BookAsset } from './book/mtcbookIO'
 import { scanChapter } from './book/sectionScan'
+import { platform } from '../platform'
 
 // I tipi restano importabili da qui, come prima della divisione in moduli
 export type { SectionType, PageFormat, SaveStatus, SectionIndexItem, BookMetadata } from './book/types'
@@ -246,6 +247,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
     // --- Nuovo libro e file .mtcbook ---
 
     async function startNewBook(title: string, author: string) {
+        platform.files.forgetCurrentFile?.()
         fileState.setLocked(false)   // un libro nuovo è subito modificabile
         // Azzera tutto PRIMA: con activeSectionId null changeActiveSection non congela nulla
         activeSectionId.value = null
@@ -266,6 +268,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
     /** Apre un file .mtcbook: legge subito metadati e indice, i capitoli restano congelati nella cache */
     async function loadMtcBook(fileBuffer: ArrayBuffer | Blob) {
         const pkg = await parseMtcBook(fileBuffer)   // se il file non è valido si lancia qui, prima di toccare lo stato
+        platform.files.forgetCurrentFile?.()
 
         fileState.setLocked(true)   // un libro aperto da file è in sola lettura finché non si sblocca
         useChessTreeStore().setChapterTrees([])

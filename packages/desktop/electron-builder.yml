@@ -1,0 +1,26 @@
+appId: com.mtcbook.writer
+productName: MTC Book
+directories:
+  output: release
+files:
+  - dist/**
+  - "!dist/**/*.map"
+  - package.json
+extraResources:
+  - from: ../app/dist
+    to: renderer
+asar: true
+artifactName: MTC-Book-Setup-${version}.${ext}
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+fileAssociations:
+  - ext: mtcbook
+    name: Libro MTC Book
+    description: Libro MTC Book
+    role: Editor

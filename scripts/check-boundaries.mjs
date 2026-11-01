@@ -6,6 +6,7 @@ const RULES = {
   shared: ['node:', 'electron', 'playwright', 'vue', 'pinia', '@mtc/'],
   'pdf-core': ['electron', 'playwright', 'node:fs', '@mtc/app', '@mtc/server'],
   server: ['electron', '@mtc/app'],
+  desktop: ['@mtc/app', '@mtc/server'],
 }
 
 const matches = (spec, rule) =>
