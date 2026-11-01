@@ -1,13 +1,17 @@
 import { app, BrowserWindow, Menu } from 'electron'
-import { handleAppProtocol, registerAppScheme } from './appProtocol.js'
+import { handleAppProtocol } from './appProtocol.js'
+import { registerSchemes } from './schemes.js'
 import { registerFileIpc, openPath } from './files.js'
+import { registerPdfIpc } from './pdf/ipc.js'
+import { runRenderCli } from './cli.js'
 import { appOrigin, createMainWindow } from './window.js'
 
 app.setName('MTC Book')
-registerAppScheme()
+registerSchemes()
 
 // Dalla build di Vite (anche non installata): "electron . --dist"
 const useDist = app.isPackaged || process.argv.includes('--dist')
+const cliIndex = process.argv.indexOf('--render-payload')
 let mainWindow: BrowserWindow | null = null
 
 const findBookArg = (argv: string[]) => argv.find((a) => a.toLowerCase().endsWith('.mtcbook'))
@@ -22,7 +26,16 @@ function buildMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }
 
-if (!app.requestSingleInstanceLock()) {
+if (cliIndex >= 0) {
+  // Modalità di prova: genera un PDF da un payload e termina. Nessuna finestra, nessun blocco di istanza unica.
+  const [payload, kind, out] = process.argv.slice(cliIndex + 1)
+  // Senza questo gestore Electron esce da solo quando si chiude l'ultima finestra nascosta, a PDF non ancora scritto
+  app.on('window-all-closed', () => { })
+  const exit = (code: number) => setTimeout(() => app.exit(code), 300) // lascia scaricare stdout
+  void app.whenReady()
+    .then(() => runRenderCli(payload, kind, out))
+    .then(exit, (e) => { console.error(e); exit(1) })
+} else if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
   app.on('second-instance', (_event, argv) => {
@@ -40,9 +53,11 @@ if (!app.requestSingleInstanceLock()) {
   })
 
   app.whenReady().then(() => {
+    console.log(`[PDF] Chromium ${process.versions.chrome}`)
     if (useDist) handleAppProtocol()
     buildMenu()
     registerFileIpc({ getWindow: () => mainWindow, allowedOrigin: appOrigin(useDist) })
+    registerPdfIpc()
     mainWindow = createMainWindow(useDist)
     mainWindow.on('closed', () => { mainWindow = null })
 

@@ -2,6 +2,10 @@ import type { PlatformCapabilities, BookPdfRequest, ChapterPdfRequest } from '@m
 export interface PdfPlatform {
   exportChapter(req: ChapterPdfRequest): Promise<void>
   exportBook(req: BookPdfRequest): Promise<void>
+  /** Solo desktop: testo di avanzamento. Restituisce la funzione per annullare l'iscrizione. */
+  onProgress?(cb: (label: string) => void): () => void
+  /** Solo desktop: annulla la generazione in corso */
+  cancel?(): void
 }
 
 export interface PickedBook { data: ArrayBuffer; name: string }

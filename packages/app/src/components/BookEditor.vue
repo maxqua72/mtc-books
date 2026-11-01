@@ -2,7 +2,7 @@
     <div
         class="th-frame flex-1 bg-white border border-neutral-200 rounded-xl flex flex-col shadow-sm overflow-hidden relative">
 
-        <PdfLoadingOverlay v-if="overlay" v-bind="overlay" />
+        <PdfLoadingOverlay v-if="overlay" v-bind="overlay" @cancel="pdfStore.cancel()" />
 
         <EditorToolbar v-if="editor" v-show="!isCoverActive" :editor="editor" :zoom="zoomOption" @update:zoom="setZoom"
             @insert-tree-block="insertNewChessTreeBlock" @split-tree-block="handleSplitTreeBlock"
@@ -48,6 +48,7 @@ import { useBlockInsertion, pasteTreeFromClipboard } from '../composables/useBlo
 import EditorToolbar from './EditorToolbar.vue'
 import CoverEditor from './cover/CoverEditor.vue'
 import PdfLoadingOverlay from './PdfLoadingOverlay.vue'
+import { platform } from '../platform'
 import '../assets/styles/book-typography.css'
 
 const store = useChessBookStore()
@@ -65,13 +66,17 @@ const scrollContainer = ref<HTMLElement | null>(null)
 const { zoomOption, wrapperStyle, canvasMinWidth, setZoom } = useEditorZoom(scrollContainer)
 
 // --- Esportazione PDF ---
-const { isAssembling } = usePdfExport(editor, layout)
+const { isAssembling, assemblyLabel } = usePdfExport(editor, layout)
 const overlay = computed(() => {
     if (pdfStore.isGeneratingPdf) {
-        return { title: 'Generazione del PDF sul server in corso...', subtitle: 'Elaborazione dei font e della paginazione con Playwright.' }
+        return {
+            title: platform.capabilities.localPdf ? 'Generazione del PDF in corso...' : 'Generazione del PDF sul server in corso...',
+            subtitle: pdfStore.progress ?? 'Elaborazione dei font e della paginazione.',
+            cancellable: pdfStore.canCancel,
+        }
     }
     if (isAssembling.value) {
-        return { title: 'Generazione del libro in corso...', subtitle: 'Stiamo assemblando i capitoli e i diagrammi.' }
+        return { title: 'Generazione del libro in corso...', subtitle: assemblyLabel.value || 'Stiamo assemblando i capitoli e i diagrammi.' }
     }
     return null
 })

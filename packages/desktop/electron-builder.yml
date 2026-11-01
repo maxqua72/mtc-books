@@ -9,6 +9,10 @@ files:
 extraResources:
   - from: ../app/dist
     to: renderer
+  - from: resources/fonts
+    to: fonts
+  - from: resources/pdfjs
+    to: pdfjs
 asar: true
 artifactName: MTC-Book-Setup-${version}.${ext}
 win:

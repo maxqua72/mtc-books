@@ -8,3 +8,5 @@ regression/
 .vscode/*
 !.vscode/settings.json
 !.vscode/launch.json
+packages/desktop/resources/
+packages/desktop/release/

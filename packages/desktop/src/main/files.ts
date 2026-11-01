@@ -1,7 +1,8 @@
 import { app, BrowserWindow, dialog, ipcMain, type IpcMainEvent, type IpcMainInvokeEvent } from 'electron'
-import { readFile, rename, stat, writeFile } from 'node:fs/promises'
+import { readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 import { IPC, type OpenedFile } from '@mtc/shared'
+import { message, writeAtomic } from './fsUtil.js'
 
 const MAX_BYTES = 500 * 1024 * 1024
 const EXT = '.mtcbook'
@@ -39,14 +40,7 @@ async function readBook(filePath: string): Promise<OpenedFile> {
   return { name: path.basename(filePath), data: new Uint8Array(buffer) }
 }
 
-/** Scrittura atomica: file temporaneo nella stessa cartella, poi rinomina */
-async function writeAtomic(target: string, data: Uint8Array) {
-  const tmp = `${target}.tmp`
-  await writeFile(tmp, data)
-  await rename(tmp, target)
-}
 
-const message = (e: unknown) => (e instanceof Error ? e.message : String(e))
 
 /** File aperto dal sistema (doppio clic, argomento di avvio, seconda istanza) */
 export async function openPath(filePath: string) {
@@ -128,3 +122,5 @@ export function registerFileIpc(d: Deps) {
     }
   })
 }
+
+export const isTrusted = trusted

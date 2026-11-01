@@ -18,6 +18,7 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
 
   /** true mentre il client assembla i capitoli (prima della chiamata al server) */
   const isAssembling = ref(false)
+  const assemblyLabel = ref('')
 
   // CSS inviato al server: variabili del libro + tipografia condivisa + regole di stampa
   const buildCss = (chapterIndex: number) => {
@@ -168,6 +169,7 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
       let chapterCounter = 0
 
       for (const section of store.sectionIndex) {
+        assemblyLabel.value = `Sezione ${store.sectionIndex.indexOf(section) + 1} di ${store.sectionIndex.length}: ${section.title}`
         if (section.type === 'chapter') chapterCounter++
 
         let html = ''
@@ -200,6 +202,7 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
     } finally {
       await restoreOriginalSection()   // se qualcosa è fallito a metà, ripristina comunque
       isAssembling.value = false
+      assemblyLabel.value = ''
     }
   }
 
@@ -207,5 +210,5 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
   watch(() => store.exportServerChapterSignal, () => { void exportChapter() })
   watch(() => store.exportServerFullBookSignal, () => { void exportBook() })
 
-  return { isAssembling }
+  return { isAssembling, assemblyLabel }
 }

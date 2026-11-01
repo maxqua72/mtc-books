@@ -12,18 +12,13 @@ const CSP = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self' http://localhost:3002",
+  "connect-src 'self'",
   "object-src 'none'",
   "base-uri 'none'",
   "frame-ancestors 'none'",
 ].join('; ')
 
-/** Da chiamare PRIMA di app.whenReady() */
-export function registerAppScheme() {
-  protocol.registerSchemesAsPrivileged([
-    { scheme: APP_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true } },
-  ])
-}
+
 
 export const rendererDir = (): string =>
   app.isPackaged ? path.join(process.resourcesPath, 'renderer') : path.resolve(__dirname, '../../app/dist')
