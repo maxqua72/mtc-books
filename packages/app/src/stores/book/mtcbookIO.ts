@@ -72,3 +72,26 @@ export async function buildMtcBook(pkg: BookPackage): Promise<Blob> {
 
   return await zip.generateAsync({ type: 'blob' })
 }
+
+export interface BookPeek {
+  bookId: string | null
+  revision: number
+  savedAt: string | null
+  title: string
+}
+
+/** Legge solo book.json: serve a confrontare un file con il libro aperto prima di sostituirlo */
+export async function peekMtcBook(fileBuffer: ArrayBuffer | Blob): Promise<BookPeek | null> {
+  try {
+    const zip = await JSZip.loadAsync(fileBuffer)
+    const raw = JSON.parse((await zip.file('book.json')?.async('string')) ?? '')
+    return {
+      bookId: typeof raw.bookId === 'string' && /^[\w-]{1,80}$/.test(raw.bookId) ? raw.bookId : null,
+      revision: Number.isInteger(raw.revision) && raw.revision >= 0 ? raw.revision : 0,
+      savedAt: typeof raw.savedAt === 'string' ? raw.savedAt : null,
+      title: typeof raw.title === 'string' ? raw.title : '',
+    }
+  } catch {
+    return null
+  }
+}

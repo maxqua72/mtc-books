@@ -1,3 +1,4 @@
+import { newUuid } from '../../utils/ids'
 // Tipi e valori predefiniti del libro
 export type SectionType = 'cover' | 'index' | 'chapter'
 export type PageFormat = 'a4' | 'crown-quarto' | 'b-format'
@@ -11,6 +12,10 @@ export interface SectionIndexItem {
 }
 
 export interface BookMetadata {
+  bookId: string                 // identità stabile del libro: serve a riconoscere copie divergenti
+  revision: number               // quante volte il libro è stato salvato su file
+  savedAt?: string               // data dell'ultimo salvataggio su file
+  savedBy?: 'web' | 'desktop'
   version: string
   title: string
   author: string
@@ -29,6 +34,8 @@ export interface BookMetadata {
 }
 
 export const defaultMetadata = (): BookMetadata => ({
+  bookId: newUuid('bk'), 
+  revision: 0,
   version: '1.0.0',
   title: 'Nuovo Libro di Scacchi',
   author: 'Autore',
@@ -51,6 +58,10 @@ export function normalizeMetadata(raw: any): BookMetadata {
   const d = defaultMetadata()
   const num = (v: unknown, def: number) => (v !== undefined ? Number(v) : def)
   return {
+    bookId: typeof raw.bookId === 'string' && /^[\w-]{1,80}$/.test(raw.bookId) ? raw.bookId : newUuid('bk'),
+    revision: Number.isInteger(raw.revision) && raw.revision >= 0 ? raw.revision : 0,
+    savedAt: typeof raw.savedAt === 'string' ? raw.savedAt : undefined,
+    savedBy: raw.savedBy === 'web' || raw.savedBy === 'desktop' ? raw.savedBy : undefined,
     version: raw.version ?? d.version,
     title: raw.title ?? d.title,
     author: raw.author ?? d.author,

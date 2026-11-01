@@ -11,6 +11,9 @@ export const IPC = {
   pdfExportBook: 'pdf:export-book',
   pdfProgress: 'pdf:progress',
   pdfCancel: 'pdf:cancel',
+  appFlushReady: 'app:flush-ready',
+  appFlush: 'app:flush',
+  appFlushDone: 'app:flush-done',
 } as const
 
 export interface OpenedFile {
@@ -18,21 +21,37 @@ export interface OpenedFile {
   data: Uint8Array
 }
 
+export type SaveMode = 'save' | 'auto' | 'save-as'
+
+export type SaveResult =
+  | { status: 'saved'; name: string }
+  | { status: 'cancelled' }   // dialogo annullato
+  | { status: 'no-file' }     // salvataggio automatico senza file associato
+  | { status: 'conflict' }    // salvataggio automatico: il file è cambiato per mano di altri
+  | { status: 'error'; message: string }
+
 export type PdfProgressStage = 'loading' | 'toc' | 'final' | 'saving'
 export interface PdfProgress { stage: PdfProgressStage }
 export type PdfExportResult = { status: 'saved'; name: string } | { status: 'cancelled' }
 
+/** Ciò che il preload espone alla pagina come window.mtcDesktop. Il renderer non passa mai percorsi: li tiene il main. */
 export interface DesktopBridge {
   platform: string
   files: {
+    /** Dialogo nativo di apertura. null = annullato */
     open(): Promise<OpenedFile | null>
-    save(data: Uint8Array, suggestedName: string): Promise<{ name: string } | null>
+    /** save: file corrente (o dialogo se manca); auto: mai dialoghi; save-as: chiede sempre dove salvare */
+    save(data: Uint8Array, suggestedName: string, mode: SaveMode): Promise<SaveResult>
+    /** Il libro corrente non ha più un file associato */
     forget(): void
+    /** L'ultimo file letto è stato caricato con successo: diventa il file corrente */
     commitOpen(): void
+    /** File aperto dal sistema (doppio clic, seconda istanza) */
     onExternalOpen(cb: (file: OpenedFile) => void): () => void
+    /** Prima della chiusura della finestra il main attende che questa funzione termini (max 6 secondi) */
+    onBeforeClose(cb: () => Promise<void>): () => void
   }
   pdf: {
-    /** Chiede dove salvare, genera e scrive il file. 'cancelled' = annullato dall'utente. */
     exportChapter(req: ChapterPdfRequest): Promise<PdfExportResult>
     exportBook(req: BookPdfRequest): Promise<PdfExportResult>
     cancel(): void

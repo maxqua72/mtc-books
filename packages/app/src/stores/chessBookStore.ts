@@ -12,7 +12,7 @@ import { useCover } from './book/useCover'
 import { useFileState } from './book/useFileState'
 import { useDiagramIndex } from './book/useDiagramIndex'
 import { useGeneratedToc } from './book/useGeneratedToc'
-import { parseMtcBook, buildMtcBook, type BookAsset } from './book/mtcbookIO'
+import { parseMtcBook, buildMtcBook, type BookAsset, peekMtcBook } from './book/mtcbookIO'
 import { scanChapter } from './book/sectionScan'
 import { platform } from '../platform'
 
@@ -71,6 +71,8 @@ export const useChessBookStore = defineStore('chessBook', () => {
         const currentIndex = chapters.findIndex(s => s.id === activeSectionId.value)
         return currentIndex !== -1 ? currentIndex + 1 : 1
     })
+
+    const peekBookFile = (buffer: ArrayBuffer | Blob) => peekMtcBook(buffer)
 
     /** id dei diagrammi presenti nei capitoli diversi da quello attivo (usa le analisi già in cache) */
     function diagramIdsOutsideActive(): Set<string> {
@@ -296,6 +298,9 @@ export const useChessBookStore = defineStore('chessBook', () => {
     async function exportMtcBook(currentEditorContent: string): Promise<Blob> {
         syncActiveSectionToCache({ html: currentEditorContent, prune: true })
         metadata.value.updatedAt = new Date().toISOString()
+        metadata.value.revision = (metadata.value.revision ?? 0) + 1
+        metadata.value.savedAt = metadata.value.updatedAt
+        metadata.value.savedBy = platform.capabilities.nativeFiles ? 'desktop' : 'web'
 
         const assets: BookAsset[] = []
         for (const id of cover.collectAssetIds()) {
@@ -332,6 +337,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
         saveStatus, persistToIndexedDB, restoreFromIndexedDB,
         isLocked: fileState.isLocked, fileDirty: fileState.fileDirty,
         setLocked: fileState.setLocked, markFileSaved: fileState.markFileSaved,
+        refreshFileDirty: fileState.refreshFileDirty, peekBookFile,
 
         // Copertina
         coverModel: cover.coverModel, coverImageUrl: cover.coverImageUrl,

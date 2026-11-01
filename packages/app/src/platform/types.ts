@@ -1,3 +1,4 @@
+import type { Ref } from 'vue'
 import type { PlatformCapabilities, BookPdfRequest, ChapterPdfRequest } from '@mtc/shared'
 export interface PdfPlatform {
   exportChapter(req: ChapterPdfRequest): Promise<void>
@@ -10,17 +11,32 @@ export interface PdfPlatform {
 
 export interface PickedBook { data: ArrayBuffer; name: string }
 
+export interface CurrentFile {
+  name: string
+  /** null = aperto ma non ancora salvato in questa sessione */
+  savedAt: number | null
+}
+
+export type AutosaveOutcome = 'saved' | 'no-file' | 'conflict' | 'error'
+
 export interface FilesPlatform {
   /** null = l'utente ha annullato */
   pickBook(): Promise<PickedBook | null>
   /** false = annullato o fallito: il libro NON va considerato salvato */
   saveBook(blob: Blob, suggestedName: string): Promise<boolean>
-  /** Solo desktop: il libro corrente non ha più un file associato */
+
+  // --- Solo desktop ---
   forgetCurrentFile?(): void
-  /** Solo desktop: l'ultimo file scelto è stato caricato, diventa il file su cui salva */
-  commitOpen?(): void
-  /** Solo desktop: file aperto dal sistema (doppio clic). Restituisce la funzione per annullare l'iscrizione. */
+  /** L'ultimo file scelto è stato caricato: diventa il file su cui salva */
+  commitOpen?(name: string): void
   onExternalOpen?(cb: (book: PickedBook) => void): () => void
+  saveBookAs?(blob: Blob, suggestedName: string): Promise<boolean>
+  /** Salvataggio silenzioso sul file corrente: mai dialoghi */
+  autosaveBook?(blob: Blob, suggestedName: string): Promise<AutosaveOutcome>
+  /** File associato al libro corrente (null = nessuno) */
+  readonly currentFile?: Readonly<Ref<CurrentFile | null>>
+  /** La finestra sta per chiudersi: la funzione ha pochi secondi per salvare */
+  onBeforeClose?(cb: () => Promise<void>): () => void
 }
 
 export interface WriteLockOptions {

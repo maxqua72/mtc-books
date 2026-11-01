@@ -1,7 +1,7 @@
 import { app, BrowserWindow, dialog, ipcMain, type IpcMainEvent, type IpcMainInvokeEvent } from 'electron'
-import { readFile, stat } from 'node:fs/promises'
+import { copyFile, readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
-import { IPC, type OpenedFile } from '@mtc/shared'
+import { IPC, type OpenedFile, type SaveResult } from '@mtc/shared'
 import { message, writeAtomic } from './fsUtil.js'
 
 const MAX_BYTES = 500 * 1024 * 1024
@@ -13,13 +13,19 @@ interface Deps {
   allowedOrigin: string
 }
 
-let deps: Deps
-let currentPath: string | null = null   // file su cui scrive "Salva Lavoro"
-let candidatePath: string | null = null // file appena letto: diventa corrente solo se l'app lo carica davvero
-let pending: OpenedFile | null = null   // file aperto dal sistema prima che la pagina fosse pronta
-let rendererReady = false
+/** Impronta del file all'ultima lettura o scrittura: serve a scoprire modifiche fatte da altri programmi */
+interface Stamp { mtimeMs: number; size: number }
 
-const trusted = (e: IpcMainEvent | IpcMainInvokeEvent): boolean => {
+let deps: Deps
+let currentPath: string | null = null     // file su cui scrive il salvataggio
+let currentStamp: Stamp | null = null
+let candidatePath: string | null = null   // file appena letto: diventa corrente solo se l'app lo carica davvero
+let candidateStamp: Stamp | null = null
+let pending: OpenedFile | null = null     // file aperto dal sistema prima che la pagina fosse pronta
+let rendererReady = false
+const backedUp = new Set<string>()        // file di cui in questa sessione esiste già la copia .bak
+
+export const isTrusted = (e: IpcMainEvent | IpcMainInvokeEvent): boolean => {
   try {
     return new URL(e.senderFrame?.url ?? '').origin === deps.allowedOrigin
   } catch {
@@ -27,20 +33,33 @@ const trusted = (e: IpcMainEvent | IpcMainInvokeEvent): boolean => {
   }
 }
 
+const stampOf = async (file: string): Promise<Stamp | null> => {
+  try {
+    const s = await stat(file)
+    return { mtimeMs: s.mtimeMs, size: s.size }
+  } catch {
+    return null
+  }
+}
+const sameStamp = (a: Stamp, b: Stamp) => a.mtimeMs === b.mtimeMs && a.size === b.size
+
 const cleanName = (name: string): string => {
   const base = path.basename(name).replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').trim() || 'libro'
   return base.toLowerCase().endsWith(EXT) ? base : base + EXT
 }
 
+const box = (win: BrowserWindow | null, options: Electron.MessageBoxOptions) =>
+  win ? dialog.showMessageBox(win, options) : dialog.showMessageBox(options)
+
 async function readBook(filePath: string): Promise<OpenedFile> {
   if (path.extname(filePath).toLowerCase() !== EXT) throw new Error('Il file non è un .mtcbook.')
-  if ((await stat(filePath)).size > MAX_BYTES) throw new Error('Il file è troppo grande.')
+  const info = await stat(filePath)
+  if (info.size > MAX_BYTES) throw new Error('Il file è troppo grande.')
   const buffer = await readFile(filePath)
   candidatePath = filePath
+  candidateStamp = { mtimeMs: info.mtimeMs, size: info.size }
   return { name: path.basename(filePath), data: new Uint8Array(buffer) }
 }
-
-
 
 /** File aperto dal sistema (doppio clic, argomento di avvio, seconda istanza) */
 export async function openPath(filePath: string) {
@@ -65,7 +84,7 @@ export function registerFileIpc(d: Deps) {
   deps = d
 
   ipcMain.handle(IPC.filesOpen, async (event) => {
-    if (!trusted(event)) return null
+    if (!isTrusted(event)) return null
     const win = BrowserWindow.fromWebContents(event.sender)
     const options = { title: 'Apri libro', properties: ['openFile' as const], filters: FILTERS }
     const res = win ? await dialog.showOpenDialog(win, options) : await dialog.showOpenDialog(options)
@@ -78,43 +97,83 @@ export function registerFileIpc(d: Deps) {
     }
   })
 
-  ipcMain.handle(IPC.filesSave, async (event, data: unknown, suggestedName: unknown) => {
-    if (!trusted(event) || !(data instanceof Uint8Array) || typeof suggestedName !== 'string') return null
-    if (data.byteLength > MAX_BYTES) return null
+  ipcMain.handle(IPC.filesSave, async (event, data: unknown, suggestedName: unknown, mode: unknown): Promise<SaveResult> => {
+    if (!isTrusted(event) || !(data instanceof Uint8Array) || typeof suggestedName !== 'string' ||
+      data.byteLength > MAX_BYTES || (mode !== 'save' && mode !== 'auto' && mode !== 'save-as')) {
+      return { status: 'error', message: 'Richiesta non valida.' }
+    }
+    const win = BrowserWindow.fromWebContents(event.sender)
 
     let target = currentPath
-    if (!target) {
-      const win = BrowserWindow.fromWebContents(event.sender)
+    let askWhere = mode === 'save-as' || !target
+    if (mode === 'auto' && !target) return { status: 'no-file' }
+
+    // Il file è stato modificato da altri dopo l'ultima lettura o scrittura di MTC Book?
+    if (target && currentStamp && mode !== 'save-as') {
+      const now = await stampOf(target)
+      if (now && !sameStamp(now, currentStamp)) {
+        if (mode === 'auto') return { status: 'conflict' }
+        const { response } = await box(win, {
+          type: 'warning',
+          title: 'File modificato',
+          message: `Il file «${path.basename(target)}» è stato modificato da un altro programma dopo l’ultimo salvataggio di MTC Book.`,
+          detail: 'Sovrascrivendolo perderai quelle modifiche. In alternativa puoi salvare il libro con un altro nome.',
+          buttons: ['Annulla', 'Sovrascrivi', 'Salva con nome…'],
+          defaultId: 0,
+          cancelId: 0,
+          noLink: true,
+        })
+        if (response === 0) return { status: 'cancelled' }
+        if (response === 2) askWhere = true
+      }
+    }
+
+    if (askWhere) {
       const options = {
-        title: 'Salva libro',
-        defaultPath: path.join(app.getPath('documents'), cleanName(suggestedName)),
+        title: mode === 'save-as' ? 'Salva con nome' : 'Salva libro',
+        defaultPath: target ?? path.join(app.getPath('documents'), cleanName(suggestedName)),
         filters: FILTERS,
       }
       const res = win ? await dialog.showSaveDialog(win, options) : await dialog.showSaveDialog(options)
-      if (res.canceled || !res.filePath) return null
+      if (res.canceled || !res.filePath) return { status: 'cancelled' }
       target = res.filePath.toLowerCase().endsWith(EXT) ? res.filePath : res.filePath + EXT
     }
+    if (!target) return { status: 'error', message: 'Percorso non disponibile.' }
 
     try {
+      // Una sola copia di sicurezza per sessione: la versione che c'era prima del primo salvataggio
+      if (!backedUp.has(target)) {
+        await copyFile(target, `${target}.bak`).catch(() => { /* il file non esiste ancora */ })
+        backedUp.add(target)
+      }
       await writeAtomic(target, data)
       currentPath = target
-      return { name: path.basename(target) }
+      currentStamp = await stampOf(target)
+      app.addRecentDocument(target)
+      return { status: 'saved', name: path.basename(target) }
     } catch (e) {
-      dialog.showErrorBox('Salvataggio non riuscito', message(e))
-      return null
+      if (mode !== 'auto') dialog.showErrorBox('Salvataggio non riuscito', message(e))
+      return { status: 'error', message: message(e) }
     }
   })
 
-  ipcMain.on(IPC.filesForget, (e) => { if (trusted(e)) currentPath = null })
+  ipcMain.on(IPC.filesForget, (e) => {
+    if (!isTrusted(e)) return
+    currentPath = null
+    currentStamp = null
+  })
 
   ipcMain.on(IPC.filesCommitOpen, (e) => {
-    if (!trusted(e) || !candidatePath) return
+    if (!isTrusted(e) || !candidatePath) return
     currentPath = candidatePath
+    currentStamp = candidateStamp
     candidatePath = null
+    candidateStamp = null
+    app.addRecentDocument(currentPath)
   })
 
   ipcMain.on(IPC.filesRendererReady, (e) => {
-    if (!trusted(e)) return
+    if (!isTrusted(e)) return
     rendererReady = true
     if (pending) {
       e.sender.send(IPC.filesExternalOpen, pending)
@@ -122,5 +181,3 @@ export function registerFileIpc(d: Deps) {
     }
   })
 }
-
-export const isTrusted = trusted

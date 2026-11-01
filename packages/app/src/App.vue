@@ -59,12 +59,15 @@ import { useChessBookStore } from './stores/chessBookStore'
 import { useChessTreeStore } from './stores/chessTreeStore'
 import { platform } from './platform'
 import { useBookFileActions } from './composables/useBookFileActions'
+import { useFileAutosave } from './composables/useFileAutosave'
 
 const bookStore = useChessBookStore()
 const treeStore = useChessTreeStore()
 
 const AUTOSAVE_DELAY = 800
 const RETRY_MAX_DELAY = 30_000
+
+const fileAutosave = useFileAutosave(() => hasWriteLock.value)
 
 // ---------------------------------------------------------------------------
 // Una sola scheda può scrivere: due schede sulla stessa IndexedDB si sovrascriverebbero
@@ -133,6 +136,8 @@ async function saveNow(): Promise<void> {
   bookStore.saveStatus = dirtyRev === savedRev ? 'saved' : 'unsaved'
   if (failed) scheduleSave(retryDelay)
   else if (dirtyRev !== savedRev) scheduleSave(AUTOSAVE_DELAY)
+
+  fileAutosave.touch()   // salvataggio su file: 30 s dopo l'ultima modifica (solo desktop)
 }
 
 // ---------------------------------------------------------------------------

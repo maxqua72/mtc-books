@@ -28,6 +28,9 @@ export function useFileState({ metadata, sectionIndex, zippedSectionsCache }: Fi
     const meta: Record<string, unknown> = { ...metadata.value }
     delete meta.createdAt
     delete meta.updatedAt
+    delete meta.revision
+    delete meta.savedAt
+    delete meta.savedBy
 
     const sections = sectionIndex.value.map(item => {
       let body: unknown = null

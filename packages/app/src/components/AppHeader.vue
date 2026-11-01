@@ -1,5 +1,6 @@
 <template>
-  <header class="th-header h-14 bg-white border-b border-neutral-200 px-6 flex items-center justify-between shadow-sm shrink-0">
+  <header
+    class="th-header h-14 bg-white border-b border-neutral-200 px-6 flex items-center justify-between shadow-sm shrink-0">
     <!-- Brand / Logo -->
     <div class="flex items-center gap-3">
       <img :src="logo" alt="MTC Book" class="w-auto h-10 object-contain" />
@@ -11,6 +12,12 @@
       <div class="h-4 w-[1px] bg-neutral-200 mx-1"></div>
 
       <SaveStatusIndicator :status="store.saveStatus" />
+
+      <span v-if="currentFile" class="text-xs truncate max-w-[260px]"
+        :class="autosavePaused || autosaveError ? 'text-amber-600 font-medium' : 'text-neutral-500'"
+        :title="`File: ${currentFile.name}`">
+        <i class="fa-solid fa-file-lines"></i> {{ currentFile.name }} · {{ fileLabel }}
+      </span>
     </div>
 
     <!-- Azioni Globali Documento -->
@@ -49,10 +56,14 @@
 
       <ExportSplitButton />
 
-      <button @click="handleSaveFile"
-        :title="store.fileDirty
-          ? 'La copia su disco non è aggiornata rispetto al lavoro nel browser: clicca per salvare'
-          : 'La copia su disco è aggiornata'"
+      <button v-if="canSaveAs" @click="handleSaveAs"
+        class="px-3.5 py-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer">
+        Salva con nome…
+      </button>
+
+      <button @click="handleSaveFile" :title="store.fileDirty
+        ? 'La copia su disco non è aggiornata rispetto al lavoro nel browser: clicca per salvare'
+        : 'La copia su disco è aggiornata'"
         class="px-4 py-1.5 text-xs font-bold text-white rounded shadow transition cursor-pointer flex items-center gap-1.5"
         :class="store.fileDirty ? 'bg-red-600 hover:bg-red-700' : 'bg-neutral-900 hover:bg-neutral-800'">
         <span v-if="store.fileDirty" class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
@@ -65,9 +76,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { platform } from '../platform'
+import { autosaveError, autosavePaused, useBookFileActions } from '../composables/useBookFileActions'
 import { useChessBookStore } from '../stores/chessBookStore'
-import { useBookFileActions } from '../composables/useBookFileActions'
 import logo from '../assets/mtcbooks-logo.png'
 import SettingsModal from './SettingsModal.vue'
 import SaveStatusIndicator from './SaveStatusIndicator.vue'
@@ -76,5 +88,15 @@ import ExportSplitButton from './ExportSplitButton.vue'
 const appVersion = __APP_VERSION__
 const store = useChessBookStore()
 const isSettingsOpen = ref(false)
-const { handleNewBook, handleOpenFile, handleSaveFile } = useBookFileActions()
+const { handleNewBook, handleOpenFile, handleSaveFile, handleSaveAs } = useBookFileActions()
+const canSaveAs = !!platform.files.saveBookAs
+const currentFile = computed(() => platform.files.currentFile?.value ?? null)
+const fileLabel = computed(() => {
+  const f = currentFile.value
+  if (!f) return ''
+  if (autosavePaused.value) return 'salvataggio automatico sospeso'
+  if (autosaveError.value) return 'ultimo salvataggio non riuscito'
+  if (f.savedAt) return `salvato alle ${new Date(f.savedAt).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`
+  return store.isLocked ? 'sola lettura' : 'aperto'
+})
 </script>
