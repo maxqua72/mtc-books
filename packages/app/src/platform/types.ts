@@ -1,5 +1,8 @@
 import type { Ref } from 'vue'
 import type { PlatformCapabilities, BookPdfRequest, ChapterPdfRequest } from '@mtc/shared'
+import type { EngineBridge } from '@mtc/shared'
+
+export type EnginePlatform = EngineBridge
 export interface PdfPlatform {
   exportChapter(req: ChapterPdfRequest): Promise<void>
   exportBook(req: BookPdfRequest): Promise<void>
@@ -54,4 +57,5 @@ export interface Platform {
   readonly pdf: PdfPlatform
   readonly files: FilesPlatform
   readonly session: SessionPlatform
+  readonly engine?: EnginePlatform
 }

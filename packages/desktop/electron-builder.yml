@@ -16,6 +16,7 @@ extraResources:
 asar: true
 artifactName: MTC-Book-Setup-${version}.${ext}
 win:
+  icon: build/icon.ico
   target:
     - target: nsis
       arch: [x64]
@@ -23,8 +24,11 @@ nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
 fileAssociations:
   - ext: mtcbook
     name: Libro MTC Book
     description: Libro MTC Book
     role: Editor
+    icon: icon.ico

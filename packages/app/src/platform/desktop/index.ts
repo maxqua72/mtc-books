@@ -8,11 +8,12 @@ export function createDesktopPlatform(): Platform {
       cloudPdf: false,
       localPdf: true,
       nativeFiles: true,
-      engine: false,      // fase 5
+      engine: true,      // fase 5
       multiTabLock: false // istanza unica garantita dal main
     },
     pdf: desktopPdf,
     files: desktopFiles,
+    engine: window.mtcDesktop!.engine,
     session: { acquireWriteLock: async () => true },
   }
 }

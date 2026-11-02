@@ -10,6 +10,9 @@
     "dev": "node scripts/copy-assets.mjs && tsup && electron .",
     "start": "node scripts/copy-assets.mjs && tsup && electron . --dist",
     "render:payload": "node scripts/copy-assets.mjs && tsup && electron . --render-payload",
+    "probe": "tsup && electron . --engine-probe",
+    "test": "tsx --test \"src/**/*.test.ts\"",
+    "icons": "node scripts/make-icons.mjs",
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "dist": "node scripts/copy-assets.mjs && tsup && electron-builder --win --publish never"
@@ -18,7 +21,9 @@
     "electron": "45.2.1",
     "electron-builder": "^26.18.0",
     "pdfjs-dist": "^6.4.299",
+    "sharp": "^0.35.5",
     "tsup": "^9.0.0",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   },
   "dependencies": {

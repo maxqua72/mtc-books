@@ -1,4 +1,4 @@
-import { BrowserWindow, dialog, ipcMain, shell, type IpcMainEvent } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell, type IpcMainEvent } from 'electron'
 import path from 'node:path'
 import { IPC } from '@mtc/shared'
 import { APP_ORIGIN } from './appProtocol.js'
@@ -25,6 +25,7 @@ export function createMainWindow(useDist: boolean): BrowserWindow {
     show: false,
     backgroundColor: '#fafafa',
     title: 'MTC Book',
+    icon: app.isPackaged ? undefined : path.resolve(__dirname, '../build/icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,

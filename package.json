@@ -13,6 +13,7 @@
         "build": "pnpm -r --if-present build",
         "check:boundaries": "node scripts/check-boundaries.mjs",
         "dev:desktop": "pnpm --filter @mtc/desktop dev",
-        "dist:desktop": "pnpm --filter @mtc/app build && pnpm --filter @mtc/desktop dist"
+        "dist:desktop": "pnpm --filter @mtc/app build && pnpm --filter @mtc/desktop dist",
+        "test": "pnpm -r --if-present test"
     }
 }

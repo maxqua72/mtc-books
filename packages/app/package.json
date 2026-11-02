@@ -7,10 +7,12 @@
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "vue-tsc -b"
+    "typecheck": "vue-tsc -b",
+    "test": "tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.2",
+    "@mtc/shared": "workspace:*",
     "@tiptap/core": "^3.32.0",
     "@tiptap/extension-focus": "^3.32.0",
     "@tiptap/extension-heading": "^3.32.0",
@@ -27,8 +29,7 @@
     "dompurify": "^3.4.17",
     "jszip": "^3.10.1",
     "pinia": "^3.0.4",
-    "vue": "^3.5.39",
-    "@mtc/shared": "workspace:*"
+    "vue": "^3.5.39"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.2",
@@ -36,6 +37,7 @@
     "@vitejs/plugin-vue": "^6.0.7",
     "@vue/tsconfig": "^0.9.1",
     "tailwindcss": "^4.3.2",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.2",
     "vite": "^8.1.1",
     "vue-tsc": "^3.3.5"

@@ -1,4 +1,5 @@
 import type { BookPdfRequest, ChapterPdfRequest } from './pdf.js'
+import type { EngineBridge } from './engine.js'
 
 export const IPC = {
   filesOpen: 'files:open',
@@ -14,6 +15,8 @@ export const IPC = {
   appFlushReady: 'app:flush-ready',
   appFlush: 'app:flush',
   appFlushDone: 'app:flush-done',
+  engineCall: 'engine:call',
+  engineEvent: 'engine:event',
 } as const
 
 export interface OpenedFile {
@@ -57,4 +60,5 @@ export interface DesktopBridge {
     cancel(): void
     onProgress(cb: (p: PdfProgress) => void): () => void
   }
+  engine: EngineBridge
 }
