@@ -15,8 +15,14 @@ extraResources:
     to: pdfjs
 asar: true
 artifactName: MTC-Book-Setup-${version}.${ext}
+publish:
+  provider: github
+  owner: maxqua72
+  repo: mtc-books-releases
+  releaseType: draft
 win:
   icon: build/icon.ico
+  verifyUpdateCodeSignature: false
   target:
     - target: nsis
       arch: [x64]

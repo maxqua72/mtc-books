@@ -1,0 +1,37 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  release:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Verifica che tag e versioni coincidano
+        shell: pwsh
+        run: |
+          $root = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $desktop = (Get-Content packages/desktop/package.json -Raw | ConvertFrom-Json).version
+          if ("v$root" -ne "${{ github.ref_name }}" -or $root -ne $desktop) {
+            throw "Versioni incoerenti: tag ${{ github.ref_name }}, radice $root, desktop $desktop"
+          }
+
+      - run: pnpm check:boundaries
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm --filter @mtc/app build
+
+      - name: Installer e bozza di release
+        run: pnpm --filter @mtc/desktop release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}

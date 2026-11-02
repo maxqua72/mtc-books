@@ -9,6 +9,8 @@ import type { PageLayout } from './usePageLayout'
 import typographyStyles from '../assets/styles/book-typography.css?raw'
 import pdfPrintStyles from '../assets/styles/pdf-print.css?raw'
 import { figurinizeHtml } from '../utils/figurines'
+import { capabilities } from '../platform'
+import { showPdfDesktopNotice } from '../platform/pdfNotice'
 
 type EditorRef = ShallowRef<Editor | undefined>
 
@@ -90,6 +92,8 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
 
   /** Capitolo attivo (o copertina, se è quella aperta) */
   const exportChapter = async () => {
+    if (!capabilities.localPdf && !capabilities.cloudPdf) { showPdfDesktopNotice(); return }
+
     if (store.activeSectionInfo?.type === 'index') {
       alert("L'indice si esporta solo con il libro intero: i numeri di pagina si calcolano lì.")
       return
@@ -99,6 +103,7 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
     if (store.activeSectionInfo?.type === 'cover') {
       try {
         store.syncActiveSectionToCache()
+        
         await pdfStore.exportCurrentChapter({
           htmlContent: await store.buildCoverHtml(store.activeSectionId!),
           customCss: buildCss(1),
@@ -135,6 +140,9 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
 
   /** Libro intero: si apre ogni capitolo nell'editor per catturarne il DOM reale, poi si torna dov'era l'utente */
   const exportBook = async () => {
+
+    if (!capabilities.localPdf && !capabilities.cloudPdf) { showPdfDesktopNotice(); return }
+    
     if (isAssembling.value) return   // evita due export concorrenti (doppio click)
     if (store.sectionIndex.length === 0) {
       alert('Nessun capitolo presente da esportare.')

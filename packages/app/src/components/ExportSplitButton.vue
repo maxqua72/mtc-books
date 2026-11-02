@@ -41,8 +41,8 @@ import { vClickOutside } from '../directives/clickOutside'
 type ExportMode = 'chapter-server' | 'book-server'
 
 const MODES: { id: ExportMode; label: string; hint: string }[] = [
-  { id: 'chapter-server', label: 'Esporta Capitolo (Server)', hint: 'Rendering vettoriale via Node/Playwright' },
-  { id: 'book-server', label: 'Esporta Libro (Server)', hint: 'Genera l\'opera intera con impaginazione server' },
+  { id: 'chapter-server', label: 'Esporta Capitolo (PDF)', hint: 'Rendering vettoriale via Node/Playwright' },
+  { id: 'book-server', label: 'Esporta Libro (PDF)', hint: 'Genera l\'opera intera con impaginazione server' },
 ]
 
 const store = useChessBookStore()

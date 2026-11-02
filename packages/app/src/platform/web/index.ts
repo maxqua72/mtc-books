@@ -1,18 +1,22 @@
 import type { Platform } from '../types'
-import { webPdf } from './webPdf'
+//import { webPdf } from './webPdf'
 import { webFiles } from './webFiles'
 import { webSession } from './webSession'
+import { webPdfNotice } from './webPdfNotice'
 
+/*
+Quando riattiverai il PDF cloud basta rimettere webPdf e cloudPdf: true
+*/
 export function createWebPlatform(): Platform {
   return {
     capabilities: {
-      cloudPdf: true,    // oggi il PDF passa dal server: invariato in fase 1
+      cloudPdf: false,    
       localPdf: false,
       nativeFiles: false,
       engine: false,
       multiTabLock: 'locks' in navigator
     },
-    pdf: webPdf,
+    pdf: webPdfNotice,
     files: webFiles,
     session: webSession
   }

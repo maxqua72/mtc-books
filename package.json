@@ -2,6 +2,7 @@
     "name": "mtc-books-monorepo",
     "private": true,
     "version": "1.0.0",
+    "version:set": "node scripts/set-version.mjs",
     "packageManager": "pnpm@10.34.9",
     "engines": {
         "node": ">=22.12"
