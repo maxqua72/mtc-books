@@ -7,6 +7,7 @@ import type {
 import { detectEngines } from './detect.js'
 import { EngineManager, type LaunchSpec } from './engineManager.js'
 import { MAX_PROFILES, SettingsStore, cleanArgs, cleanPrefs, cleanText, type StoredProfile } from './settingsStore.js'
+import os from 'node:os'
 
 export interface EngineServiceDeps {
   userDataDir: string
@@ -72,6 +73,7 @@ export class EngineService {
       profiles: this.publicProfiles(),
       activeProfileId: this.settings.data.activeProfileId,
       prefs: this.settings.data.prefs,
+      system: { cpus: os.availableParallelism(), memoryMb: Math.round(os.totalmem() / 1048576) },
     }
   }
 

@@ -24,6 +24,7 @@ const props = defineProps<{
   dests: Map<Key, Key[]>
   linked?: boolean   // modalità albero: bordo azzurro
   shapes?: BoardShape[]   // frecce e marcatori della posizione mostrata
+  autoShapes?: { orig: string; dest?: string; brush?: string }[]   // frecce temporanee, non disegnabili dall'utente
 }>()
 
 const emit = defineEmits<{
@@ -62,14 +63,19 @@ const resync = () => {
 
 const syncShapes = () => cgApi?.setShapes(toDrawShapes(props.shapes))
 
+const syncAuto = () => cgApi?.setAutoShapes(
+  (props.autoShapes ?? []).map(s => ({ orig: s.orig as Key, ...(s.dest ? { dest: s.dest as Key } : {}), brush: s.brush ?? 'paleBlue' }))
+)
+
 /** Forme attualmente sulla scacchiera, normalizzate (servono anche quando la posizione non ha un nodo) */
 const getShapes = (): BoardShape[] => (cgApi ? cleanShapes(cgApi.state.drawable.shapes) : [])
 const clearShapes = () => cgApi?.setShapes([])
 
 // Cambio posizione: prima pezzi e turno, poi le forme del nodo (anche se i pezzi erano già a posto per un drag)
-watch(() => props.fen, () => { updateBoard(); syncShapes() })
+watch(() => props.fen, () => { updateBoard(); syncShapes(); syncAuto() })
 watch(() => props.dests, updateBoard)
 watch(() => props.shapes, syncShapes)
+watch(() => props.autoShapes, syncAuto, { deep: true })
 
 // Chessground posiziona i pezzi con una misura della scacchiera messa in cache.
 // Se la misura è obsoleta (layout non definitivo, zoom del browser, animazioni CSS)
@@ -109,6 +115,8 @@ onMounted(() => {
       onChange: (shapes: DrawShape[]) => emit('shapes', cleanShapes(shapes))
     }
   })
+
+  syncAuto()
 
   // Solo per i test dalla console del browser
   if (import.meta.env.DEV) (window as any).cgApi = cgApi

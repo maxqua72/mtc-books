@@ -60,6 +60,7 @@ export function cleanPrefs(v: unknown): EnginePrefs {
     depth: clampInt(r.depth, 1, 99, DEFAULT_ENGINE_PREFS.depth),
     timeMs: clampInt(r.timeMs, 100, 600_000, DEFAULT_ENGINE_PREFS.timeMs),
     autoStart: r.autoStart === true,
+    showArrow: r.showArrow !== false,
   }
 }
 

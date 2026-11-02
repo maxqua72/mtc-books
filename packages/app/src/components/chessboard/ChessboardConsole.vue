@@ -36,10 +36,14 @@
         <button @click="activeTab = 'pgn'"
           :class="activeTab === 'pgn' ? 'border-b-2 border-black text-black' : 'text-neutral-400 hover:text-neutral-600'"
           class="pb-1.5 px-2 transition">Importa PGN</button>
+        <button v-if="engineAvailable" @click="activeTab = 'engine'"
+          :class="activeTab === 'engine' ? 'border-b-2 border-black text-black' : 'text-neutral-400 hover:text-neutral-600'"
+          class="pb-1.5 px-2 transition">Motore</button>
       </div>
 
       <FenPanel v-if="activeTab === 'fen'" :current-fen="currentFen" @update-fen="emit('updateFen', $event)" />
-      <PgnImportPanel v-else />
+      <PgnImportPanel v-else-if="activeTab === 'pgn'" />
+      <component :is="EnginePanel" v-if="EnginePanel" v-show="activeTab === 'engine'" />
     </div>
 
     <div class="flex flex-wrap gap-2 pt-2">
@@ -56,12 +60,12 @@
 
       <!-- Riordino delle varianti: agisce sulla linea che contiene la mossa selezionata -->
       <div v-if="showReorder" class="w-full flex gap-2">
-        <button @click="emit('promoteVariation')" :disabled="!canPromote" :title="promoteTitle"
-          class="reorder-btn"><i class="fa-solid fa-arrow-up"></i> Promuovi</button>
-        <button @click="emit('makeMainLine')" :disabled="!canPromote" :title="mainTitle"
-          class="reorder-btn"><i class="fa-solid fa-angles-up"></i> Rendi principale</button>
-        <button @click="emit('demoteVariation')" :disabled="!canDemote" :title="demoteTitle"
-          class="reorder-btn"><i class="fa-solid fa-arrow-down"></i> Abbassa</button>
+        <button @click="emit('promoteVariation')" :disabled="!canPromote" :title="promoteTitle" class="reorder-btn"><i
+            class="fa-solid fa-arrow-up"></i> Promuovi</button>
+        <button @click="emit('makeMainLine')" :disabled="!canPromote" :title="mainTitle" class="reorder-btn"><i
+            class="fa-solid fa-angles-up"></i> Rendi principale</button>
+        <button @click="emit('demoteVariation')" :disabled="!canDemote" :title="demoteTitle" class="reorder-btn"><i
+            class="fa-solid fa-arrow-down"></i> Abbassa</button>
       </div>
 
       <button v-if="!tree || fenLocked" @click="emit('newTree')" :disabled="!inChapter || locked"
@@ -73,13 +77,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { defineAsyncComponent, ref, computed } from 'vue'
 import { useChessTreeStore } from '../../stores/chessTreeStore'
 import { useChessBookStore } from '../../stores/chessBookStore'
 import TreeStatusBar from './TreeStatusBar.vue'
 import NagPalette from './NagPalette.vue'
 import FenPanel from './FenPanel.vue'
 import PgnImportPanel from './PgnImportPanel.vue'
+import { capabilities } from '../../platform'
 
 defineProps<{
   currentFen: string
@@ -100,7 +105,10 @@ const emit = defineEmits<{
 
 const treeStore = useChessTreeStore()
 const bookStore = useChessBookStore()
-const activeTab = ref<'fen' | 'pgn'>('fen')
+// Il pannello del motore esiste solo nel desktop e si scarica solo lì
+const engineAvailable = capabilities.engine
+const EnginePanel = engineAvailable ? defineAsyncComponent(() => import('./EnginePanel.vue')) : null
+const activeTab = ref<'fen' | 'pgn' | 'engine'>('fen')
 
 const tree = computed(() => treeStore.currentTree)
 const fenLocked = computed(() => treeStore.isFenLocked)
@@ -153,6 +161,13 @@ const toggleNag = (code: number) => {
   white-space: nowrap;
   transition: background 0.15s;
 }
-.reorder-btn:hover:not(:disabled) { background: var(--color-neutral-100, #f5f5f5); }
-.reorder-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.reorder-btn:hover:not(:disabled) {
+  background: var(--color-neutral-100, #f5f5f5);
+}
+
+.reorder-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 </style>

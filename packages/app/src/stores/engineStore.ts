@@ -4,7 +4,7 @@ import { Chess } from 'chess.js'
 import {
   DEFAULT_ENGINE_PREFS,
   type AnalysisLine, type EngineCandidate, type EngineEvent, type EngineOption, type EnginePrefs,
-  type EngineProfile, type EngineResult, type EngineSnapshot, type EngineState,
+  type EngineProfile, type EngineResult, type EngineSnapshot, type EngineState, type EngineSystemInfo,
 } from '@mtc/shared'
 import { platform } from '../platform'
 
@@ -19,6 +19,7 @@ export const useEngineStore = defineStore('engine', () => {
   const profiles = ref<EngineProfile[]>([])
   const activeProfileId = ref<string | null>(null)
   const prefs = ref<EnginePrefs>({ ...DEFAULT_ENGINE_PREFS })
+  const system = ref<EngineSystemInfo>({ cpus: 1, memoryMb: 4096 })
   const lines = ref<AnalysisLine[]>([])
   const analyzedFen = ref<string | null>(null)   // posizione a cui si riferiscono le linee
   const bestMove = ref<string | null>(null)
@@ -43,14 +44,19 @@ export const useEngineStore = defineStore('engine', () => {
     profiles.value = s.profiles
     activeProfileId.value = s.activeProfileId
     prefs.value = s.prefs
+    system.value = s.system
   }
 
   function onEvent(e: EngineEvent) {
     switch (e.type) {
-      case 'state':
+      case 'state': {
+        const previous = state.value.status
         state.value = e.state
         if (!isRunning.value) resetAnalysis()
+        // Solo all'avvio: anche a fine analisi lo stato torna a «ready», ma l'analisi non va ripetuta
+        else if (previous === 'starting' && e.state.status === 'ready' && wantedFen) analyzePosition(wantedFen, true)
         break
+      }
       case 'options': options.value = e.options; break
       case 'profiles': profiles.value = e.profiles; activeProfileId.value = e.activeProfileId; break
       case 'prefs': prefs.value = e.prefs; break
@@ -66,7 +72,7 @@ export const useEngineStore = defineStore('engine', () => {
     return r
   }
 
-  /** Da chiamare all'apertura del pannello */
+  /** Da chiamare alla comparsa del pannello */
   async function init() {
     if (!api || off) return
     off = api.onEvent(onEvent)
@@ -76,13 +82,8 @@ export const useEngineStore = defineStore('engine', () => {
 
   function dispose() { off?.(); off = null }
 
-  async function enable() {
-    const r = await run(() => api!.enable())
-    if (r.ok && wantedFen) analyzePosition(wantedFen, true)
-    return r
-  }
+  const enable = () => run(() => api!.enable())
   const disable = () => run(() => api!.disable())
-
   const addProfile = (args: string[] = []) => run(() => api!.addProfile(args))
   const detect = (): Promise<EngineResult<EngineCandidate[]>> => run(() => api!.detect())
   const addDetected = (token: string, args: string[] = []) => run(() => api!.addDetected(token, args))
@@ -95,7 +96,8 @@ export const useEngineStore = defineStore('engine', () => {
 
   async function setPrefs(patch: Partial<EnginePrefs>) {
     const r = await run(() => api!.setPrefs(patch))
-    if (r.ok && wantedFen) analyzePosition(wantedFen)
+    const changesSearch = 'mode' in patch || 'depth' in patch || 'timeMs' in patch
+    if (r.ok && changesSearch && wantedFen) analyzePosition(wantedFen)
     return r
   }
 
@@ -134,7 +136,7 @@ export const useEngineStore = defineStore('engine', () => {
   }
 
   return {
-    available, state, options, profiles, activeProfileId, prefs, lines, analyzedFen, bestMove, positionNote, lastError,
+    available, state, options, profiles, activeProfileId, prefs, system, lines, analyzedFen, bestMove, positionNote, lastError,
     isRunning, activeProfile, featuredOptions, advancedOptions,
     init, dispose, enable, disable, addProfile, detect, addDetected, updateProfile, removeProfile, setActiveProfile,
     setOption, pressButton, resetOptions, setPrefs, analyzePosition, stopAnalysis,

@@ -73,6 +73,8 @@ export const useChessTreeStore = defineStore('chessTree', {
     // Non fa parte del documento e non viene salvato.
     clipboard: null as { mode: 'copy' | 'cut'; tree: ChessTree } | null,
     boardFlipped: false,   // scacchiera (e diagrammi inseriti) con il Nero in basso
+    // Frecce temporanee sopra la scacchiera (es. mossa migliore del motore): non si salvano e non si disegnano a mano
+    autoShapes: [] as { orig: string; dest?: string; brush?: string }[],
   }),
 
   getters: {
@@ -135,6 +137,30 @@ export const useChessTreeStore = defineStore('chessTree', {
   actions: {
     toggleBoardFlip() {
       this.boardFlipped = !this.boardFlipped
+    },
+
+    setAutoShapes(shapes: { orig: string; dest?: string; brush?: string }[]) {
+      this.autoShapes = shapes
+    },
+
+    /**
+     * Aggiunge una linea (in SAN) a partire dalla posizione attiva dell'albero del documento,
+     * riusando addMove: le mosse illegali si fermano, quelle già presenti si fondono.
+     * La selezione non cambia. Restituisce quante mosse nuove ha creato; null se non è possibile.
+     */
+    addLine(sans: string[]): number | null {
+      const tree = this.currentTree
+      if (!tree || sans.length === 0) return null
+      if (reorderBlockedReason(tree, this.trees)) return null
+      const startNodeId = this.activeNodeId
+      let added = 0
+      for (const san of sans) {
+        const result = this.addMove(san)
+        if (!result) break
+        if (result.isNew) added++
+      }
+      this.setActiveNode(startNodeId)
+      return added
     },
 
     /** Aggiunge/toglie un simbolo di annotazione (!, ?, +=, ...) a una mossa. I gruppi esclusivi si sostituiscono. */

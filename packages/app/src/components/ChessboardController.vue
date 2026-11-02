@@ -7,7 +7,10 @@
       <div class="relative">
         <ChessboardView ref="chessboardRef" :fen="treeStore.activeFen" :turn-color="currentTurnColor"
           :dests="playableDests" :linked="!!treeStore.currentTree"
-          :orientation="treeStore.boardFlipped ? 'black' : 'white'" :shapes="nodeShapes" @move="handlePhysicsMove"
+          :orientation="treeStore.boardFlipped ? 'black' : 'white'" 
+          :shapes="nodeShapes" 
+          :auto-shapes="treeStore.autoShapes"
+          @move="handlePhysicsMove"
           @shapes="onShapes" />
         <PromotionPicker v-if="pendingPromotion" :color="pendingPromotion.color" @choose="completePromotion"
           @cancel="cancelPromotion" />

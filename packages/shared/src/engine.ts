@@ -42,9 +42,12 @@ export interface EnginePrefs {
   depth: number
   timeMs: number
   autoStart: boolean
+  showArrow: boolean   // freccia della mossa migliore sulla scacchiera
 }
 
-export const DEFAULT_ENGINE_PREFS: EnginePrefs = { mode: 'infinite', depth: 22, timeMs: 3000, autoStart: false }
+export const DEFAULT_ENGINE_PREFS: EnginePrefs = { mode: 'infinite', depth: 22, timeMs: 3000, autoStart: false, showArrow: true }
+
+export interface EngineSystemInfo { cpus: number; memoryMb: number }
 
 export interface AnalysisRequest {
   id: number
@@ -83,7 +86,8 @@ export interface EngineSnapshot {
   options: EngineOption[]
   profiles: EngineProfile[]
   activeProfileId: string | null
-  prefs: EnginePrefs
+  prefs: EnginePrefs,
+  system: EngineSystemInfo
 }
 
 export type EngineResult<T = void> = { ok: true; value: T } | { ok: false; message: string }
