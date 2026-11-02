@@ -10,3 +10,4 @@ regression/
 !.vscode/launch.json
 packages/desktop/resources/
 packages/desktop/release/
+packages/desktop/dist/
