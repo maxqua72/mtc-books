@@ -26,7 +26,7 @@
       </span>
     </div>
 
-    <NagPalette v-if="showNags" :active-nags="activeNags" @toggle="toggleNag" />
+
 
     <div class="space-y-3">
       <div class="flex border-b border-neutral-200 text-xs font-semibold">
@@ -39,10 +39,20 @@
         <button v-if="engineAvailable" @click="activeTab = 'engine'"
           :class="activeTab === 'engine' ? 'border-b-2 border-black text-black' : 'text-neutral-400 hover:text-neutral-600'"
           class="pb-1.5 px-2 transition">Motore</button>
+        <button v-if="showNags" @click="activeTab = 'nags'"
+          :class="activeTab === 'nags' ? 'border-b-2 border-black text-black' : 'text-neutral-400 hover:text-neutral-600'"
+          class="pb-1.5 px-2 transition">
+          Simboli
+          <span v-if="activeNags.length"
+            class="ml-1 inline-block min-w-[16px] px-1 rounded-full bg-neutral-900 text-white text-[10px] leading-4 text-center">
+            {{ activeNags.length }}
+          </span>
+        </button>
       </div>
 
       <FenPanel v-if="activeTab === 'fen'" :current-fen="currentFen" @update-fen="emit('updateFen', $event)" />
       <PgnImportPanel v-else-if="activeTab === 'pgn'" />
+      <NagPalette v-else-if="activeTab === 'nags'" :active-nags="activeNags" @toggle="toggleNag" />
       <component :is="EnginePanel" v-if="EnginePanel" v-show="activeTab === 'engine'" />
     </div>
 
@@ -77,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineAsyncComponent, ref, computed } from 'vue'
+import { defineAsyncComponent, ref, computed, watch } from 'vue'
 import { useChessTreeStore } from '../../stores/chessTreeStore'
 import { useChessBookStore } from '../../stores/chessBookStore'
 import TreeStatusBar from './TreeStatusBar.vue'
@@ -108,7 +118,7 @@ const bookStore = useChessBookStore()
 // Il pannello del motore esiste solo nel desktop e si scarica solo lì
 const engineAvailable = capabilities.engine
 const EnginePanel = engineAvailable ? defineAsyncComponent(() => import('./EnginePanel.vue')) : null
-const activeTab = ref<'fen' | 'pgn' | 'engine'>('fen')
+const activeTab = ref<'fen' | 'pgn' | 'engine' | 'nags'>('fen')
 
 const tree = computed(() => treeStore.currentTree)
 const fenLocked = computed(() => treeStore.isFenLocked)
@@ -141,6 +151,10 @@ const demoteTitle = computed(() => reorderTitle(moves.value.demote,
 
 // I simboli si assegnano alla mossa attiva di un albero del documento
 const showNags = computed(() => !!tree.value && !!treeStore.currentNode && !locked.value)
+
+// Senza una mossa attiva (o in sola lettura) il tab Simboli sparisce: si torna a FEN
+watch(showNags, ok => { if (!ok && activeTab.value === 'nags') activeTab.value = 'fen' })
+
 const activeNags = computed(() => treeStore.currentNode?.nags ?? [])
 const toggleNag = (code: number) => {
   const id = treeStore.activeNodeId

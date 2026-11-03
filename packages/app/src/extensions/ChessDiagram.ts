@@ -142,6 +142,7 @@ export const ChessDiagram = Node.create({
 
   addCommands() {
     return {
+      /*
       insertChessDiagram: (options) => ({ chain }) => {
         if (!isValidFen(options.fen)) return false
         const shapes = cleanShapes(options.shapes)
@@ -153,6 +154,16 @@ export const ChessDiagram = Node.create({
             ...(caption ? { content: [{ type: 'text', text: caption }] } : {}),
           })
           .run()
+      },*/
+      insertChessDiagram: (options) => ({ commands }) => {
+        if (!isValidFen(options.fen)) return false
+        const shapes = cleanShapes(options.shapes)
+        const caption = options.caption?.trim()
+        return commands.insertContent({
+          type: this.name,
+          attrs: { fen: options.fen, flipped: !!options.flipped, shapes: shapes.length ? shapes : null },
+          ...(caption ? { content: [{ type: 'text', text: caption }] } : {}),
+        })
       },
     }
   },

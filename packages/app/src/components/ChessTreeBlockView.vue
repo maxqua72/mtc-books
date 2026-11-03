@@ -1,11 +1,13 @@
 <template>
   <node-view-wrapper class="chess-tree-block-container"
-    :class="{ 'is-active-tree': isActive, 'is-pgn-target': !!pgnBadge }" @mousedown="onMouseDown"
-    @click="activateTree">
+    :class="{ 'is-active-tree': isActive, 'is-pgn-target': !!pgnBadge }" @mousedown="onMouseDown" @click="activateTree">
     <div v-if="pgnBadge" class="pgn-target-badge" contenteditable="false">{{ pgnBadge }}</div>
     <!-- Header comandi stile Gmail: compare in posizione assoluta solo all'hover del blocco -->
     <div class="block-header">
-      <span class="game-title">📊 {{ currentTree?.title || 'Albero di mosse' }}</span>
+      <span class="game-title">
+        <i class="fa-solid fa-sitemap"></i>
+        {{ currentTree?.title || 'Albero di mosse' }}
+      </span>
       <button v-if="!locked" @click.stop="insertParagraph('before')" class="action-btn"
         title="Inserisci un paragrafo sopra">¶↑</button>
       <button v-if="!locked" @click.stop="insertParagraph('after')" class="action-btn"
@@ -19,7 +21,7 @@
         <i class="fa-solid fa-scissors"></i>
       </button>
       <button v-if="!locked" @click.stop="deleteBlock" class="delete-btn" title="Elimina il blocco albero">
-        ✕
+        <i class="fa-solid fa-trash-can"></i>
       </button>
     </div>
 
@@ -209,13 +211,13 @@ watch(
   position: absolute;
   top: -14px;
   right: 10px;
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  border-radius: 4px;
-  padding: 2px 8px;
+  background: var(--t-surface-bg);
+  border: 1px solid var(--t-surface-border);
+  border-radius: 6px;
+  padding: 2px;
   align-items: center;
-  gap: 12px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  gap: 2px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
   z-index: 20;
 }
 
@@ -241,43 +243,50 @@ watch(
 }
 
 .game-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 0 6px;
+  margin-right: 2px;
+  border-right: 1px solid var(--t-surface-border);
   font-size: 0.75rem;
   font-family: ui-sans-serif, system-ui, sans-serif;
-  color: #64748b;
   font-weight: 500;
+  color: var(--t-text-muted);
 }
 
+.game-title i {
+  font-size: 11px;
+  color: var(--t-accent);
+}
+
+.action-btn,
 .delete-btn {
+  min-width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
   background: transparent;
   border: none;
-  color: #ef4444;
+  border-radius: 4px;
+  color: var(--t-text-muted);
   font-size: 0.75rem;
   font-weight: 600;
-  cursor: pointer;
-  padding: 2px 4px;
-  border-radius: 3px;
   font-family: ui-sans-serif, system-ui, sans-serif;
-  transition: background-color 0.15s;
-}
-
-.delete-btn:hover {
-  background-color: #fee2e2;
-}
-
-.action-btn {
-  background: transparent;
-  border: none;
-  color: #64748b;
-  font-size: 0.75rem;
   cursor: pointer;
-  padding: 2px 4px;
-  border-radius: 3px;
-  transition: background-color 0.15s, color 0.15s;
+  transition: background-color 0.12s, color 0.12s;
 }
 
 .action-btn:hover {
-  background-color: #f1f5f9;
-  color: #0f172a;
+  background-color: var(--t-surface-hover);
+  color: var(--t-text);
+}
+
+.delete-btn:hover {
+  background-color: color-mix(in srgb, #dc2626 14%, transparent);
+  color: #dc2626;
 }
 
 .block-content {
@@ -372,6 +381,9 @@ watch(
     display: none !important;
   }
 
-  .tree-closers { font-weight: normal; color: #111827; }
+  .tree-closers {
+    font-weight: normal;
+    color: #111827;
+  }
 }
 </style>

@@ -7,6 +7,7 @@ import { usePgnImportStore } from '../stores/pgnImportStore'
 import { findTreeBlockPos, treeIdsInDoc } from '../utils/editorDoc'
 import { canSplitAt, findMergeableChild } from '../utils/treeOps'
 import { resetHistory } from '../utils/editorHistory'
+import { NodeSelection } from '@tiptap/pm/state'
 
 type EditorRef = ShallowRef<Editor | undefined>
 
@@ -100,9 +101,18 @@ export function useBlockInsertion(editor: EditorRef) {
 
       // Modalità libera: al cursore, senza toccare alberi
       if (!tree || !block) {
+        /*
         ed.chain().focus()
           .insertChessDiagram({ fen: diagramFen, flipped: treeStore.boardFlipped, shapes: diagramShapes })
-          .insertContent({ type: 'paragraph' }).run()
+          .insertContent({ type: 'paragraph' }).run()*/
+        const { selection } = ed.state
+        const pos = selection instanceof NodeSelection || selection.$to.depth === 0
+          ? selection.to                 // nodo selezionato (es. un diagramma): subito dopo
+          : selection.$to.after(1)       // altrimenti: dopo il blocco di primo livello del cursore
+        ed.chain().focus().insertContentAt(pos, [
+          { type: 'chessDiagram', attrs: { fen: diagramFen, flipped: treeStore.boardFlipped, shapes: diagramShapes.length ? diagramShapes : null } },
+          { type: 'paragraph' }
+        ]).run()
         return
       }
 
@@ -132,5 +142,5 @@ export function useBlockInsertion(editor: EditorRef) {
     }
   })
 
-  return { insertNewChessTreeBlock, handleSplitTreeBlock, handleMergeTreeBlock  }
+  return { insertNewChessTreeBlock, handleSplitTreeBlock, handleMergeTreeBlock }
 }

@@ -31,6 +31,18 @@ jobs:
       - run: pnpm test
       - run: pnpm --filter @mtc/app build
 
+      - name: Prepara la bozza di release
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $repo = "maxqua72/mtc-books-releases"
+          $found = gh release list --repo $repo --limit 100 --json tagName | ConvertFrom-Json | Where-Object { $_.tagName -eq $tag }
+          if (-not $found) {
+            gh release create $tag --repo $repo --draft --title $tag.TrimStart('v') --notes "Versione $($tag.TrimStart('v'))"
+          }
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+
       - name: Installer e bozza di release
         run: pnpm --filter @mtc/desktop release
         env:
