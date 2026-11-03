@@ -53,6 +53,15 @@ export const defaultMetadata = (): BookMetadata => ({
   variationSpacing: 4
 })
 
+/** Metadati scritti nel file a ogni salvataggio. Non modifica `meta`: il libro aperto si aggiorna solo a salvataggio riuscito */
+export const savedMetadata = (meta: BookMetadata, by: 'web' | 'desktop', now = new Date().toISOString()): BookMetadata => ({
+  ...meta,
+  updatedAt: now,
+  revision: (meta.revision ?? 0) + 1,
+  savedAt: now,
+  savedBy: by,
+})
+
 /** Metadati da un book.json (anche di versioni vecchie): i campi mancanti prendono i valori predefiniti */
 export function normalizeMetadata(raw: any): BookMetadata {
   const d = defaultMetadata()

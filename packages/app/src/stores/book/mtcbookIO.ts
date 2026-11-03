@@ -1,5 +1,6 @@
 // Lettura e scrittura del pacchetto .mtcbook (ZIP). Funzioni pure: non toccano lo store.
 import JSZip from 'jszip'
+import { BOOK_FORMAT_VERSION, BOOK_TOO_NEW_MESSAGE, isBookTooNew } from '@mtc/shared'
 import { sanitizeSectionIndex } from '../../utils/sanitize'
 import { COVER_EXT_BY_MIME, COVER_MIME_BY_EXT } from '../../utils/cover'
 import { normalizeMetadata, type BookMetadata, type SectionIndexItem } from './types'
@@ -13,12 +14,17 @@ export interface BookPackage {
   assets: BookAsset[]
 }
 
+export class BookTooNewError extends Error {
+  constructor() { super(BOOK_TOO_NEW_MESSAGE) }
+}
+
 export async function parseMtcBook(fileBuffer: ArrayBuffer | Blob): Promise<BookPackage> {
   const zip = await JSZip.loadAsync(fileBuffer)
 
   const bookJsonRaw = await zip.file('book.json')?.async('string')
   if (!bookJsonRaw) throw new Error('File book.json non trovato nell\'archivio.')
   const bookData = JSON.parse(bookJsonRaw)
+  if (isBookTooNew(bookData)) throw new BookTooNewError()   // salvandolo si perderebbero i dati che non conosciamo
 
   const metadata = normalizeMetadata(bookData)
   const sectionIndex = sanitizeSectionIndex(bookData.sectionIndex)
@@ -54,7 +60,7 @@ export async function parseMtcBook(fileBuffer: ArrayBuffer | Blob): Promise<Book
 
 export async function buildMtcBook(pkg: BookPackage): Promise<Blob> {
   const zip = new JSZip()
-  zip.file('book.json', JSON.stringify({ ...pkg.metadata, sectionIndex: pkg.sectionIndex }, null, 2))
+  zip.file('book.json', JSON.stringify({ ...pkg.metadata, formatVersion: BOOK_FORMAT_VERSION, sectionIndex: pkg.sectionIndex }, null, 2))
 
   // Solo le sezioni presenti nell'indice
   const sectionsFolder = zip.folder('sections')
@@ -78,6 +84,7 @@ export interface BookPeek {
   revision: number
   savedAt: string | null
   title: string
+  tooNew: boolean   // formato più recente di quello supportato
 }
 
 /** Legge solo book.json: serve a confrontare un file con il libro aperto prima di sostituirlo */
@@ -90,6 +97,7 @@ export async function peekMtcBook(fileBuffer: ArrayBuffer | Blob): Promise<BookP
       revision: Number.isInteger(raw.revision) && raw.revision >= 0 ? raw.revision : 0,
       savedAt: typeof raw.savedAt === 'string' ? raw.savedAt : null,
       title: typeof raw.title === 'string' ? raw.title : '',
+      tooNew: isBookTooNew(raw),
     }
   } catch {
     return null

@@ -1,7 +1,9 @@
 import { ref } from 'vue'
+import { BOOK_TOO_NEW_MESSAGE } from '@mtc/shared'
 import { useChessBookStore } from '../stores/chessBookStore'
 import { platform } from '../platform'
 import type { PickedBook } from '../platform/types'
+import type { BookPeek } from '../stores/book/mtcbookIO'
 
 export type SaveOutcome = 'saved' | 'cancelled' | 'conflict' | 'no-file' | 'unchanged' | 'error'
 
@@ -32,9 +34,8 @@ export function useBookFileActions() {
   }
 
   /** Testo della conferma prima di sostituire il libro aperto (null = nessuna conferma) */
-  const confirmationFor = async (picked: PickedBook): Promise<string | null> => {
+  const confirmationFor = (peek: BookPeek | null): string | null => {
     if (!store.isBookLoaded) return null
-    const peek = await store.peekBookFile(picked.data)
     const sameBook = !!peek?.bookId && peek.bookId === store.metadata.bookId
 
     if (sameBook && peek.revision < (store.metadata.revision ?? 0)) {
@@ -50,7 +51,10 @@ export function useBookFileActions() {
 
   /** Carica un libro già letto (dal selettore o aperto dal sistema) */
   const openPicked = async (picked: PickedBook) => {
-    const question = await confirmationFor(picked)
+    const peek = await store.peekBookFile(picked.data)
+    if (peek?.tooNew) { alert(BOOK_TOO_NEW_MESSAGE); return }
+
+    const question = confirmationFor(peek)
     if (question && !confirm(question)) return
 
     try {
@@ -76,6 +80,11 @@ export function useBookFileActions() {
 
       const { book, changed } = result
       const peek = await store.peekBookFile(book.data)
+      if (peek?.tooNew) {
+        platform.files.forgetCurrentFile?.()   // non va sovrascritto: si perderebbero i dati del formato nuovo
+        alert(`${BOOK_TOO_NEW_MESSAGE} Il libro è stato ripreso dalla copia interna, senza file associato.`)
+        return
+      }
       // Un file senza bookId (versioni precedenti) lo riceve al primo salvataggio: vale il dato del main
       if (!peek || (peek.bookId && peek.bookId !== store.metadata.bookId)) {
         platform.files.forgetCurrentFile?.()   // è un altro libro: non va mai sovrascritto con questo
@@ -109,7 +118,7 @@ export function useBookFileActions() {
         if (!store.fileDirty) return 'unchanged'
       }
 
-      const blob = await store.exportMtcBook(store.activeSectionHtml)
+      const { blob, markSaved } = await store.exportMtcBook(store.activeSectionHtml)
       const name = fileName()
       let outcome: SaveOutcome
 
@@ -123,7 +132,10 @@ export function useBookFileActions() {
         outcome = (await platform.files.saveBook(blob, name)) ? 'saved' : 'cancelled'
       }
 
-      if (outcome === 'saved') await store.markFileSaved()
+      if (outcome === 'saved') {
+        markSaved()
+        await store.markFileSaved()
+      }
       return outcome
     } catch (error) {
       console.error(error)

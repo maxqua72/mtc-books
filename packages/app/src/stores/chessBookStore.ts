@@ -7,7 +7,7 @@ import { randomToken } from '../utils/ids'
 import { sanitizeTrees, sanitizeSectionIndex } from '../utils/sanitize'
 import type { BoardShape } from '../utils/shapes'
 import { useChessTreeStore, type ChessTree } from './chessTreeStore'
-import { defaultMetadata, type BookMetadata, type SaveStatus, type SectionIndexItem, type SectionType } from './book/types'
+import { defaultMetadata, savedMetadata, type BookMetadata, type SaveStatus, type SectionIndexItem, type SectionType } from './book/types'
 import { useCover } from './book/useCover'
 import { useFileState } from './book/useFileState'
 import { useDiagramIndex } from './book/useDiagramIndex'
@@ -294,13 +294,13 @@ export const useChessBookStore = defineStore('chessBook', () => {
         await persistToIndexedDB()
     }
 
-    /** Esporta lo stato attuale come blob .mtcbook. `currentEditorContent` = HTML dell'editor attivo. */
-    async function exportMtcBook(currentEditorContent: string): Promise<Blob> {
+    /**
+     * Prepara il .mtcbook dello stato attuale. `currentEditorContent` = HTML dell'editor attivo.
+     * Revisione e date cambiano nel libro aperto solo chiamando `markSaved`, a scrittura riuscita.
+     */
+    async function exportMtcBook(currentEditorContent: string): Promise<{ blob: Blob; markSaved: () => void }> {
         syncActiveSectionToCache({ html: currentEditorContent, prune: true })
-        metadata.value.updatedAt = new Date().toISOString()
-        metadata.value.revision = (metadata.value.revision ?? 0) + 1
-        metadata.value.savedAt = metadata.value.updatedAt
-        metadata.value.savedBy = platform.capabilities.nativeFiles ? 'desktop' : 'web'
+        const saved = savedMetadata(metadata.value, platform.capabilities.nativeFiles ? 'desktop' : 'web')
 
         const assets: BookAsset[] = []
         for (const id of cover.collectAssetIds()) {
@@ -308,12 +308,18 @@ export const useChessBookStore = defineStore('chessBook', () => {
             if (asset) assets.push({ id, blob: asset.blob, type: asset.type })
         }
 
-        return buildMtcBook({
-            metadata: metadata.value,
+        const blob = await buildMtcBook({
+            metadata: saved,
             sectionIndex: sectionIndex.value,
             sections: zippedSectionsCache.value,
             assets
         })
+
+        const markSaved = () => {
+            const { updatedAt, revision, savedAt, savedBy } = saved
+            metadata.value = { ...metadata.value, updatedAt, revision, savedAt, savedBy }
+        }
+        return { blob, markSaved }
     }
 
     return {
