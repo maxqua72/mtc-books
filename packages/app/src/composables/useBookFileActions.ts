@@ -63,6 +63,36 @@ export function useBookFileActions() {
     }
   }
 
+  /** Dopo il ripristino da IndexedDB: ricollega il libro al suo file, che nel desktop è la fonte di verità */
+  const reconnectLastFile = async () => {
+    try {
+      const result = await platform.files.reopenLast?.()
+      if (!result || result.status === 'none') return
+
+      if (result.status === 'missing') {
+        alert(`Il file «${result.name}» non è stato trovato: il libro è stato ripreso dalla copia interna e il salvataggio automatico su file non è attivo. Ricollega il disco che lo contiene e riavvia, oppure usa «Salva con nome».`)
+        return
+      }
+
+      const { book, changed } = result
+      const peek = await store.peekBookFile(book.data)
+      // Un file senza bookId (versioni precedenti) lo riceve al primo salvataggio: vale il dato del main
+      if (!peek || (peek.bookId && peek.bookId !== store.metadata.bookId)) {
+        platform.files.forgetCurrentFile?.()   // è un altro libro: non va mai sovrascritto con questo
+        return
+      }
+
+      if (changed) {
+        const reload = confirm(`Il file «${book.name}» è stato modificato da un altro programma dopo l'ultimo salvataggio di MTC Book.\n\nOK: carica il libro dal file (le differenze nella copia interna andranno perse).\nAnnulla: resta sulla copia interna, senza file associato (per conservarla usa «Salva con nome»).`)
+        if (!reload) { platform.files.forgetCurrentFile?.(); return }
+        await store.loadMtcBook(book.data)
+      }
+      platform.files.commitOpen?.(book.name)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   const handleOpenFile = async () => {
     const picked = await platform.files.pickBook() // prima istruzione: resta dentro il gesto dell'utente
     if (picked) await openPicked(picked)
@@ -106,5 +136,5 @@ export function useBookFileActions() {
   const handleSaveFile = () => saveToFile('manual')
   const handleSaveAs = () => saveToFile('as')
 
-  return { handleNewBook, handleOpenFile, handleSaveFile, handleSaveAs, openPicked, saveToFile }
+  return { handleNewBook, handleOpenFile, handleSaveFile, handleSaveAs, openPicked, reconnectLastFile, saveToFile }
 }

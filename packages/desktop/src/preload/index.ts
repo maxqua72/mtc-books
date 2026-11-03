@@ -10,6 +10,7 @@ const bridge: DesktopBridge = {
         save: (data, suggestedName, mode) => ipcRenderer.invoke(IPC.filesSave, data, suggestedName, mode),
         forget: () => ipcRenderer.send(IPC.filesForget),
         commitOpen: () => ipcRenderer.send(IPC.filesCommitOpen),
+        reopenLast: () => ipcRenderer.invoke(IPC.filesReopenLast),
         onExternalOpen(cb) {
             const listener = (_event: unknown, file: OpenedFile) => cb(file)
             ipcRenderer.on(IPC.filesExternalOpen, listener)
@@ -59,4 +60,4 @@ const bridge: DesktopBridge = {
     },
 }
 
-contextBridge.exposeInMainWorld('mtcDesktop', bridge)
+contextBridge.exposeInMainWorld('mtcDesktop', bridge)

@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import type { OpenedFile, SaveMode, SaveResult } from '@mtc/shared'
-import type { AutosaveOutcome, CurrentFile, FilesPlatform, PickedBook } from '../types'
+import type { AutosaveOutcome, CurrentFile, FilesPlatform, PickedBook, ReopenOutcome } from '../types'
 
 const files = () => window.mtcDesktop!.files
 
@@ -41,7 +41,11 @@ export const desktopFiles: FilesPlatform = {
     currentFile.value = { name, savedAt: null }
     files().commitOpen()
   },
+  async reopenLast(): Promise<ReopenOutcome> {
+    const r = await files().reopenLast()
+    return r.status === 'found' ? { status: 'found', book: toPicked(r.file), changed: r.changed } : r
+  },
   onExternalOpen(cb) { return files().onExternalOpen((f) => cb(toPicked(f))) },
   onBeforeClose(cb) { return files().onBeforeClose(cb) },
   currentFile,
-}
+}

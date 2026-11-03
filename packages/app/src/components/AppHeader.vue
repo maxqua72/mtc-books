@@ -18,6 +18,10 @@
         :title="`File: ${currentFile.name}`">
         <i class="fa-solid fa-file-lines"></i> {{ currentFile.name }} · {{ fileLabel }}
       </span>
+      <span v-else-if="platform.capabilities.nativeFiles && store.isBookLoaded" class="text-xs text-amber-600 font-medium truncate max-w-[260px]"
+        title="Questo libro è solo nella copia interna: scegli un file con «Salva Lavoro» per attivare il salvataggio automatico">
+        <i class="fa-solid fa-triangle-exclamation"></i> Nessun file associato
+      </span>
     </div>
 
     <!-- Azioni Globali Documento -->

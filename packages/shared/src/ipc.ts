@@ -8,6 +8,7 @@ export const IPC = {
   filesCommitOpen: 'files:commit-open',
   filesRendererReady: 'files:renderer-ready',
   filesExternalOpen: 'files:external-open',
+  filesReopenLast: 'files:reopen-last',
   pdfExportChapter: 'pdf:export-chapter',
   pdfExportBook: 'pdf:export-book',
   pdfProgress: 'pdf:progress',
@@ -33,6 +34,12 @@ export type SaveResult =
   | { status: 'conflict' }    // salvataggio automatico: il file è cambiato per mano di altri
   | { status: 'error'; message: string }
 
+/** Ultimo file associato al libro, cercato dopo un riavvio dell'app */
+export type ReopenLastResult =
+  | { status: 'none' }
+  | { status: 'missing'; name: string }                       // il file non c'è più o non si legge
+  | { status: 'found'; file: OpenedFile; changed: boolean }   // changed: modificato da altri dopo l'ultimo salvataggio
+
 export type PdfProgressStage = 'loading' | 'toc' | 'final' | 'saving'
 export interface PdfProgress { stage: PdfProgressStage }
 export type PdfExportResult = { status: 'saved'; name: string } | { status: 'cancelled' }
@@ -49,6 +56,8 @@ export interface DesktopBridge {
     forget(): void
     /** L'ultimo file letto è stato caricato con successo: diventa il file corrente */
     commitOpen(): void
+    /** Rilegge l'ultimo file del libro. Diventa il file corrente solo con commitOpen */
+    reopenLast(): Promise<ReopenLastResult>
     /** File aperto dal sistema (doppio clic, seconda istanza) */
     onExternalOpen(cb: (file: OpenedFile) => void): () => void
     /** Prima della chiusura della finestra il main attende che questa funzione termini (max 6 secondi) */
@@ -61,4 +70,4 @@ export interface DesktopBridge {
     onProgress(cb: (p: PdfProgress) => void): () => void
   }
   engine: EngineBridge
-}
+}

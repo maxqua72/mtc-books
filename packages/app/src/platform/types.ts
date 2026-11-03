@@ -22,6 +22,11 @@ export interface CurrentFile {
 
 export type AutosaveOutcome = 'saved' | 'no-file' | 'conflict' | 'error'
 
+export type ReopenOutcome =
+  | { status: 'none' }
+  | { status: 'missing'; name: string }
+  | { status: 'found'; book: PickedBook; changed: boolean }
+
 export interface FilesPlatform {
   /** null = l'utente ha annullato */
   pickBook(): Promise<PickedBook | null>
@@ -32,6 +37,8 @@ export interface FilesPlatform {
   forgetCurrentFile?(): void
   /** L'ultimo file scelto è stato caricato: diventa il file su cui salva */
   commitOpen?(name: string): void
+  /** Dopo un riavvio: l'ultimo file del libro. Diventa il file su cui salva solo con commitOpen */
+  reopenLast?(): Promise<ReopenOutcome>
   onExternalOpen?(cb: (book: PickedBook) => void): () => void
   saveBookAs?(blob: Blob, suggestedName: string): Promise<boolean>
   /** Salvataggio silenzioso sul file corrente: mai dialoghi */

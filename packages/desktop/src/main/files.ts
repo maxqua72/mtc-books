@@ -1,8 +1,9 @@
 import { app, BrowserWindow, dialog, ipcMain, type IpcMainEvent, type IpcMainInvokeEvent } from 'electron'
 import { copyFile, readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
-import { IPC, type OpenedFile, type SaveResult } from '@mtc/shared'
+import { IPC, type OpenedFile, type ReopenLastResult, type SaveResult } from '@mtc/shared'
 import { message, writeAtomic } from './fsUtil.js'
+import { LastBookStore } from './lastBook.js'
 
 const MAX_BYTES = 500 * 1024 * 1024
 const EXT = '.mtcbook'
@@ -23,15 +24,14 @@ let candidatePath: string | null = null   // file appena letto: diventa corrente
 let candidateStamp: Stamp | null = null
 let pending: OpenedFile | null = null     // file aperto dal sistema prima che la pagina fosse pronta
 let rendererReady = false
+let externalOpens = 0                     // aperture dal sistema ancora in lettura
+let lastBook: LastBookStore
 const backedUp = new Set<string>()        // file di cui in questa sessione esiste già la copia .bak
 
-export const isTrusted = (e: IpcMainEvent | IpcMainInvokeEvent): boolean => {
-  try {
-    return new URL(e.senderFrame?.url ?? '').origin === deps.allowedOrigin
-  } catch {
-    return false
-  }
-}
+// Si usa l'origine del frame: new URL('app://mtc/').origin vale "null" per gli schemi personalizzati
+export const isTrusted = (e: IpcMainEvent | IpcMainInvokeEvent): boolean =>
+  e.senderFrame?.origin === deps.allowedOrigin
+
 
 const stampOf = async (file: string): Promise<Stamp | null> => {
   try {
@@ -63,6 +63,7 @@ async function readBook(filePath: string): Promise<OpenedFile> {
 
 /** File aperto dal sistema (doppio clic, argomento di avvio, seconda istanza) */
 export async function openPath(filePath: string) {
+  externalOpens++
   try {
     const file = await readBook(filePath)
     const win = deps.getWindow()
@@ -75,6 +76,8 @@ export async function openPath(filePath: string) {
     }
   } catch (e) {
     dialog.showErrorBox('Impossibile aprire il file', message(e))
+  } finally {
+    externalOpens--
   }
 }
 
@@ -82,6 +85,7 @@ export const resetRendererReady = () => { rendererReady = false }
 
 export function registerFileIpc(d: Deps) {
   deps = d
+  lastBook = new LastBookStore(path.join(app.getPath('userData'), 'last-book.json'))
 
   ipcMain.handle(IPC.filesOpen, async (event) => {
     if (!isTrusted(event)) return null
@@ -149,6 +153,7 @@ export function registerFileIpc(d: Deps) {
       await writeAtomic(target, data)
       currentPath = target
       currentStamp = await stampOf(target)
+      if (currentStamp) await lastBook.remember({ path: target, ...currentStamp })
       app.addRecentDocument(target)
       return { status: 'saved', name: path.basename(target) }
     } catch (e) {
@@ -161,6 +166,7 @@ export function registerFileIpc(d: Deps) {
     if (!isTrusted(e)) return
     currentPath = null
     currentStamp = null
+    void lastBook.forget()
   })
 
   ipcMain.on(IPC.filesCommitOpen, (e) => {
@@ -169,7 +175,23 @@ export function registerFileIpc(d: Deps) {
     currentStamp = candidateStamp
     candidatePath = null
     candidateStamp = null
+    if (currentStamp) void lastBook.remember({ path: currentPath, ...currentStamp })
     app.addRecentDocument(currentPath)
+  })
+
+  // Dopo un riavvio: un file aperto dal sistema ha la precedenza sull'ultimo libro
+  ipcMain.handle(IPC.filesReopenLast, async (event): Promise<ReopenLastResult> => {
+    if (!isTrusted(event) || pending || externalOpens > 0) return { status: 'none' }
+    const last = await lastBook.load()
+    if (!last) return { status: 'none' }
+    const name = path.basename(last.path)
+    const now = await stampOf(last.path)
+    if (!now) return { status: 'missing', name }
+    try {
+      return { status: 'found', file: await readBook(last.path), changed: !sameStamp(now, last) }
+    } catch {
+      return { status: 'missing', name }
+    }
   })
 
   ipcMain.on(IPC.filesRendererReady, (e) => {
@@ -180,4 +202,4 @@ export function registerFileIpc(d: Deps) {
       pending = null
     }
   })
-}
+}

@@ -7,7 +7,7 @@ import { getFontCss } from './pdfFonts.js'
 export { getBrowser } from '../adapters/playwright/playwrightRenderer.js'
 
 /** Per ispezionare l'HTML inviato a Chromium: PDF_DEBUG=1 (cartella opzionale in PDF_DEBUG_DIR) */
-const DEBUG_HTML = process.env.PDF_DEBUG === '1'
+const DEBUG_HTML = process.env.PDF_DEBUG === '0'
 
 const engine = createPdfEngine({
   renderer: createPlaywrightRenderer(),

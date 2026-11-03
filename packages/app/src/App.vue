@@ -167,10 +167,8 @@ onMounted(async () => {
   // Chiede al browser di non sfrattare IndexedDB (può essere negato: non è un errore)
   void navigator.storage?.persist?.().catch(() => { })
 
-  await bookStore.restoreFromIndexedDB()
-
-  const { openPicked } = useBookFileActions()
-  await bookStore.restoreFromIndexedDB()
+  const { openPicked, reconnectLastFile } = useBookFileActions()
+  if (await bookStore.restoreFromIndexedDB()) await reconnectLastFile()
   unsubscribeExternalOpen = platform.files.onExternalOpen?.(openPicked) ?? null
 })
 

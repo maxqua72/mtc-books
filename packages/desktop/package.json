@@ -8,7 +8,7 @@
   "main": "dist/main.cjs",
   "scripts": {
     "dev": "node scripts/copy-assets.mjs && tsup && electron .",
-    "start": "node scripts/copy-assets.mjs && tsup && electron . --dist",
+    "start": "pnpm --filter @mtc/app build && node scripts/copy-assets.mjs && tsup && electron . --dist",
     "render:payload": "node scripts/copy-assets.mjs && tsup && electron . --render-payload",
     "probe": "tsup && electron . --engine-probe",
     "test": "tsx --test \"src/**/*.test.ts\"",
