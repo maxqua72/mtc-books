@@ -30,6 +30,7 @@ export function useGeneratedToc(
     chapters.forEach((ch, i) => {
       const mainCounter = i + 1
       let subCounter = 0
+      let subSubCounter = 0
 
       for (const h of scanChapter(ch.id, src).headings) {
         const text = escapeHtml(h.text || 'Titolo senza testo')
@@ -43,8 +44,15 @@ export function useGeneratedToc(
           numbering = numbered ? `${mainCounter}. ` : ''
           paddingLeft = '0px'
           fontSize = '1.1rem'
+        } else if (h.level === '3') {
+          subSubCounter++
+          numbering = numbered ? `${mainCounter}.${subCounter}.${subSubCounter} ` : ''
+          paddingLeft = '40px'
+          fontSize = '0.875rem'
+          fontWeight = 'normal'
         } else {
           subCounter++
+          subSubCounter = 0
           //numbering = `${mainCounter}.${subCounter} `
           numbering = numbered ? `${mainCounter}.${subCounter} ` : ''
           paddingLeft = '20px'

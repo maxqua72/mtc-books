@@ -50,11 +50,22 @@
     margin-bottom: 9pt !important;
 }
 
+.book-text-engine h4,
+.tiptap h4 {
+    font-size: 12.5pt !important;
+    line-height: 16pt !important;
+    font-weight: bold !important;
+    margin-top: 14pt !important;
+    margin-bottom: 7pt !important;
+}
+
 /* I titoli non si infilano accanto a un diagramma a margine */
 .book-text-engine h2,
 .book-text-engine h3,
+.book-text-engine h4,
 .tiptap h2,
-.tiptap h3 {
+.tiptap h3,
+.tiptap h4 {
     clear: both;
 }
 

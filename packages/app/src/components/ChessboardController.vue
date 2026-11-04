@@ -68,7 +68,7 @@ const formatNodeLabel = (node: ChessMoveNode) =>
   `${node.moveNumber}${node.color === 'w' ? '.' : '...'} ${node.san}`
 
 // ---------------------------------------------------------------------------
-// Tastiera: navigazione nell'albero (attiva solo con il mouse sopra scacchiera/console)
+// Tastiera: navigazione nell'albero (con un albero attivo, oppure con il mouse sopra scacchiera/console)
 // Senza albero né cronologia temporanea le azioni dello store non hanno effetto.
 // ---------------------------------------------------------------------------
 const isPointerOver = ref(false)
@@ -95,17 +95,11 @@ const onKeydown = (e: KeyboardEvent) => {
     return
   }
 
-  if (!isPointerOver.value) return
+  // Con un albero del documento attivo basta la tastiera: dopo il clic su una mossa il fuoco non è su nessun elemento.
+  // Il cursore nel testo non arriva qui (controllo sopra) e un clic nel testo disattiva l'albero
+  if (!isPointerOver.value && !treeStore.currentTree) return
 
-  switch (e.key) {
-    case 'ArrowLeft': treeStore.goBack(); break
-    case 'ArrowRight': treeStore.goForward(); break
-    case 'ArrowUp': treeStore.goToSibling(-1); break
-    case 'ArrowDown': treeStore.goToSibling(1); break
-    case 'Home': treeStore.goToStart(); break
-    case 'End': treeStore.goToEnd(); break
-    default: return
-  }
+  if (!treeStore.navigateByKey(e.key)) return
   if (treeStore.workingTree) e.preventDefault()   // senza nulla da navigare lo scroll resta libero
 }
 

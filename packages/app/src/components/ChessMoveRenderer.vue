@@ -171,7 +171,13 @@ const activateThisTree = (nodeId: string) => {
 
 // Gestione blindata della tastiera
 const handleMoveKeydown = (nodeId: string, event: KeyboardEvent) => {
-  if (event.ctrlKey || event.altKey || event.metaKey || event.key === 'Tab' || event.key.startsWith('Arrow')) {
+  if (event.ctrlKey || event.altKey || event.metaKey || event.key === 'Tab') return
+
+  // Frecce, Home e Fine: ci si sposta tra le mosse, anche in sola lettura e con il mouse lontano dalla scacchiera
+  if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) {
+    event.preventDefault()
+    activateThisTree(treeStore.activeTreeId === props.treeId && treeStore.activeNodeId ? treeStore.activeNodeId : nodeId)
+    treeStore.navigateByKey(event.key)
     return
   }
 

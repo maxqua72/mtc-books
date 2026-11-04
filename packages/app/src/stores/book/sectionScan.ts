@@ -72,7 +72,7 @@ const scanSection = (sectionId: string, source: string, isJson: boolean): Sectio
         level: el.getAttribute('data-toc-level') ?? '',
         text: el.textContent?.trim() ?? ''
       }))
-      .filter(h => h.level === '1' || h.level === '2'),
+      .filter(h => h.level === '1' || h.level === '2' || h.level === '3'),
   }
   sectionScanCache.set(sectionId, { source, scan })
   return scan

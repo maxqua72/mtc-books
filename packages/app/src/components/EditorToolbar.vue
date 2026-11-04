@@ -89,6 +89,11 @@
                                 :class="{ invisible: !editor.isActive('heading', { level: 3 }) }"></i>
                             <span class="font-bold">Titolo 2</span>
                         </button>
+                        <button role="menuitem" :class="item" @mousedown.prevent @click="setHeading(4); close()">
+                            <i class="fa-solid fa-check w-3 text-[10px]"
+                                :class="{ invisible: !editor.isActive('heading', { level: 4 }) }"></i>
+                            <span class="font-semibold">Titolo 3</span>
+                        </button>
                     </template>
                 </ToolbarMenu>
 
@@ -212,6 +217,7 @@ import type { Editor } from '@tiptap/vue-3'
 import { useChessTreeStore } from '../stores/chessTreeStore'
 import { useChessBookStore } from '../stores/chessBookStore'
 import ToolbarMenu from './toolbar/ToolbarMenu.vue'
+import { TOC_LEVELS } from '../extensions/CustomHeading'
 import { canSplitAt, findMergeableChild } from '../utils/treeOps'
 import { insertDiagramRefInComment } from '../utils/diagramRefs'
 import { treeIdsInDoc } from '../utils/editorDoc'
@@ -279,9 +285,9 @@ watch(locked, () => nextTick(measureOverflow))
 // ---------------------------------------------------------------------------
 // Titoli
 // ---------------------------------------------------------------------------
-const setHeading = (level: 2 | 3) =>
+const setHeading = (level: 2 | 3 | 4) =>
     props.editor.chain().focus().toggleHeading({ level })
-        .updateAttributes('heading', { 'toc-level': level === 2 ? '1' : '2' }).run()
+        .updateAttributes('heading', { 'toc-level': TOC_LEVELS[level] }).run()
 
 // ---------------------------------------------------------------------------
 // Allineamento

@@ -157,7 +157,9 @@ const handleCanvasClick = (event: MouseEvent) => {
 
 /* Colore dei sottotitoli: nell'editor segue il tema (ripiego #262626); nel PDF eredita il colore del testo */
 .book-text-engine h3,
-.tiptap h3 {
+.tiptap h3,
+.book-text-engine h4,
+.tiptap h4 {
     color: var(--t-sheet-text, #262626) !important;
 }
 
@@ -174,14 +176,28 @@ const handleCanvasClick = (event: MouseEvent) => {
     content: counter(chapter-count) "." counter(section-count) " ";
 }
 
+/* Titolo 3: la numerazione riparte a ogni Titolo 2 */
+.show-numbering .tiptap h3 {
+    counter-set: subsection-count 0;
+}
+
+.show-numbering .tiptap h4[data-toc-level="3"] {
+    counter-increment: subsection-count;
+}
+
+.show-numbering .tiptap h4::before {
+    content: counter(chapter-count) "." counter(section-count) "." counter(subsection-count) " ";
+}
+
 .is-structural-page .tiptap h2::before,
-.is-structural-page .tiptap h3::before {
+.is-structural-page .tiptap h3::before,
+.is-structural-page .tiptap h4::before {
     content: none !important;
 }
 
 /* Struttura del Contenitore della Pagina Editor */
 .tiptap-container {
-    counter-reset: chapter-count var(--chapter-index) section-count 0;
+    counter-reset: chapter-count var(--chapter-index) section-count 0 subsection-count 0;
     background: var(--t-sheet-bg, #ffffff);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     border: 1px solid #e5e7eb;
@@ -259,7 +275,8 @@ const handleCanvasClick = (event: MouseEvent) => {
 /* Indicatore discreto di blocco/paragrafo attivo (Stile Google Docs / Notion) */
 .ProseMirror p.is-node-focused,
 .ProseMirror h2.is-node-focused,
-.ProseMirror h3.is-node-focused {
+.ProseMirror h3.is-node-focused,
+.ProseMirror h4.is-node-focused {
     position: relative;
     background-color: var(--t-accent-wash, rgba(239, 246, 255, 0.4));
     /* Un leggerissimo azzurro di background */
@@ -269,7 +286,8 @@ const handleCanvasClick = (event: MouseEvent) => {
 /* Linea di focus laterale sul paragrafo/blocco in cui si trova il cursore */
 .ProseMirror p.is-node-focused::before,
 .ProseMirror h2.is-node-focused::before,
-.ProseMirror h3.is-node-focused::before {
+.ProseMirror h3.is-node-focused::before,
+.ProseMirror h4.is-node-focused::before {
     content: '';
     position: absolute;
     left: -12px;

@@ -41,8 +41,8 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
   `
     // Numerazione spenta: stessa specificità delle regole di pdf-print.css ma più in basso, quindi vince
     const noNumbering = store.metadata.showNumbering ? '' : `
-      .show-numbering h2::before, .show-numbering h3::before,
-      .book-print-container h2::before, .book-print-container h3::before {
+      .show-numbering h2::before, .show-numbering h3::before, .show-numbering h4::before,
+      .book-print-container h2::before, .book-print-container h3::before, .book-print-container h4::before {
         content: none !important;
       }`
 

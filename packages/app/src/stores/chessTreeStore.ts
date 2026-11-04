@@ -305,6 +305,19 @@ export const useChessTreeStore = defineStore('chessTree', {
       return this.currentChildren.find(n => n.san === san) ?? null
     },
 
+    /** Navigazione da tastiera tra le mosse. true = il tasto è stato usato */
+    navigateByKey(key: string): boolean {
+      switch (key) {
+        case 'ArrowLeft': this.goBack(); return true
+        case 'ArrowRight': this.goForward(); return true
+        case 'ArrowUp': this.goToSibling(-1); return true
+        case 'ArrowDown': this.goToSibling(1); return true
+        case 'Home': this.goToStart(); return true
+        case 'End': this.goToEnd(); return true
+        default: return false
+      }
+    },
+
     goToStart() {
       this.setActiveNode(null)
     },

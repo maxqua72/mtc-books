@@ -44,7 +44,7 @@ body {
 }
 
 .tiptap-container {
-  counter-reset: chapter-count var(--chapter-index, 1) section-count 0 !important;
+  counter-reset: chapter-count var(--chapter-index, 1) section-count 0 subsection-count 0 !important;
 }
 
 /* --- REGOLA UNIFICATA PER TUTTI I PDF --- */
@@ -52,7 +52,7 @@ body {
 /* La sezione è l'unità base di conteggio */
 .book-section {
   /* Prende il valore dal tag style inline style="--chapter-index: X", con fallback a 1 */
-  counter-reset: chapter-count var(--chapter-index, 1) section-count 0 diagram-count 0 !important;
+  counter-reset: chapter-count var(--chapter-index, 1) section-count 0 subsection-count 0 diagram-count 0 !important;
   page-break-before: always;
   break-before: page;
 }
@@ -95,7 +95,7 @@ body {
   margin-top: 0 !important; 
 }
 
-.book-text-engine h3, .tiptap h3 { 
+.book-text-engine h3, .tiptap h3, .book-text-engine h4, .tiptap h4 { 
   font-family: Lora,Georgia, serif !important; 
   page-break-inside: avoid !important; 
   break-inside: avoid !important; 
@@ -259,8 +259,19 @@ body {
   counter-increment: section-count !important;
   content: counter(chapter-count) "." counter(section-count) " " !important;
 }
+/* Titolo 3: la numerazione riparte a ogni Titolo 2 */
+.show-numbering h3,
+.book-print-container h3 {
+  counter-set: subsection-count 0 !important;
+}
+.show-numbering h4::before,
+.book-print-container h4::before {
+  counter-increment: subsection-count !important;
+  content: counter(chapter-count) "." counter(section-count) "." counter(subsection-count) " " !important;
+}
 .is-structural-page h2::before, 
-.is-structural-page h3::before { 
+.is-structural-page h3::before,
+.is-structural-page h4::before { 
   content: none !important; 
 }
 
