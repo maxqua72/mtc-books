@@ -60,22 +60,11 @@
 
       <ExportSplitButton />
 
-      <button v-if="canSaveAs" @click="handleSaveAs"
-        class="px-3.5 py-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer">
-        Salva con nome…
-      </button>
-
-      <button @click="handleSaveFile" :title="store.fileDirty
-        ? 'La copia su disco non è aggiornata rispetto al lavoro nel browser: clicca per salvare'
-        : 'La copia su disco è aggiornata'"
-        class="px-4 py-1.5 text-xs font-bold text-white rounded shadow transition cursor-pointer flex items-center gap-1.5"
-        :class="store.fileDirty ? 'bg-red-600 hover:bg-red-700' : 'bg-neutral-900 hover:bg-neutral-800'">
-        <span v-if="store.fileDirty" class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-        Salva Lavoro
-      </button>
+      <SaveSplitButton />
     </div>
 
     <SettingsModal :is-open="isSettingsOpen" @close="isSettingsOpen = false" />
+    <PdfDesktopNotice />
   </header>
 </template>
 
@@ -88,12 +77,13 @@ import logo from '../assets/mtcbooks-logo.png'
 import SettingsModal from './SettingsModal.vue'
 import SaveStatusIndicator from './SaveStatusIndicator.vue'
 import ExportSplitButton from './ExportSplitButton.vue'
+import SaveSplitButton from './SaveSplitButton.vue'
+import PdfDesktopNotice from './PdfDesktopNotice.vue'
 
 const appVersion = __APP_VERSION__
 const store = useChessBookStore()
 const isSettingsOpen = ref(false)
-const { handleNewBook, handleOpenFile, handleSaveFile, handleSaveAs } = useBookFileActions()
-const canSaveAs = !!platform.files.saveBookAs
+const { handleNewBook, handleOpenFile } = useBookFileActions()
 const currentFile = computed(() => platform.files.currentFile?.value ?? null)
 const fileLabel = computed(() => {
   const f = currentFile.value

@@ -2,11 +2,12 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
 import { useChessBookStore } from '../stores/chessBookStore'
 import { getPagePx } from '../utils/pageFormats'
+import { loadZoom, saveZoom } from '../utils/zoomPreference'
 
 export function useEditorZoom(scrollContainer: Ref<HTMLElement | null>) {
   const store = useChessBookStore()
 
-  const zoomOption = ref<string>('100')
+  const zoomOption = ref<string>(loadZoom())
   const zoomScale = ref(1)
   let resizeObserver: ResizeObserver | null = null
 
@@ -29,6 +30,7 @@ export function useEditorZoom(scrollContainer: Ref<HTMLElement | null>) {
 
   const setZoom = (value: string) => {
     zoomOption.value = value
+    saveZoom(value)
     nextTick(calculateZoom)
   }
 

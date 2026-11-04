@@ -139,43 +139,35 @@
 
             <!-- 4. Scacchi: blocchi di mosse e riferimenti -->
             <div class="tb-group">
-                <button @click="emit('insertTreeBlock')"
-                    class="h-7 px-2 rounded text-xs font-medium text-neutral-600 hover:bg-neutral-200 transition flex items-center gap-1.5 whitespace-nowrap"
-                    title="Inserisci blocco partita o varianti">
-                    <i class="fa-solid fa-plus text-neutral-500"></i><span>Blocco Mosse</span>
+                <button @click="emit('insertTreeBlock')" :class="[btn, off]" title="Inserisci blocco mosse (partita o varianti)">
+                    <i class="fa-solid fa-chess-knight"></i>
                 </button>
 
-                <button @click="emit('splitTreeBlock')" :disabled="!canSplitBlock"
-                    class="h-7 px-2 rounded text-xs font-medium text-neutral-600 hover:bg-neutral-200 transition flex items-center gap-1.5 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                <button @click="emit('splitTreeBlock')" :disabled="!canSplitBlock" :class="[btn, off]"
                     :title="!canSplitBlock
                         ? 'Seleziona una mossa con qualcosa da stampare dopo di essa per dividere il blocco'
                         : splitInVariation
-                            ? 'Dividi in questa mossa della variante: la sua continuazione e il ritorno alla linea madre vanno in nuovi blocchi (non annullabile)'
+                            ? 'Dividi blocco in questa mossa della variante: la sua continuazione e il ritorno alla linea madre vanno in nuovi blocchi (non annullabile)'
                             : 'Dividi il blocco mosse nel punto selezionato (non annullabile)'">
-                    <i class="fa-solid fa-scissors"></i><span>Dividi Blocco</span>
+                    <i class="fa-solid fa-scissors"></i>
                 </button>
 
-                <button @click="emit('mergeTreeBlock')" :disabled="!mergeTarget"
-                    class="h-7 px-2 rounded text-xs font-medium text-neutral-600 hover:bg-neutral-200 transition flex items-center gap-1.5 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                <button @click="emit('mergeTreeBlock')" :disabled="!mergeTarget" :class="[btn, off]"
                     :title="mergeTarget
                         ? `Unisci il blocco «${mergeTarget.title}» a questo (non annullabile)`
                         : 'Seleziona un blocco seguito da un blocco che lo continua (derivato da una divisione, oppure che parte dalla posizione in cui finisce la linea principale)'">
-                    <i class="fa-solid fa-object-group"></i><span>Unisci Blocchi</span>
+                    <i class="fa-solid fa-object-group"></i>
                 </button>
 
-                <button @mousedown.prevent @click="emit('pasteTreeBlock')" :disabled="!treeStore.clipboard"
-                    class="h-7 px-2 rounded text-xs font-medium text-neutral-600 hover:bg-neutral-200 transition flex items-center gap-1.5 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                <button @mousedown.prevent @click="emit('pasteTreeBlock')" :disabled="!treeStore.clipboard" :class="[btn, off]"
                     :title="treeStore.clipboard ? `Incolla l'albero «${treeStore.clipboard.tree.title}» nel punto del cursore` : 'Copia o taglia prima un albero di mosse'">
-                    <i class="fa-solid fa-clipboard"></i><span>Incolla Blocco</span>
+                    <i class="fa-solid fa-paste"></i>
                 </button>
 
                 <ToolbarMenu
                     :title="bookStore.diagramList.length ? 'Inserisci un riferimento a un diagramma' : 'Nessun diagramma nel libro'"
                     :disabled="bookStore.diagramList.length === 0" panel-class="w-72 max-h-72 overflow-y-auto">
-                    <template #button>
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                        <span class="font-medium whitespace-nowrap">Rif. diagramma</span>
-                    </template>
+                    <template #button><i class="fa-solid fa-chess-board"></i></template>
                     <template #default="{ close }">
                         <button v-for="d in bookStore.diagramList" :key="d.id" role="menuitem" @mousedown.prevent
                             @click="insertRef(d); close()"
