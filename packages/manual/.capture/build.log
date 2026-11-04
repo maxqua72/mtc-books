@@ -36,7 +36,7 @@ dist/assets/index-9-FaLwpr.js                                 1,010.49 kB │ gz
 - Using dynamic import() to code-split the application
 - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 1.19s[39m
+[32m✓ built in 1.08s[39m
 
 > @mtc/manual@0.0.0 docs:build /home/runner/work/mtc-books/mtc-books/packages/manual
 > vitepress build .
@@ -48,7 +48,7 @@ dist/assets/index-9-FaLwpr.js                                 1,010.49 kB │ gz
 [32m✓[0m building client + server bundles...
 - rendering pages...
 [32m✓[0m rendering pages...
-build complete in 3.40s.
+build complete in 2.97s.
 [34mCLI[39m Building entry: {"main":"src/main/index.ts","preload":"src/preload/index.ts"}
 [34mCLI[39m Using tsconfig: tsconfig.json
 [34mCLI[39m tsup v9.0.0
@@ -60,4 +60,4 @@ build complete in 3.40s.
 [32mCJS[39m [1mdist/main.cjs        [22m[32m681.86 KB[39m
 [32mCJS[39m [1mdist/preload.cjs.map [22m[32m9.67 KB[39m
 [32mCJS[39m [1mdist/main.cjs.map    [22m[32m1.15 MB[39m
-[32mCJS[39m ⚡️ Build success in 144ms
+[32mCJS[39m ⚡️ Build success in 127ms

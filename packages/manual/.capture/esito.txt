@@ -1,5 +1,1 @@
-diagramma
-area-lavoro
-simboli
-motore
-manuale
+tutto ok
