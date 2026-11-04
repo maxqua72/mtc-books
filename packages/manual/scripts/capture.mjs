@@ -47,6 +47,12 @@ const left = () => page.locator('aside').first()
 const right = () => page.locator('aside.th-right')
 const tab = async (name) => { await right().getByRole('button', { name, exact: true }).click(); await page.waitForTimeout(200) }
 const settle = () => page.waitForTimeout(400)
+// Finestra alta per i pannelli che altrimenti scorrono
+const resize = async (height) => {
+  await app.evaluate(({ BrowserWindow }, h) => BrowserWindow.getAllWindows()[0].setContentSize(1440, h), height)
+  await page.waitForTimeout(500)
+}
+const clip = async (name, box) => page.screenshot({ path: path.join(outDir, `${name}.png`), clip: box })
 // Le mosse sono disegnate con le figurine: si cercano per posizione, non per testo
 const moves = () => page.locator('.chess-tree-block-container').first().locator('.chess-move-item')
 const QB3 = 12, BXB5 = 21
@@ -67,12 +73,12 @@ try {
   await page.getByRole('button', { name: 'Crea un nuovo libro' }).waitFor()
   await settle()
 
-  await step('schermata-iniziale', () => shot('schermata-iniziale'))
+  await step('schermata-iniziale', () => clip('schermata-iniziale', { x: 0, y: 0, width: 1440, height: 800 }))
 
   await step('nuovo-libro', async () => {
     await button('Crea un nuovo libro').click()
     await settle()
-    await shot('nuovo-libro')
+    await clip('nuovo-libro', { x: 0, y: 0, width: 1440, height: 800 })
     await page.getByPlaceholder('Es. Le mie Grandi Partite').fill('Le partite immortali')
     await page.getByPlaceholder('Nome Cognome').fill('Autore di esempio')
     await button('Inizia a scrivere').click()
@@ -100,7 +106,9 @@ try {
     await tab('Importa PGN')
     await right().locator('textarea').fill(PGN)
     await settle()
+    await resize(1560)
     await shot('import-pgn', right())
+    await resize(900)
     await button('Importa nel documento').click()
     await page.locator('.chess-tree-block-container').first().waitFor()
     await settle()
@@ -114,9 +122,16 @@ try {
     const diagram = page.locator('.chess-diagram-container').first()
     await diagram.waitFor()
     await settle()
-    await diagram.hover()
+    const card = diagram.locator('.diagram-card')
+    await card.hover()
+    await page.getByTitle(/^Modifica didascalia/).first().click()
+    await page.keyboard.type('Matto del Bianco: 17. Td8#')
+    await page.keyboard.press('Enter')
     await settle()
-    await shot('diagramma', diagram.locator('xpath=ancestor-or-self::*[contains(@class,"react-renderer") or contains(@class,"node-view")][1]').or(diagram).first())
+    await card.hover()
+    await page.waitForTimeout(400)
+    const box = await card.boundingBox()
+    await clip('diagramma', { x: box.x - 70, y: box.y - 16, width: box.width + 220, height: box.height + 32 })
   })
 
   await step('area-lavoro', async () => {
@@ -137,6 +152,7 @@ try {
 
   await step('simboli', async () => {
     await tab('Simboli')
+    await resize(1400)
     await shot('simboli', right())
   })
 
@@ -150,12 +166,11 @@ try {
     await settle()
     await button('Editor scacchiera').click()
     await settle()
+    await resize(1560)
     await shot('editor-scacchiera', right())
     await button('Annulla').click()
-    await settle()
+    await resize(900)
   })
-
-  await step('sezioni', () => shot('sezioni', left()))
 
   await step('proprieta', async () => {
     await page.getByTitle('Proprietà Libro').click()
@@ -194,13 +209,30 @@ try {
     await page.getByText('Cambia immagine').waitFor()
     await button('Aggiungi testo').click()
     await settle()
+    const text = page.getByText('Testo', { exact: true }).last()
+    await text.dblclick()
+    await page.keyboard.press('Control+A')
+    await page.keyboard.type('Le partite immortali')
+    await page.locator('main').getByRole('button', { name: 'Aggiungi testo' }).hover()
+    await page.locator('.ProseMirror, main').first().evaluate(() => document.activeElement?.blur())
+    await settle()
+    await resize(1400)
     await shot('copertina', page.locator('main'))
+    await resize(900)
   })
 
   await step('indice', async () => {
     await left().getByRole('button', { name: 'Indice' }).click()
     await settle()
     await shot('indice', page.locator('main'))
+  })
+
+  await step('sezioni', async () => {
+    await left().getByRole('button', { name: 'Nuovo Capitolo' }).click()
+    await settle()
+    await left().getByText('La partita dell’Opera').first().hover()
+    await settle()
+    await shot('sezioni', left())
   })
 
   await step('menu-file', async () => {
@@ -210,7 +242,10 @@ try {
     await settle()
     const width = page.viewportSize()?.width ?? await page.evaluate(() => innerWidth)
     await page.screenshot({ path: path.join(outDir, 'menu-salva.png'), clip: { x: width - 560, y: 0, width: 560, height: 170 } })
-    await page.keyboard.press('Escape')
+    await page.getByTitle('Scegli come salvare').click()
+    await page.locator('header').getByRole('button', { name: /Esporta/ }).nth(1).click()
+    await settle()
+    await page.screenshot({ path: path.join(outDir, 'menu-esporta.png'), clip: { x: width - 620, y: 0, width: 620, height: 170 } })
     await page.mouse.click(700, 500)
     await settle()
   })
@@ -225,7 +260,9 @@ try {
     await moves().nth(QB3).click()
     await right().getByText(/Profondità \d/).waitFor({ timeout: 30000 })
     await page.waitForTimeout(4000)
+    await resize(1700)
     await shot('motore', right())
+    await resize(900)
   })
 
   // Prova del manuale nella finestra vera, con la CSP vera
