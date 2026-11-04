@@ -1,0 +1,24 @@
+
+> @mtc/manual@0.0.0 screenshots /home/runner/work/mtc-books/mtc-books/packages/manual
+> node scripts/capture.mjs
+
+Downloading Electron binary...
+ok   schermata-iniziale
+ok   nuovo-libro
+ok   testo
+ok   import-pgn
+ok   diagramma
+ok   area-lavoro
+ok   albero-mosse
+ok   simboli
+ok   fen
+ok   editor-scacchiera
+ok   proprieta
+ok   impostazioni
+ok   copertina
+ok   indice
+ok   sezioni
+ok   menu-file
+ok   motore
+manuale: url app://mtc/manual/diagrammi.html, errori console 0
+ok   manuale
