@@ -41,7 +41,7 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          xvfb-run -a -s "-screen 0 1600x1000x24" pnpm --filter @mtc/manual screenshots 2>&1 | tee "$MANUAL_DEBUG_DIR/capture.log"
+          xvfb-run -a -s "-screen 0 3200x2000x24" pnpm --filter @mtc/manual screenshots 2>&1 | tee "$MANUAL_DEBUG_DIR/capture.log"
       - name: Commit del risultato
         run: |
           git config user.name "github-actions[bot]"

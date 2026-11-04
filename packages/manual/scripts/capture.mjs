@@ -47,6 +47,9 @@ const left = () => page.locator('aside').first()
 const right = () => page.locator('aside.th-right')
 const tab = async (name) => { await right().getByRole('button', { name, exact: true }).click(); await page.waitForTimeout(200) }
 const settle = () => page.waitForTimeout(400)
+// Le mosse sono disegnate con le figurine: si cercano per posizione, non per testo
+const moves = () => page.locator('.chess-tree-block-container').first().locator('.chess-move-item')
+const QB3 = 12, BXB5 = 21
 
 const app = await electron.launch({
   executablePath: createRequire(path.join(desktopDir, 'package.json'))('electron'),
@@ -105,7 +108,7 @@ try {
 
   await step('diagramma', async () => {
     const block = page.locator('.chess-tree-block-container').first()
-    await block.getByText('Rd8#').first().click()
+    await moves().last().click()
     await settle()
     await button('Inserisci Diagramma').click()
     const diagram = page.locator('.chess-diagram-container').first()
@@ -117,8 +120,8 @@ try {
   })
 
   await step('area-lavoro', async () => {
-    const block = page.locator('.chess-tree-block-container').first()
-    await block.getByText('Bxb5+').first().click()
+    await tab('FEN') // l'importazione PGN aperta mostra un segnaposto nel documento
+    await moves().nth(BXB5).click()
     await settle()
     await page.mouse.move(5, 5)
     await settle()
@@ -205,7 +208,8 @@ try {
     await settle()
     await page.getByTitle('Scegli come salvare').click()
     await settle()
-    await shot('menu-salva', page.locator('header'))
+    const width = page.viewportSize()?.width ?? await page.evaluate(() => innerWidth)
+    await page.screenshot({ path: path.join(outDir, 'menu-salva.png'), clip: { x: width - 560, y: 0, width: 560, height: 170 } })
     await page.keyboard.press('Escape')
     await page.mouse.click(700, 500)
     await settle()
@@ -218,7 +222,7 @@ try {
     const toggle = right().getByRole('switch')
     await toggle.waitFor({ timeout: 20000 })
     if ((await toggle.getAttribute('aria-checked')) !== 'true') await toggle.click()
-    await page.locator('.chess-tree-block-container').first().getByText('Qb3').first().click()
+    await moves().nth(QB3).click()
     await right().getByText(/Profondità \d/).waitFor({ timeout: 30000 })
     await page.waitForTimeout(4000)
     await shot('motore', right())
@@ -229,14 +233,17 @@ try {
     const opened = app.waitForEvent('window')
     await page.getByTitle('Manuale utente').click()
     const manual = await opened
+    await manual.setViewportSize({ width: 1100, height: 760 }).catch(() => {})
     const problems = []
     manual.on('console', (m) => { if (m.type() === 'error') problems.push(m.text()) })
     manual.on('pageerror', (e) => problems.push(String(e)))
     await manual.waitForLoadState('load')
+    await manual.waitForTimeout(1500)
+    if (debugDir) await manual.screenshot({ path: path.join(debugDir, 'manuale-home.png') })
     await manual.locator('.VPSidebar').waitFor({ timeout: 15000 })
-    await manual.getByRole('link', { name: 'Diagrammi' }).first().click()
+    await manual.locator('.VPSidebar').getByRole('link', { name: 'Diagrammi' }).click({ timeout: 10000 })
     await manual.getByRole('heading', { name: 'Diagrammi', level: 1 }).waitFor({ timeout: 15000 })
-    await manual.getByRole('button', { name: /Cerca/ }).first().click()
+    await manual.locator('.VPNavBarSearch button').first().click({ timeout: 10000 })
     await manual.getByRole('searchbox').or(manual.locator('input[type=search], .search-input')).first().fill('promozione')
     await manual.waitForTimeout(1500)
     console.log(`manuale: url ${manual.url()}, errori console ${problems.length}`)
