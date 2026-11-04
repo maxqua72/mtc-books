@@ -250,7 +250,7 @@ try {
     await page.getByTitle('Scegli come salvare').click()
     await page.locator('header [aria-haspopup="true"]').first().click()
     await settle()
-    await page.screenshot({ path: path.join(outDir, 'menu-esporta.png'), clip: { x: width - 620, y: 0, width: 620, height: 170 } })
+    await page.screenshot({ path: path.join(outDir, 'menu-esporta.png'), clip: { x: width - 620, y: 0, width: 620, height: 190 } })
     await page.mouse.click(700, 500)
     await settle()
   })
