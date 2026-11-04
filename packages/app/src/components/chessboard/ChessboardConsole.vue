@@ -50,7 +50,8 @@
         </button>
       </div>
 
-      <FenPanel v-if="activeTab === 'fen'" :current-fen="currentFen" @update-fen="emit('updateFen', $event)" />
+      <FenPanel v-if="activeTab === 'fen'" :current-fen="currentFen" @update-fen="emit('updateFen', $event)"
+        @edit="emit('openEditor')" />
       <PgnImportPanel v-else-if="activeTab === 'pgn'" />
       <NagPalette v-else-if="activeTab === 'nags'" :active-nags="activeNags" @toggle="toggleNag" />
       <component :is="EnginePanel" v-if="EnginePanel" v-show="activeTab === 'engine'" />
@@ -106,6 +107,7 @@ const emit = defineEmits<{
   (e: 'insertDiagram'): void
   (e: 'deleteBranch'): void
   (e: 'updateFen', newFen: string): void
+  (e: 'openEditor'): void
   (e: 'newTree'): void
   (e: 'clearShapes'): void
   (e: 'promoteVariation'): void

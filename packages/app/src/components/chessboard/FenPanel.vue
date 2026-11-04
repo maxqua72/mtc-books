@@ -10,6 +10,10 @@
     <input type="text" :value="currentFen" :readonly="fenReadonly" @change="handleFenChange"
       class="w-full font-mono text-[11px] bg-neutral-900 text-neutral-300 p-2 rounded break-all focus:outline-none focus:ring-1 focus:ring-neutral-500 select-all leading-relaxed border border-neutral-800"
       :class="{ 'opacity-70 cursor-default': fenReadonly }" />
+    <button type="button" :disabled="fenReadonly" @click="emit('edit')"
+      class="w-full py-1.5 bg-white hover:bg-neutral-50 text-neutral-700 rounded text-xs font-semibold border border-neutral-300 transition disabled:opacity-40 disabled:cursor-not-allowed">
+      <i class="fa-solid fa-pen-to-square"></i> Editor scacchiera
+    </button>
     <p v-if="fenLocked" class="text-[11px] text-neutral-500">
       Posizione iniziale già fissata: per partire da un’altra posizione crea un nuovo albero.
     </p>
@@ -28,7 +32,7 @@ import { useChessTreeStore } from '../../stores/chessTreeStore'
 import { useChessBookStore } from '../../stores/chessBookStore'
 
 const props = defineProps<{ currentFen: string }>()
-const emit = defineEmits<{ (e: 'updateFen', fen: string): void }>()
+const emit = defineEmits<{ (e: 'updateFen', fen: string): void; (e: 'edit'): void }>()
 
 const treeStore = useChessTreeStore()
 const bookStore = useChessBookStore()

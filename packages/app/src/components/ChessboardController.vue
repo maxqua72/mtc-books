@@ -10,15 +10,23 @@
           :orientation="treeStore.boardFlipped ? 'black' : 'white'" 
           :shapes="nodeShapes" 
           :auto-shapes="treeStore.autoShapes"
+          :editable="editing" :tool="editorTool"
           @move="handlePhysicsMove"
-          @shapes="onShapes" />
+          @shapes="onShapes" @board-change="editorPlacement = $event" />
         <PromotionPicker v-if="pendingPromotion" :color="pendingPromotion.color" @choose="completePromotion"
           @cancel="cancelPromotion" />
       </div>
-      <ChessboardNavigation />
+      <ChessboardNavigation v-show="!editing" />
     </div>
 
-    <ChessboardConsole :current-fen="treeStore.activeFen" :last-move="lastMoveNotation" @reset="resetBoard"
+    <BoardEditorPanel v-if="editing" :start-fen="treeStore.activeFen" :placement="editorPlacement"
+      :has-tree="!!treeStore.currentTree" v-model:tool="editorTool"
+      @set-placement="chessboardRef?.setPlacement($event)"
+      @drag-piece="(piece, event) => chessboardRef?.dragNewPiece(piece, event)"
+      @flip="treeStore.toggleBoardFlip()" @apply="applyEditor" @cancel="editing = false" />
+
+    <!-- v-show: il pannello del motore resta montato e l'analisi non si interrompe -->
+    <ChessboardConsole v-show="!editing" @open-editor="openEditor" :current-fen="treeStore.activeFen" :last-move="lastMoveNotation" @reset="resetBoard"
       @insert-diagram="insertDiagramIntoText" @delete-branch="deleteActiveBranch" @update-fen="handleManualFenUpdate"
       @new-tree="newTreeHere" @clear-shapes="clearShapes" @promote-variation="promoteVariation"
       @make-main-line="makeMainLine" @demote-variation="demoteVariation" />
@@ -34,11 +42,13 @@ import ChessboardView from './chessboard/ChessboardView.vue'
 import ChessboardConsole from './chessboard/ChessboardConsole.vue'
 import ChessboardNavigation from './chessboard/ChessboardNavigation.vue'
 import PromotionPicker from './chessboard/PromotionPicker.vue'
+import BoardEditorPanel from './chessboard/BoardEditorPanel.vue'
 
 import { useChessBookStore } from '../stores/chessBookStore'
 import { useChessTreeStore, type ChessMoveNode } from '../stores/chessTreeStore'
 import { usePgnImportStore } from '../stores/pgnImportStore'
 import type { BoardShape } from '../utils/shapes'
+import type { EditorTool } from '../utils/boardEditor'
 
 const chess = new Chess()
 const bookStore = useChessBookStore()
@@ -62,6 +72,12 @@ const onKeydown = (e: KeyboardEvent) => {
 
   const target = e.target as HTMLElement | null
   if (target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return
+
+  // Editor scacchiera: frecce e pezzi di promozione non hanno effetto
+  if (editing.value) {
+    if (e.key === 'Escape') editing.value = false
+    return
+  }
 
   // Scelta del pezzo di promozione: ha la precedenza sulla navigazione e vale anche col mouse fuori
   if (pendingPromotion.value) {
@@ -245,6 +261,29 @@ const handleManualFenUpdate = (newFen: string) => {
     lastMoveNotation.value = 'Nessuna'
   }
 }
+
+// --- Editor scacchiera ---
+// Stesse condizioni del campo FEN: posizione libera, oppure albero vuoto non in sola lettura
+const fenEditable = computed(() => !treeStore.isFenLocked && !(bookStore.isLocked && !!treeStore.currentTree))
+const editing = ref(false)
+const editorTool = ref<EditorTool>(null)
+const editorPlacement = ref('')
+
+const openEditor = () => {
+  if (!fenEditable.value) return
+  pendingPromotion.value = null
+  editorTool.value = null
+  editorPlacement.value = treeStore.activeFen.split(' ')[0]
+  editing.value = true
+}
+
+const applyEditor = (fen: string) => {
+  handleManualFenUpdate(fen)
+  editing.value = false
+}
+
+// La posizione o l'albero cambiano da fuori (clic su una mossa nel testo, sola lettura): l'editor si chiude
+watch([() => treeStore.activeFen, () => treeStore.activeTreeId, fenEditable], () => { editing.value = false })
 
 // Nuovo albero che parte dalla posizione corrente (anche da una mossa di un altro albero)
 const newTreeHere = () => {
