@@ -1,11 +1,6 @@
 name: Screenshot del manuale
 on:
   workflow_dispatch:
-  push:
-    branches: [docs/manuale-utente]
-    paths:
-      - packages/manual/scripts/**
-      - .github/workflows/manual-screenshots.yml
 
 permissions:
   contents: write
@@ -13,8 +8,6 @@ permissions:
 jobs:
   capture:
     runs-on: ubuntu-latest
-    env:
-      MANUAL_DEBUG_DIR: ${{ github.workspace }}/packages/manual/.capture
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
@@ -22,30 +15,17 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - run: mkdir -p "$MANUAL_DEBUG_DIR"
       - run: sudo apt-get update && sudo apt-get install -y xvfb stockfish && sudo ln -sf /usr/games/stockfish /usr/local/bin/stockfish
-      - run: pnpm install --no-frozen-lockfile
-      - name: Verifiche
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          { pnpm check:boundaries && pnpm typecheck && pnpm test; } 2>&1 | tee "$MANUAL_DEBUG_DIR/verifiche.log"
-      - name: Build
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          pnpm --filter @mtc/app build 2>&1 | tee "$MANUAL_DEBUG_DIR/build.log"
-          cd packages/desktop && node scripts/copy-assets.mjs && pnpm exec tsup 2>&1 | tee -a "$MANUAL_DEBUG_DIR/build.log"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @mtc/app build
+      - run: node scripts/copy-assets.mjs && pnpm exec tsup
+        working-directory: packages/desktop
       - run: pnpm --filter @mtc/manual exec playwright install-deps chromium
-      - name: Screenshot
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          xvfb-run -a -s "-screen 0 3200x3800x24" pnpm --filter @mtc/manual screenshots 2>&1 | tee "$MANUAL_DEBUG_DIR/capture.log"
+      - run: xvfb-run -a -s "-screen 0 3200x3800x24" pnpm --filter @mtc/manual screenshots
       - name: Commit del risultato
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
-          git add -f packages/manual/public/screenshots packages/manual/.capture pnpm-lock.yaml
+          git add packages/manual/public/screenshots
           git diff --cached --quiet || git commit -m "Aggiorna gli screenshot del manuale"
           git push

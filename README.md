@@ -27,6 +27,7 @@ I testi sono file Markdown in `packages/manual`; il menu laterale è in `package
 |---|---|---|
 | Anteprima con aggiornamento a caldo | `pnpm dev:manual` | Su `localhost:5175/manual/`; con `pnpm dev:app` è raggiungibile anche dal pulsante «?» |
 | Controllo | `pnpm --filter @mtc/manual docs:build` | Fallisce se un link interno è rotto |
+| Rigenerare gli screenshot | Azione **Screenshot del manuale** su GitHub, da eseguire a mano | Avvia la vera app con un libro di esempio e fa il commit delle immagini; lo script è `packages/manual/scripts/capture.mjs` |
 
 `pnpm --filter @mtc/app build` genera il manuale in `packages/app/dist/manual`, quindi web e installer lo includono da soli.
 Quando una modifica cambia ciò che l'utente vede, aggiorna anche la pagina del manuale nello stesso commit.
