@@ -1,0 +1,27 @@
+
+> @mtc/manual@0.0.0 screenshots /home/runner/work/mtc-books/mtc-books/packages/manual
+> node scripts/capture.mjs
+
+Downloading Electron binary...
+ok   schermata-iniziale
+ok   nuovo-libro
+ok   testo
+ok   import-pgn
+FAIL diagramma: locator.click: Timeout 30000ms exceeded.
+FAIL area-lavoro: locator.click: Timeout 30000ms exceeded.
+ok   albero-mosse
+FAIL simboli: locator.click: Timeout 30000ms exceeded.
+ok   fen
+ok   editor-scacchiera
+ok   sezioni
+ok   proprieta
+ok   impostazioni
+ok   copertina
+ok   indice
+ok   menu-file
+FAIL motore: locator.click: Timeout 30000ms exceeded.
+FAIL manuale: locator.click: Timeout 30000ms exceeded.
+Passi non riusciti: diagramma, area-lavoro, simboli, motore, manuale
+/home/runner/work/mtc-books/mtc-books/packages/manual:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @mtc/manual@0.0.0 screenshots: `node scripts/capture.mjs`
+Exit status 1
