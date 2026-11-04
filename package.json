@@ -1,5 +1,5 @@
 {
-    "name": "mtc-books-monorepo",
+    "name": "mtc-books",
     "private": true,
     "version": "1.0.0",
     "version:set": "node scripts/set-version.mjs",
