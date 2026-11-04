@@ -8,6 +8,8 @@ Dalla versione web, salva il file `.mtcbook` e aprilo con l'app desktop.
 
 Il pulsante di esportazione in alto esegue l'ultima scelta; la freccia accanto la cambia.
 
+![Il menu di esportazione](/screenshots/menu-esporta.png)
+
 - **Esporta Capitolo (PDF)**: esporta la sezione aperta.
 - **Esporta Libro (PDF)**: esporta tutte le sezioni nell'ordine dell'elenco.
 
