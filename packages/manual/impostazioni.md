@@ -2,6 +2,8 @@
 
 Apri le impostazioni con l'icona a ingranaggio nell'intestazione. Restano su questo dispositivo: non finiscono nel file `.mtcbook` e non cambiano il PDF.
 
+![La finestra Impostazioni](/screenshots/impostazioni.png)
+
 ## Tema
 
 - **Tema standard**: lo stile originale dell'applicazione.

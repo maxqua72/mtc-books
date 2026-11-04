@@ -2,6 +2,8 @@
 
 La colonna destra contiene la scacchiera, i comandi di navigazione e la console.
 
+![La colonna destra con scacchiera, barra di stato e console](/screenshots/console-fen.png)
+
 ## Posizione libera e albero collegato
 
 La barra di stato sopra la console dice dove finiscono le mosse.
@@ -46,6 +48,8 @@ Disegnali sulla scacchiera con il tasto destro: nel libro risultano neri. Con `M
 ## Editor scacchiera
 
 Dalla scheda **FEN** scegli **Editor scacchiera** per comporre una posizione.
+
+![L’editor scacchiera](/screenshots/editor-scacchiera.png)
 
 - Trascina un pezzo sulla scacchiera, oppure sceglilo e clicca sulle case.
 - **Sposta** muove i pezzi; trascinandone uno fuori dalla scacchiera lo togli.

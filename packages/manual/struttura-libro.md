@@ -2,6 +2,8 @@
 
 Un libro è un elenco di sezioni, visibile nella colonna sinistra. Le sezioni sono di tre tipi: **capitolo**, **copertina** e **indice**.
 
+![La colonna sinistra con copertina, capitoli e indice](/screenshots/sezioni.png)
+
 ## Gestire le sezioni
 
 | Azione | Come |
@@ -32,9 +34,13 @@ Se rinomini dall'elenco un capitolo collegato, l'app chiede conferma e disattiva
 
 L'indice si genera dai titoli dei capitoli (**Titolo 1**, **Titolo 2**, **Titolo 3**), senza doverlo scrivere. I numeri di pagina si calcolano durante l'esportazione del libro intero.
 
+![L’indice generato dai titoli](/screenshots/indice.png)
+
 ## Proprietà del libro
 
 Clicca l'icona **Proprietà Libro** accanto al titolo, nella colonna sinistra.
+
+![La finestra Proprietà del Libro](/screenshots/proprieta-libro.png)
 
 | Proprietà | Effetto |
 |---|---|

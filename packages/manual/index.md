@@ -1,5 +1,7 @@
 # Introduzione
 
+![La schermata iniziale di MTC Book Writer](/screenshots/schermata-iniziale.png)
+
 MTC Book Writer serve a scrivere libri di scacchi: testo, diagrammi e partite commentate stanno nello stesso documento, che alla fine si esporta in PDF pronto per la lettura o la stampa.
 
 ## Cosa puoi fare
@@ -28,6 +30,8 @@ Esistono due versioni con la stessa interfaccia. L'app desktop è l'editor compl
 ## L'area di lavoro
 
 Con un libro aperto la finestra ha un'intestazione e tre colonne.
+
+![L’area di lavoro con il testo, un albero di mosse, un diagramma e la scacchiera](/screenshots/area-lavoro.png)
 
 - **Intestazione**: versione, stato del salvataggio, nome del file e comandi **Nuovo**, **Apri...**, impostazioni, manuale, sola lettura, esportazione e salvataggio.
 - **Colonna sinistra**: titolo del libro ed elenco delle sezioni.

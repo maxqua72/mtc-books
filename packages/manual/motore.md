@@ -21,7 +21,9 @@ Puoi configurare più motori, ma ne è attivo uno alla volta. In **Motori config
 
 Usa l'interruttore in alto nel pannello. Lo stato può essere **Spento**, **Avvio in corso…**, **Pronto**, **In analisi**, **Errore** o **Interrotto**.
 
-L'analisi segue la posizione della scacchiera e funziona anche in sola lettura. Ogni linea mostra valutazione e mosse.
+L'analisi segue la posizione della scacchiera e funziona anche in sola lettura. Ogni linea mostra valutazione e mosse. La valutazione è dal punto di vista del Bianco: un numero positivo indica vantaggio del Bianco.
+
+![Il pannello Motore con Stockfish in analisi](/screenshots/motore.png)
 
 ## Usare le linee
 

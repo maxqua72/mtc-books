@@ -2,6 +2,8 @@
 
 Un albero di mosse contiene una partita o una linea con le sue varianti. Nel testo appare come un blocco di notazione.
 
+![Un blocco di notazione con commenti, una variante e la mossa selezionata](/screenshots/albero-mosse.png)
+
 ## Creare un albero
 
 - **Inserisci blocco mosse** nella barra degli strumenti crea in fondo al capitolo un albero che parte dalla posizione della scacchiera.
@@ -27,6 +29,8 @@ Con una mossa selezionata e le modifiche attive, la scheda **Simboli** offre:
 - **Altri simboli**: `∆` con l'idea, `∇` contro l'idea, `N` novità teorica.
 
 Nei primi due gruppi ogni mossa ha al massimo un simbolo: quello nuovo sostituisce il precedente. Passando sul pulsante leggi il significato.
+
+![La scheda Simboli della console](/screenshots/simboli.png)
 
 ## Riordinare ed eliminare
 

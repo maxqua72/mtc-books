@@ -8,6 +8,8 @@ In pochi minuti puoi creare un libro con un testo, una variante e un diagramma.
 2. Inserisci titolo e autore. Il titolo è obbligatorio.
 3. Scegli **Inizia a scrivere**.
 
+![La finestra di configurazione del nuovo libro](/screenshots/nuovo-libro.png)
+
 Un libro nuovo è subito modificabile.
 
 Se hai già un libro, trascina il file `.mtcbook` nella schermata iniziale oppure clicca l'area per cercarlo.

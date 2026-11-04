@@ -9,6 +9,8 @@ Il file è la versione ufficiale del libro. L'intestazione mostra il suo nome e 
 - **Salva Lavoro** salva sul file. La prima volta scegli nome e cartella.
 - **Salva con nome…**, dalla freccia accanto, crea un file nuovo.
 
+![Il menu di salvataggio](/screenshots/menu-salva.png)
+
 ### Salvataggio automatico
 
 Con un file associato e le modifiche attive, il libro si salva dopo 30 secondi senza modifiche e quando la finestra perde il focus. In sola lettura il file non viene toccato.

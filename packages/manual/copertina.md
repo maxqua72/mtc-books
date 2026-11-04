@@ -2,6 +2,8 @@
 
 Aggiungi la copertina con il pulsante **Copertina** nella colonna sinistra. La pagina ha il formato scelto nelle [proprietà del libro](./struttura-libro#proprieta-del-libro).
 
+![L’editor della copertina con immagine di sfondo e titolo](/screenshots/copertina.png)
+
 ## Immagine di sfondo
 
 1. Clicca **Scegli immagine**. Sono accettati PNG, JPEG e WebP.

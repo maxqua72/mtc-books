@@ -6,6 +6,8 @@ Il PGN è il formato standard delle partite di scacchi. Per importare servono la
 
 Apri la scheda **Importa PGN** nella console.
 
+![La scheda Importa PGN con una partita pronta da importare](/screenshots/import-pgn.png)
+
 1. **Incolla il PGN o carica un file**: incolla il testo, oppure usa **Carica file…** con un file `.pgn` o `.txt`. **Pulisci** svuota il campo.
 2. **Partite nel file**: scegli le partite. Per ognuna vedi mosse, varianti e commenti. Le partite senza mosse sono ignorate.
 3. **Dove va inserito**: scegli la destinazione.

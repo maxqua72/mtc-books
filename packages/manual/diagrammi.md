@@ -17,6 +17,8 @@ Porta la scacchiera sulla posizione e clicca **Inserisci Diagramma** nella conso
 
 Passando sul diagramma compare una barra a destra.
 
+![Un diagramma con la barra dei comandi](/screenshots/diagramma.png)
+
 - **Dimensione**: piccola, media o grande.
 - **Allineamento**: al centro, oppure a sinistra o a destra con il testo che scorre accanto.
 - **Modifica didascalia**: `Invio` conferma, `Maiusc+Invio` va a capo.
