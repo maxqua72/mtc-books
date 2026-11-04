@@ -13,6 +13,8 @@
           :editable="editing" :tool="editorTool"
           @move="handlePhysicsMove"
           @shapes="onShapes" @board-change="editorPlacement = $event" />
+        <!-- Accanto alla scacchiera, nel margine della colonna: non cambia la larghezza -->
+        <component :is="EngineEvalBar" v-if="EngineEvalBar && !editing" />
         <PromotionPicker v-if="pendingPromotion" :color="pendingPromotion.color" @choose="completePromotion"
           @cancel="cancelPromotion" />
       </div>
@@ -34,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { defineAsyncComponent, ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { Chess } from 'chess.js'
 import type { Key } from 'chessground/types'
 
@@ -49,6 +51,10 @@ import { useChessTreeStore, type ChessMoveNode } from '../stores/chessTreeStore'
 import { usePgnImportStore } from '../stores/pgnImportStore'
 import type { BoardShape } from '../utils/shapes'
 import type { EditorTool } from '../utils/boardEditor'
+import { capabilities } from '../platform'
+
+// La barra usa lo store del motore: come il pannello, esiste e si scarica solo nel desktop
+const EngineEvalBar = capabilities.engine ? defineAsyncComponent(() => import('./chessboard/EngineEvalBar.vue')) : null
 
 const chess = new Chess()
 const bookStore = useChessBookStore()

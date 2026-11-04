@@ -1,10 +1,5 @@
 <template>
   <div class="space-y-1.5">
-    <div class="h-2 rounded overflow-hidden border border-neutral-300" style="background: #262626"
-      role="img" :aria-label="`Valutazione: ${formatScore(top?.score ?? null)}`">
-      <div class="h-full transition-all duration-150" :style="{ width: whitePct + '%', background: '#f5f5f5' }"></div>
-    </div>
-
     <ol class="space-y-1" :class="stale ? 'opacity-40' : ''">
       <li v-for="slot in slots" :key="slot.n" class="flex items-start gap-2 h-9">
         <span class="shrink-0 w-16 pt-px" :title="slot.row ? `Profondità ${slot.row.line.depth}` : undefined">
@@ -84,13 +79,6 @@ const lineCount = computed(() => {
 })
 const slots = computed(() =>
   Array.from({ length: lineCount.value }, (_, i) => ({ n: i + 1, row: rows.value.find((r) => r.line.multipv === i + 1) ?? null })))
-
-const whitePct = computed(() => {
-  const s = top.value?.score
-  if (!s) return 50
-  if (s.kind === 'mate') return s.value > 0 ? 100 : s.value < 0 ? 0 : 50
-  return 100 / (1 + Math.exp(-s.value / 400))
-})
 
 // Vantaggio visto dal lato che sta in basso sulla scacchiera (la valutazione del motore è sempre dal punto di vista del Bianco)
 const tone = computed<'good' | 'bad' | 'even' | null>(() => {

@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { formatScore, pvToSan, uciToSan } from '../src/utils/uciPv'
+import { formatScore, pvToSan, uciToSan, whitePercent } from '../src/utils/uciPv'
 
 const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
@@ -25,6 +25,14 @@ test('promozione, arrocco e FEN non valido', () => {
   assert.equal(pvToSan('8/4P2k/8/8/8/8/8/4K3 w - - 0 1', ['e7e8q']).text, '1. e8=Q')
   assert.equal(pvToSan('r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1', ['e1g1']).text, '1. O-O')
   assert.deepEqual(pvToSan('non-un-fen', ['e2e4']), { text: '', sans: [], complete: false })
+})
+
+test('quota della barra di valutazione', () => {
+  assert.equal(whitePercent({ kind: 'cp', value: 0 }), 50)
+  assert.ok(whitePercent({ kind: 'cp', value: 150 }) > 50)
+  assert.ok(whitePercent({ kind: 'cp', value: -150 }) < 50)
+  assert.equal(whitePercent({ kind: 'mate', value: 3 }), 100)
+  assert.equal(whitePercent({ kind: 'mate', value: -2 }), 0)
 })
 
 test('mossa singola e valutazione', () => {

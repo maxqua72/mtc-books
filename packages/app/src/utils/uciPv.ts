@@ -34,6 +34,12 @@ export function pvToSan(fen: string, pv: string[], maxMoves = 24): PvResult {
 
 export const uciToSan = (fen: string, uci: string): string | null => pvToSan(fen, [uci], 1).sans[0] ?? null
 
+/** Quota della barra di valutazione che spetta al Bianco, da 0 a 100. Il matto la riempie del tutto */
+export function whitePercent(score: AnalysisScore): number {
+  if (score.kind === 'mate') return score.value > 0 ? 100 : score.value < 0 ? 0 : 50
+  return 100 / (1 + Math.exp(-score.value / 400))
+}
+
 /** +0.35, -1.20, #3, #-2 (sempre dal punto di vista del Bianco) */
 export function formatScore(score: AnalysisScore | null): string {
   if (!score) return '…'
