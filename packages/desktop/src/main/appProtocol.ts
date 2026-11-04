@@ -1,23 +1,10 @@
 import { app, net, protocol } from 'electron'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { cspFor } from './csp.js'
 
 export const APP_SCHEME = 'app'
 export const APP_ORIGIN = 'app://mtc'
-
-// Sul server di sviluppo (http) la CSP è quella di Vite: qui vale solo per l'app servita da app://
-const CSP = [
-  "default-src 'self'",
-  "script-src 'self'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
-  "font-src 'self' data:",
-  "connect-src 'self'",
-  "object-src 'none'",
-  "base-uri 'none'",
-  "frame-ancestors 'none'",
-].join('; ')
-
 
 
 export const rendererDir = (): string =>
@@ -33,7 +20,8 @@ export function handleAppProtocol() {
     try {
       const res = await net.fetch(pathToFileURL(file).toString())
       const headers = new Headers(res.headers)
-      headers.set('Content-Security-Policy', CSP)
+      // Sul server di sviluppo (http) la CSP è quella di Vite: qui vale solo per l'app servita da app://
+      headers.set('Content-Security-Policy', cspFor(rel))
       return new Response(res.body, { status: res.status, headers })
     } catch {
       return new Response('Not found', { status: 404 })

@@ -11,3 +11,4 @@ regression/
 packages/desktop/resources/
 packages/desktop/release/
 packages/desktop/dist/
+packages/manual/.vitepress/cache/

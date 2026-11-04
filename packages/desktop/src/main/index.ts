@@ -9,6 +9,7 @@ import { registerPdfIpc } from './pdf/ipc.js'
 import { runEngineProbe, runRenderCli } from './cli.js'
 import { setupEngine } from './engine/ipc.js'
 import type { EngineService } from './engine/service.js'
+import { openManualWindow } from './manualWindow.js'
 import { appOrigin, createMainWindow } from './window.js'
 import { DOWNLOAD_URL } from '@mtc/shared'
 import { setupUpdater, type Updater } from './updater.js'
@@ -48,6 +49,15 @@ function buildMenu() {
         {
             label: 'Aiuto',
             submenu: [
+                {
+                    label: 'Manuale utente',
+                    accelerator: 'F1',
+                    click: () => {
+                        const origin = appOrigin(useDist)
+                        openManualWindow(`${origin}/manual/index.html`, origin)
+                    },
+                },
+                { type: 'separator' },
                 { label: 'Verifica aggiornamenti…', click: () => updater?.checkNow() },
                 { label: 'Pagina di download e novità', click: () => void shell.openExternal(DOWNLOAD_URL) },
                 { label: 'Apri la cartella dei dati', click: () => void shell.openPath(app.getPath('userData')) },

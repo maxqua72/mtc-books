@@ -8,5 +8,6 @@ const rootPkg = JSON.parse(readFileSync(new URL('../../package.json', import.met
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
   define: { __APP_VERSION__: JSON.stringify(rootPkg.version) },
-  server: { port: 5174, strictPort: true },
+  // In sviluppo il manuale è servito da «pnpm dev:manual»
+  server: { port: 5174, strictPort: true, proxy: { '/manual': 'http://localhost:5175' } },
 })

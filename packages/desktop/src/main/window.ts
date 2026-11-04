@@ -1,21 +1,16 @@
-import { app, BrowserWindow, dialog, ipcMain, shell, type IpcMainEvent } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, type IpcMainEvent } from 'electron'
 import path from 'node:path'
 import { IPC } from '@mtc/shared'
 import { APP_ORIGIN } from './appProtocol.js'
 import { resetRendererReady } from './files.js'
+import { openExternalSafe } from './externalLinks.js'
+import { closeManualWindow, isManualUrl, openManualWindow } from './manualWindow.js'
 import { attachContextMenu } from './spellcheck.js'
 
 const DEV_URL = process.env.MTC_DEV_URL || 'http://localhost:5174'
-const SAFE_EXTERNAL = new Set(['http:', 'https:', 'mailto:', 'tel:'])
 const FLUSH_TIMEOUT_MS = 6000
 
 export const appOrigin = (useDist: boolean) => (useDist ? APP_ORIGIN : new URL(DEV_URL).origin)
-
-const openExternalSafe = (url: string) => {
-    try {
-        if (SAFE_EXTERNAL.has(new URL(url).protocol)) void shell.openExternal(url)
-    } catch { /* URL non valido: ignorata */ }
-}
 
 export function createMainWindow(useDist: boolean): BrowserWindow {
     const win = new BrowserWindow({
@@ -37,6 +32,7 @@ export function createMainWindow(useDist: boolean): BrowserWindow {
     })
 
     win.once('ready-to-show', () => win.show())
+    win.on('closed', closeManualWindow) // altrimenti l'app resterebbe aperta col solo manuale
   attachContextMenu(win)
 
     const origin = appOrigin(useDist)
@@ -48,7 +44,8 @@ export function createMainWindow(useDist: boolean): BrowserWindow {
     })
 
     win.webContents.setWindowOpenHandler(({ url }) => {
-        openExternalSafe(url)
+        if (isManualUrl(url, origin)) openManualWindow(url, origin)
+        else openExternalSafe(url)
         return { action: 'deny' }
     })
 

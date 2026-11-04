@@ -42,6 +42,12 @@
         <i class="fa-solid fa-gear"></i>
       </button>
 
+      <button @click="openManual"
+        class="px-3.5 py-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer"
+        title="Manuale utente" aria-label="Manuale utente">
+        <i class="fa-solid fa-circle-question"></i>
+      </button>
+
       <!-- Interruttore sola lettura / modifica -->
       <button v-if="store.isBookLoaded" @click="store.setLocked(!store.isLocked)" role="switch"
         :aria-checked="!store.isLocked"
@@ -83,6 +89,9 @@ import PdfDesktopNotice from './PdfDesktopNotice.vue'
 const appVersion = __APP_VERSION__
 const store = useChessBookStore()
 const isSettingsOpen = ref(false)
+
+// Sul web apre una nuova scheda; nel desktop il processo main la trasforma nella finestra del manuale
+const openManual = () => window.open(`${import.meta.env.BASE_URL}manual/index.html`, '_blank', 'noopener')
 const { handleNewBook, handleOpenFile } = useBookFileActions()
 const currentFile = computed(() => platform.files.currentFile?.value ?? null)
 const fileLabel = computed(() => {

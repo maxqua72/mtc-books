@@ -19,6 +19,18 @@ Comandi per PowerShell, da eseguire nella cartella principale del progetto.
 | Desktop | `pnpm dev:app`, poi in un secondo terminale `pnpm dev:desktop` | Serve Vite già avviato; aggiornamento a caldo |
 | Server PDF (opzionale) | `pnpm dev:server` | Non serve al prodotto |
 
+## Manuale utente
+
+I testi sono file Markdown in `packages/manual`; il menu laterale è in `packages/manual/.vitepress/config.ts`.
+
+| Attività | Comando | Note |
+|---|---|---|
+| Anteprima con aggiornamento a caldo | `pnpm dev:manual` | Su `localhost:5175/manual/`; con `pnpm dev:app` è raggiungibile anche dal pulsante «?» |
+| Controllo | `pnpm --filter @mtc/manual docs:build` | Fallisce se un link interno è rotto |
+
+`pnpm --filter @mtc/app build` genera il manuale in `packages/app/dist/manual`, quindi web e installer lo includono da soli.
+Quando una modifica cambia ciò che l'utente vede, aggiorna anche la pagina del manuale nello stesso commit.
+
 ## Prova della build compilata
 
 | Attività | Comando | Note |

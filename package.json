@@ -10,6 +10,7 @@
     "scripts": {
         "dev:app": "pnpm --filter @mtc/app dev",
         "dev:server": "pnpm --filter @mtc/server dev",
+        "dev:manual": "pnpm --filter @mtc/manual dev",
         "typecheck": "pnpm -r --if-present typecheck",
         "build": "pnpm -r --if-present build",
         "check:boundaries": "node scripts/check-boundaries.mjs",
