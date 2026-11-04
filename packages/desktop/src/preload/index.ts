@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { IPC, type DesktopBridge, type OpenedFile, type PdfProgress, type EngineEvent } from '@mtc/shared'
+import { IPC, type DesktopBridge, type OpenedFile, type PdfProgress, type EngineEvent, type SpellcheckStatus } from '@mtc/shared'
 
 const call = (method: string, ...args: unknown[]) => ipcRenderer.invoke(IPC.engineCall, method, args)
 
@@ -34,6 +34,15 @@ const bridge: DesktopBridge = {
             const listener = (_event: unknown, p: PdfProgress) => cb(p)
             ipcRenderer.on(IPC.pdfProgress, listener)
             return () => { ipcRenderer.removeListener(IPC.pdfProgress, listener) }
+        },
+    },
+    spellcheck: {
+        get: () => ipcRenderer.invoke(IPC.spellcheckGet),
+        set: (settings) => ipcRenderer.invoke(IPC.spellcheckSet, settings),
+        onStatus(cb) {
+            const listener = (_event: unknown, s: SpellcheckStatus) => cb(s)
+            ipcRenderer.on(IPC.spellcheckStatus, listener)
+            return () => { ipcRenderer.removeListener(IPC.spellcheckStatus, listener) }
         },
     },
     engine: {

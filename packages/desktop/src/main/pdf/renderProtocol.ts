@@ -87,6 +87,7 @@ let renderSession: Session | null = null
 export function getRenderSession(): Session {
   if (renderSession) return renderSession
   const ses = session.fromPartition('mtc-render') // senza "persist:" resta in memoria
+  ses.setSpellCheckerLanguages([])                // nessun dizionario: altrimenti Electron lo scarica da solo
   ses.webRequest.onBeforeRequest((details, callback) => {
     const ok = details.url.startsWith(`${RENDER_ORIGIN}/`) || details.url.startsWith('data:') || details.url.startsWith('blob:')
     callback({ cancel: !ok })

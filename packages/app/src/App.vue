@@ -54,6 +54,7 @@ import AppHeader from './components/AppHeader.vue'
 import WelcomeDashboard from './components/WelcomeDashboard.vue'
 import BookOrganizer from './components/BookOrganizer.vue'
 import BookEditor from './components/BookEditor.vue'
+import { useSpellcheckStore } from './stores/spellcheckStore'
 import ChessboardController from './components/ChessboardController.vue'
 import { useChessBookStore } from './stores/chessBookStore'
 import { useChessTreeStore } from './stores/chessTreeStore'
@@ -157,6 +158,7 @@ const onBeforeUnload = (e: BeforeUnloadEvent) => {
 }
 
 onMounted(async () => {
+  void useSpellcheckStore().init()
   document.addEventListener('visibilitychange', onVisibility)
   window.addEventListener('pagehide', onPageHide)
   window.addEventListener('beforeunload', onBeforeUnload)

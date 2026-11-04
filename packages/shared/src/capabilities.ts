@@ -4,4 +4,5 @@ export interface PlatformCapabilities {
   nativeFiles: boolean  // dialoghi e salvataggio su disco (desktop)
   engine: boolean       // motore UCI (desktop)
   multiTabLock: boolean // controllo "già aperto in un'altra scheda"
+  spellcheckLanguages: boolean // lingue del controllo ortografico scelte nell'app (nel web le decide il browser)
 }

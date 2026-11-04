@@ -3,6 +3,7 @@ import type { Platform } from '../types'
 import { webFiles } from './webFiles'
 import { webSession } from './webSession'
 import { webPdfNotice } from './webPdfNotice'
+import { webSpellcheck } from './webSpellcheck'
 
 /*
 Quando riattiverai il PDF cloud basta rimettere webPdf e cloudPdf: true
@@ -14,10 +15,12 @@ export function createWebPlatform(): Platform {
       localPdf: false,
       nativeFiles: false,
       engine: false,
-      multiTabLock: 'locks' in navigator
+      multiTabLock: 'locks' in navigator,
+      spellcheckLanguages: false
     },
     pdf: webPdfNotice,
     files: webFiles,
-    session: webSession
+    session: webSession,
+    spellcheck: webSpellcheck
   }
 }

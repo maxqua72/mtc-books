@@ -12,9 +12,11 @@ import type { EngineService } from './engine/service.js'
 import { appOrigin, createMainWindow } from './window.js'
 import { DOWNLOAD_URL } from '@mtc/shared'
 import { setupUpdater, type Updater } from './updater.js'
+import { blockDictionaryDownload, setupSpellcheck } from './spellcheck.js'
 
 app.setName('MTC Book')
 registerSchemes()
+void app.whenReady().then(blockDictionaryDownload) // per primo, in ogni modalità di avvio
 
 // Dalla build di Vite (anche non installata): "electron . --dist"
 const useDist = app.isPackaged || process.argv.includes('--dist')
@@ -106,6 +108,7 @@ if (renderIdx >= 0 || probeIdx >= 0) {
         buildMenu()
         registerFileIpc({ getWindow: () => mainWindow, allowedOrigin: appOrigin(useDist) })
         registerPdfIpc()
+        await setupSpellcheck(() => mainWindow)
         engineService = await setupEngine(() => mainWindow) // prima della finestra: la pagina lo chiama subito
         mainWindow = createMainWindow(useDist)
         mainWindow.on('closed', () => { mainWindow = null })

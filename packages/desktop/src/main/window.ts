@@ -3,6 +3,7 @@ import path from 'node:path'
 import { IPC } from '@mtc/shared'
 import { APP_ORIGIN } from './appProtocol.js'
 import { resetRendererReady } from './files.js'
+import { attachContextMenu } from './spellcheck.js'
 
 const DEV_URL = process.env.MTC_DEV_URL || 'http://localhost:5174'
 const SAFE_EXTERNAL = new Set(['http:', 'https:', 'mailto:', 'tel:'])
@@ -31,11 +32,12 @@ export function createMainWindow(useDist: boolean): BrowserWindow {
             contextIsolation: true,
             nodeIntegration: false,
             sandbox: true,
-            spellcheck: false,
+            spellcheck: true, // acceso qui, governato dalle impostazioni (spellcheck.ts)
         },
     })
 
     win.once('ready-to-show', () => win.show())
+  attachContextMenu(win)
 
     const origin = appOrigin(useDist)
     win.webContents.on('will-navigate', (event, url) => {

@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 import type { PlatformCapabilities, BookPdfRequest, ChapterPdfRequest } from '@mtc/shared'
-import type { EngineBridge } from '@mtc/shared'
+import type { EngineBridge, SpellcheckSettings, SpellcheckSnapshot, SpellcheckStatus } from '@mtc/shared'
 
 export type EnginePlatform = EngineBridge
 export interface PdfPlatform {
@@ -49,6 +49,13 @@ export interface FilesPlatform {
   onBeforeClose?(cb: () => Promise<void>): () => void
 }
 
+export interface SpellcheckPlatform {
+  load(): Promise<SpellcheckSnapshot>
+  save(settings: SpellcheckSettings): Promise<SpellcheckSnapshot>
+  /** Solo desktop: avanzamento del download dei dizionari */
+  onStatus?(cb: (status: SpellcheckStatus) => void): () => void
+}
+
 export interface WriteLockOptions {
   steal?: boolean
   onLost?: () => void
@@ -64,5 +71,6 @@ export interface Platform {
   readonly pdf: PdfPlatform
   readonly files: FilesPlatform
   readonly session: SessionPlatform
+  readonly spellcheck: SpellcheckPlatform
   readonly engine?: EnginePlatform
 }

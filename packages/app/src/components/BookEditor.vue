@@ -23,7 +23,8 @@
                 <!-- Wrapper di trasformazione zoom -->
                 <div class="zoom-transform-wrapper transition-transform duration-150 ease-out origin-top-left ml-0"
                     :style="wrapperStyle">
-                    <div @click.self="handlePageClick" class="tiptap-container" :class="pageClasses" :style="cssVars">
+                    <div @click.self="handlePageClick" class="tiptap-container" :class="pageClasses" :style="cssVars"
+                        :spellcheck="spellcheck.settings.enabled ? 'true' : 'false'">
                         <editor-content :editor="editor" />
                     </div>
                 </div>
@@ -38,6 +39,7 @@ import { EditorContent } from '@tiptap/vue-3'
 import { computed, ref } from 'vue'
 import { useChessBookStore } from '../stores/chessBookStore'
 import { usePdfStore } from '../stores/pdfStore'
+import { useSpellcheckStore } from '../stores/spellcheckStore'
 import { getPageSizeMm, type BookCover } from '../utils/cover'
 import { useBookEditor } from '../composables/useBookEditor'
 import { useEditorZoom } from '../composables/useEditorZoom'
@@ -56,6 +58,7 @@ const pdfStore = usePdfStore()
 
 // --- Editor e sue funzioni ---
 const { editor } = useBookEditor()
+const spellcheck = useSpellcheckStore()   // l'attributo vale per testo, didascalie e commenti alle mosse
 const layout = usePageLayout()
 const { cssVars } = layout
 const { insertNewChessTreeBlock, handleSplitTreeBlock, handleMergeTreeBlock } = useBlockInsertion(editor)
