@@ -27,7 +27,19 @@ I testi sono file Markdown in `packages/manual`; il menu laterale è in `package
 |---|---|---|
 | Anteprima con aggiornamento a caldo | `pnpm dev:manual` | Su `localhost:5175/manual/`; con `pnpm dev:app` è raggiungibile anche dal pulsante «?» |
 | Controllo | `pnpm --filter @mtc/manual docs:build` | Fallisce se un link interno è rotto |
-| Rigenerare gli screenshot | Azione **Screenshot del manuale** su GitHub, da eseguire a mano | Avvia la vera app con un libro di esempio e fa il commit delle immagini; lo script è `packages/manual/scripts/capture.mjs` |
+
+Gli screenshot in `packages/manual/public/screenshots` sono file versionati: build e installer usano quelli presenti e **non li rigenerano**. Vanno rigenerati con un comando separato quando cambia l'aspetto di una schermata, in uno di questi due modi:
+
+- **Da GitHub** (consigliato): **Actions → Screenshot del manuale → Run workflow**, scegliendo il branch. Avvia la vera app con un libro di esempio e fa il commit delle immagini sul branch. L'azione compare dopo l'unione in `main`.
+- **Dal PC**: i comandi sotto, poi `git add` e commit delle immagini. Serve Stockfish nel `PATH`, altrimenti lo screenshot del motore non viene aggiornato e il comando termina con errore.
+
+```powershell
+pnpm --filter @mtc/app build
+cd packages\desktop; node scripts/copy-assets.mjs; pnpm exec tsup; cd ..\..
+pnpm --filter @mtc/manual screenshots
+```
+
+Il libro di esempio e le schermate fotografate sono definiti in `packages/manual/scripts/capture.mjs`.
 
 `pnpm --filter @mtc/app build` genera il manuale in `packages/app/dist/manual`, quindi web e installer lo includono da soli.
 Quando una modifica cambia ciò che l'utente vede, aggiorna anche la pagina del manuale nello stesso commit.
