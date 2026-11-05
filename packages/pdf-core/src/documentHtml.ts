@@ -1,5 +1,5 @@
 // Numeri di pagina in basso al centro; nessun numero sulla copertina
-export const PAGE_NUMBER_CSS = `
+const PAGE_NUMBER_CSS = `
   @page {
     @bottom-center {
       content: counter(page);

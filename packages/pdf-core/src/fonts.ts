@@ -19,7 +19,7 @@ const FONT_FACES: FontFaceDef[] = [
   { family: 'Lora', files: ['Lora-Regular.ttf'], weight: '400', style: 'normal', display: 'swap' },
   { family: 'Lora', files: ['Lora-Italic.ttf'], weight: '400', style: 'italic', display: 'swap' },
   { family: 'Lora', files: ['Lora-Bold.ttf'], weight: '700', style: 'normal', display: 'swap' },
-  { family: 'Lora', files: ['Lora-BoldItalic.ttf', 'lora-bold-italic.ttf'], weight: '700', style: 'italic', display: 'swap' },
+  { family: 'Lora', files: ['Lora-BoldItalic.ttf'], weight: '700', style: 'italic', display: 'swap' },
 ]
 
 export interface FontFormat { mime: string; format: string }

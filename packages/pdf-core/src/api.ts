@@ -30,9 +30,8 @@ export function createPdfEngine(deps: PdfEngineDeps) {
   { onDebugHtml: deps.onDebugHtml, onProgress: deps.onProgress })
 
   return {
-    /** PDF di un singolo capitolo */
     generateChapter({ htmlContent, customCss, chapterNumber = 1, pageSize = 'A4' }: ChapterRequest) {
-      // Avvolge anche il singolo capitolo in <section class="book-section">
+      // Stesso involucro del libro: i contatori dei titoli partono da .book-section e --chapter-index
       const sectionsHtml = `
       <section class="book-section" style="--chapter-index: ${chapterNumber};">
         ${htmlContent}
@@ -41,7 +40,7 @@ export function createPdfEngine(deps: PdfEngineDeps) {
       return render({ sectionsHtml, customCss, pageSize, debugName: 'debug_output.html' })
     },
 
-    /** PDF dell'intero libro: ogni sezione in un <section class="book-section">, con indice numerato */
+    /** is-structural-page: copertina e indice non numerano i titoli. data-section-type: l'indice raccoglie solo i capitoli */
     generateBook({ sections, customCss, pageSize = 'A4' }: BookRequest) {
       const sectionsHtml = sections
         .map(

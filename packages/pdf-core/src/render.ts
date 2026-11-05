@@ -32,14 +32,14 @@ export async function renderPdf(renderer: PdfRenderer, req: RenderRequest, hooks
 
     await page.evaluate(async () => {
       await document.fonts.ready
-      // Le immagini (es. la copertina) devono essere decodificate prima di stampare
+      // Le immagini (es. la copertina) devono essere decodificate prima di stampare; una rotta non blocca l'esportazione
       await Promise.all(Array.from(document.images).map(img => img.decode().catch(() => { })))
     })
 
     const pdfOptions: PdfOptions = {
       ...pdfPageOptions(req.pageSize),
       printBackground: true,
-      margin: { top: '0mm', bottom: '0mm', left: '0mm', right: '0mm' },
+      margin: { top: '0mm', bottom: '0mm', left: '0mm', right: '0mm' }, // i margini veri vengono da @page nel CSS del libro
       displayHeaderFooter: false,
     }
 
@@ -53,6 +53,7 @@ export async function renderPdf(renderer: PdfRenderer, req: RenderRequest, hooks
         else console.log(`[PDF ENGINE] Indice: trovate ${pages.size} pagine di titoli.`)
         await fillTocPages(page, pages)
       } else {
+        // Senza voci non c'è fillTocPages: i marcatori vanno tolti qui per non finire nel PDF
         await page.evaluate(() => document.querySelectorAll('.toc-marker').forEach(m => m.remove()))
       }
     }

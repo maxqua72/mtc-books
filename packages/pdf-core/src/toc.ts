@@ -1,7 +1,11 @@
 
 import type { PdfPage } from './types.js'
 
-/** Assegna un id ai titoli, ci mette un marcatore invisibile e rende cliccabili le voci dell'indice */
+/**
+ * Assegna un id ai titoli, ci mette un marcatore invisibile e rende cliccabili le voci dell'indice.
+ * data-toc-n di una voce è la posizione del titolo in questo elenco: useGeneratedToc dell'app deve contare
+ * gli stessi titoli nello stesso ordine.
+ */
 export async function prepareToc(page: PdfPage): Promise<number> {
   return page.evaluate(() => {
     const headings = Array.from(document.querySelectorAll<HTMLElement>(
