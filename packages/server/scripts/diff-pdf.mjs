@@ -1,4 +1,5 @@
 // Uso: node scripts/diff-pdf.mjs <a.pdf> <b.pdf> [pagine-da-mostrare]
+// Classifica le differenze di testo di ogni pagina: spaziatura, ordine delle parole o contenuto.
 import { readFile } from 'node:fs/promises'
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs'
 

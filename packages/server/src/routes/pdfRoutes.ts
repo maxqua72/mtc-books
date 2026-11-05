@@ -32,11 +32,7 @@ function attachmentHeader(filename: string): string {
   return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(filename)}`;
 }
 
-/**
- * POST /api/pdf/generate
- * Generazione PDF per il capitolo singolo
- */
-pdfRouter.post('/pdf/generate', async (req: Request, res: Response) => {
+pdfRouter.post('/pdf/generate',async (req: Request, res: Response) => {
   try {
     const { htmlContent, customCss, chapterNumber, pageSize } = req.body;
 
@@ -62,11 +58,7 @@ pdfRouter.post('/pdf/generate', async (req: Request, res: Response) => {
   }
 });
 
-/**
- * POST /api/pdf/generate-book
- * Generazione PDF per l'intero libro
- */
-pdfRouter.post('/pdf/generate-book', async (req: Request, res: Response) => {
+pdfRouter.post('/pdf/generate-book',async (req: Request, res: Response) => {
   try {
     const { sections, customCss, bookTitle, pageSize } = req.body;
 

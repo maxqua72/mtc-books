@@ -1,5 +1,5 @@
 // Uso: node scripts/diff-pdf-masked.mjs <a.pdf> <b.pdf>
-// Confronta il testo di ogni pagina escludendo le scacchiere (font Chess Merida) e mostra cosa contengono in B.
+// Confronta il testo di ogni pagina escludendo le scacchiere (font Chess Merida) e mostra i codici dei caratteri della prima.
 import { readFile } from 'node:fs/promises'
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs'
 

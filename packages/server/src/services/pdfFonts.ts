@@ -2,7 +2,6 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { buildFontCss } from '@mtc/pdf-core';
 
-/** Font incorporati nel PDF come data URI Base64. Il risultato si calcola UNA volta e si riusa. */
 const fontsDir = () => process.env.PDF_FONTS_DIR || path.resolve(process.cwd(), '../app/src/assets/fonts');
 
 async function loadFontCss(dir: string) {
@@ -13,6 +12,7 @@ async function loadFontCss(dir: string) {
   });
 }
 
+// Font incorporati nel PDF come data URI Base64: costosi da calcolare, quindi una volta sola
 let cache: Promise<string> | null = null;
 
 /** Un font mancante viene segnalato nel log e non si memorizza il risultato: rimettendo il file basta la richiesta successiva. */
