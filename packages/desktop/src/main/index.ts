@@ -16,8 +16,6 @@ import { setupUpdater, type Updater } from './updater.js'
 import { blockDictionaryDownload, setupSpellcheck } from './spellcheck.js'
 
 app.setName('MTC Books')
-// La cartella dati resta quella storica: rinominarla farebbe perdere copia interna e profili motore
-if (!app.commandLine.hasSwitch('user-data-dir')) app.setPath('userData', path.join(app.getPath('appData'), 'MTC Book'))
 registerSchemes()
 void app.whenReady().then(blockDictionaryDownload) // per primo, in ogni modalità di avvio
 

@@ -20,4 +20,4 @@ Per controllare a mano usa **Aiuto → Verifica aggiornamenti…**. Da **Aiuto �
 
 Usa **Impostazioni → App → App installate → MTC Books → Disinstalla** in Windows. I file `.mtcbook` restano dove sono.
 
-Il libro di lavoro interno e i profili del motore stanno in `%APPDATA%\MTC Book`. Puoi aprire questa cartella da **Aiuto → Apri la cartella dei dati**.
+Il libro di lavoro interno e i profili del motore stanno in `%APPDATA%\MTC Books`. Puoi aprire questa cartella da **Aiuto → Apri la cartella dei dati**.

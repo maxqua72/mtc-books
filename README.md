@@ -93,9 +93,9 @@ L'icona di finestra, installer e file `.mtcbook` viene da questi file. Il comand
 | Creare l'installer | `pnpm dist:desktop`: crea `packages\desktop\release\MTC-Books-Setup-<versione>.exe` |
 | Installare | Esegui il file; se compare SmartScreen: **Ulteriori informazioni** → **Esegui comunque** |
 | Disinstallare | **Impostazioni → App → App installate → MTC Books → Disinstalla** |
-| Ripartire da zero | Dopo la disinstallazione cancella `%APPDATA%\MTC Book` (libro di lavoro e profili motore) |
+| Ripartire da zero | Dopo la disinstallazione cancella `%APPDATA%\MTC Books` (libro di lavoro e profili motore) |
 
-L'app installata e `start` condividono i dati in `%APPDATA%\MTC Book`.
+L'app installata e `start` condividono i dati in `%APPDATA%\MTC Books`.
 
 ## Rilascio di una versione
 
