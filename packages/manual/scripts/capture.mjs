@@ -192,6 +192,14 @@ try {
     await page.getByTitle(/^Impostazioni/).click()
     await settle()
     await shot('impostazioni')
+    for (const [i, n] of ['carta', 'classico', 'scuro', 'verde'].entries()) {
+      await page.locator('input[name="app-theme"]').nth(i).check({ force: true })
+      await settle()
+      await page.keyboard.press('Escape'); await settle()
+      await shot('tema-' + n)
+      await page.getByTitle(/^Impostazioni/).click(); await settle()
+    }
+    await page.locator('input[name="app-theme"]').nth(0).check({ force: true })
     await page.keyboard.press('Escape')
     await settle()
   })
