@@ -202,4 +202,4 @@ export function registerFileIpc(d: Deps) {
       pending = null
     }
   })
-}
+}
