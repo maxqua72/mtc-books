@@ -33,6 +33,7 @@ export interface EngineProfile {
   args: string[]
 }
 
+/** path è solo da mostrare: la pagina sceglie con il token, valido fino alla ricerca successiva, e non può indicare altri eseguibili */
 export interface EngineCandidate { token: string; path: string }
 
 export type SearchMode = 'infinite' | 'depth' | 'time'
@@ -50,7 +51,7 @@ export const DEFAULT_ENGINE_PREFS: EnginePrefs = { mode: 'infinite', depth: 22, 
 export interface EngineSystemInfo { cpus: number; memoryMb: number }
 
 export interface AnalysisRequest {
-  id: number
+  id: number   // ripetuto negli eventi: la pagina scarta quelli di analisi ormai superate
   fen: string
   mode: SearchMode
   depth: number

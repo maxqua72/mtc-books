@@ -62,7 +62,7 @@ export interface DesktopBridge {
     commitOpen(): void
     /** Rilegge l'ultimo file del libro. Diventa il file corrente solo con commitOpen */
     reopenLast(): Promise<ReopenLastResult>
-    /** File aperto dal sistema (doppio clic, seconda istanza) */
+    /** File aperto dal sistema (doppio clic, argomento di avvio, seconda istanza). Iscriversi dice al main che la pagina è pronta a riceverli: consegna subito quello in attesa */
     onExternalOpen(cb: (file: OpenedFile) => void): () => void
     /** Prima della chiusura della finestra il main attende che questa funzione termini (max 6 secondi) */
     onBeforeClose(cb: () => Promise<void>): () => void
