@@ -26,27 +26,31 @@
 
     <!-- Azioni Globali Documento -->
     <div class="flex items-center gap-2">
-      <button @click="handleNewBook"
-        class="px-3.5 py-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer">
-        Nuovo
-      </button>
+      <div class="flex items-center gap-0.5">
+        <button @click="handleNewBook"
+          class="px-2 py-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer">
+          Nuovo
+        </button>
 
-      <button @click="handleOpenFile"
-        class="px-3.5 py-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer">
-        Apri...
-      </button>
+        <button @click="handleOpenFile"
+          class="px-2 py-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer">
+          Apri...
+        </button>
+      </div>
 
-      <button @click="isSettingsOpen = true"
-        class="px-3.5 py-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer"
-        title="Impostazioni: aspetto dell'applicazione">
-        <i class="fa-solid fa-gear"></i>
-      </button>
+      <div class="flex items-center gap-0.5">
+        <button @click="isSettingsOpen = true"
+          class="w-8 h-8 flex items-center justify-center text-base text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer"
+          title="Impostazioni: aspetto dell'applicazione">
+          <i class="fa-solid fa-gear"></i>
+        </button>
 
-      <button @click="openManual"
-        class="px-3.5 py-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer"
-        title="Manuale utente" aria-label="Manuale utente">
-        <i class="fa-solid fa-circle-question"></i>
-      </button>
+        <button @click="openManual"
+          class="w-8 h-8 flex items-center justify-center text-base text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer"
+          title="Manuale utente" aria-label="Manuale utente">
+          <i class="fa-solid fa-circle-question"></i>
+        </button>
+      </div>
 
       <!-- Interruttore sola lettura / modifica -->
       <button v-if="store.isBookLoaded" @click="store.setLocked(!store.isLocked)" role="switch"

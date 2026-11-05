@@ -1,4 +1,5 @@
-import { BrowserWindow } from 'electron'
+import { app, BrowserWindow } from 'electron'
+import path from 'node:path'
 import { openExternalSafe } from './externalLinks.js'
 
 let manual: BrowserWindow | null = null
@@ -19,6 +20,7 @@ export function openManualWindow(url: string, origin: string) {
     minWidth: 600,
     minHeight: 400,
     title: 'Manuale di MTC Book',
+    icon: app.isPackaged ? undefined : path.resolve(__dirname, '../build/icon.png'),
     autoHideMenuBar: true,
     webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
   })
