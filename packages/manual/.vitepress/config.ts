@@ -51,6 +51,7 @@ export default defineConfig({
           { text: 'Scorciatoie da tastiera', link: '/scorciatoie' },
           { text: 'Problemi frequenti', link: '/problemi' },
           { text: 'Glossario', link: '/glossario' },
+          { text: 'Privacy', link: '/privacy' },
         ],
       },
     ],

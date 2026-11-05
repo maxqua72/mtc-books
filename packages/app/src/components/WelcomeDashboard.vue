@@ -51,6 +51,7 @@
           />
         </div>
       </div>
+      <button type="button" @click="openManualPage('privacy')" class="block mx-auto text-xs text-neutral-500 underline hover:text-neutral-900 cursor-pointer">Privacy</button>
     </div>
 
     <!-- Modale Semplice di Configurazione Nuovo Libro -->
@@ -86,6 +87,7 @@
 import { ref, reactive } from 'vue'
 import { useChessBookStore } from '../stores/chessBookStore'
 import logo from '../assets/mtcbooks-logo.svg'
+import { openManualPage } from '../utils/manualPage'
 
 const store = useChessBookStore()
 const showCreateModal = ref(false)

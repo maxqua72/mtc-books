@@ -66,6 +66,7 @@
         <div class="border-t border-neutral-200 px-6 py-3 flex items-center gap-3">
           <p class="flex-1 text-[11px] text-neutral-500 leading-snug">
             Queste scelte restano su questo dispositivo: non finiscono nel file .mtcbook e non cambiano il PDF.
+            <button type="button" @click="openManualPage('privacy')" class="underline hover:text-neutral-900 cursor-pointer">Privacy</button>
           </p>
           <button @click="emit('close')"
             class="bg-neutral-900 text-white px-4 py-2 text-sm font-medium rounded-lg hover:bg-neutral-800 transition">
@@ -81,6 +82,7 @@ import { THEMES, useThemeStore } from '../stores/themeStore'
 import { useSpellcheckStore } from '../stores/spellcheckStore'
 import { capabilities } from '../platform'
 import BaseModal from './BaseModal.vue'
+import { openManualPage } from '../utils/manualPage'
 
 defineProps<{ isOpen: boolean }>()
 const emit = defineEmits<{ (e: 'close'): void }>()

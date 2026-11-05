@@ -11,6 +11,8 @@ export function openManualWindow(url: string, origin: string) {
   if (manual) {
     if (manual.isMinimized()) manual.restore()
     manual.focus()
+    // Un link a una pagina precisa la apre; F1 e il pulsante «?» lasciano quella che si sta leggendo
+    if (!url.endsWith('/manual/index.html')) void manual.loadURL(url)
     return
   }
 

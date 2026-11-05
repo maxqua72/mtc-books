@@ -84,6 +84,7 @@ import { platform } from '../platform'
 import { autosaveError, autosavePaused, useBookFileActions } from '../composables/useBookFileActions'
 import { useChessBookStore } from '../stores/chessBookStore'
 import logo from '../assets/mtcbooks-logo.svg'
+import { openManualPage } from '../utils/manualPage'
 import SettingsModal from './SettingsModal.vue'
 import SaveStatusIndicator from './SaveStatusIndicator.vue'
 import ExportSplitButton from './ExportSplitButton.vue'
@@ -94,8 +95,7 @@ const appVersion = __APP_VERSION__
 const store = useChessBookStore()
 const isSettingsOpen = ref(false)
 
-// Sul web apre una nuova scheda; nel desktop il processo main la trasforma nella finestra del manuale
-const openManual = () => window.open(`${import.meta.env.BASE_URL}manual/index.html`, '_blank', 'noopener')
+const openManual = () => openManualPage()
 const { handleNewBook, handleOpenFile } = useBookFileActions()
 const currentFile = computed(() => platform.files.currentFile?.value ?? null)
 const fileLabel = computed(() => {
