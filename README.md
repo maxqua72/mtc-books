@@ -71,6 +71,21 @@ git push origin main
 
 Il push avvia la CI ma non pubblica nulla: il rilascio parte solo con un tag `v*`.
 
+## Cambiare l'icona dell'applicazione
+
+Le icone non si rigenerano durante la compilazione: `icon.png` e `icon.ico` sono file versionati e vanno ricreati con un comando separato.
+
+1. Sostituisci `packages/desktop/build/icon.svg` con la nuova immagine, mantenendo questo nome. Conviene un disegno quadrato con fondo trasparente.
+2. Esegui `pnpm --filter @mtc/desktop icons`: ricrea `build/icon.png` (1024 px) e `build/icon.ico` (da 16 a 256 px).
+3. Controlla il risultato con `pnpm dist:desktop` e fai il commit dei tre file.
+
+L'icona di finestra, installer e file `.mtcbook` viene da questi file. Il comando non tocca gli altri due file, da aggiornare a mano se devono cambiare:
+
+| File | Dove si vede |
+|---|---|
+| `packages/app/public/favicon.svg` | Scheda del browser nella versione web |
+| `packages/app/src/assets/mtcbooks-logo.png` | Intestazione e schermata iniziale dell'app |
+
 ## Installazione di prova (senza pubblicare)
 
 | Attività | Come |
