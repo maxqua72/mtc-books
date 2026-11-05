@@ -1,7 +1,7 @@
 import { readFile, rm } from 'node:fs/promises'
 import { writeAtomic } from './fsUtil.js'
 
-/** Ultimo file associato al libro: percorso e impronta all'ultima lettura o scrittura di MTC Book */
+/** Ultimo file associato al libro: percorso e impronta all'ultima lettura o scrittura di MTC Books */
 export interface LastBook { path: string; mtimeMs: number; size: number }
 
 /** Dati utente dell'app, mai nel .mtcbook. Le scritture passano da una coda: dimenticare e ricordare restano in ordine. */

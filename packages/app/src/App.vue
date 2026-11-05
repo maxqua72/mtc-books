@@ -32,7 +32,7 @@
     <div v-if="!hasWriteLock"
       class="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
       <div class="bg-white rounded-xl border border-neutral-200 shadow-xl max-w-md w-full p-6 space-y-4">
-        <h3 class="text-lg font-semibold text-neutral-900">MTC Book è già aperto in un'altra scheda</h3>
+        <h3 class="text-lg font-semibold text-neutral-900">MTC Books è già aperto in un'altra scheda</h3>
         <p class="text-sm text-neutral-600">
           Lavorare su due schede contemporaneamente farebbe sovrascrivere il salvataggio dell'una all'altra.
           Chiudi questa scheda, oppure usa questa e l'altra smetterà di salvare.

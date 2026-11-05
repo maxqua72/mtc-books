@@ -12,4 +12,4 @@ export function readFormatVersion(book: unknown): number {
 
 export const isBookTooNew = (book: unknown): boolean => readFormatVersion(book) > BOOK_FORMAT_VERSION
 
-export const BOOK_TOO_NEW_MESSAGE = 'Questo libro è stato salvato con una versione più recente di MTC Book. Aggiorna l\'applicazione per aprirlo.'
+export const BOOK_TOO_NEW_MESSAGE = 'Questo libro è stato salvato con una versione più recente di MTC Books. Aggiorna l\'applicazione per aprirlo.'

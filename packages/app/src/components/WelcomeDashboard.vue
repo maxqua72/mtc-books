@@ -8,8 +8,8 @@
         <div class="w-16 h-16 bg-black rounded-2xl flex items-center justify-center text-white font-serif font-black text-3xl mx-auto shadow-md">
           M
         </div> -->
-        <img :src="logo" alt="MTC Book Writer" class="w-auto h-18 object-contain mx-auto" />
-        <h1 class="text-2xl font-black text-neutral-900 tracking-tight uppercase">MTC Book Writer</h1>
+        <img :src="logo" alt="MTC Books" class="w-auto h-18 object-contain mx-auto" />
+        <h1 class="text-2xl font-black text-neutral-900 tracking-tight uppercase">MTC Books</h1>
         <p class="text-sm text-neutral-500">Piattaforma di Micro-Publishing per Libri e Manuali di Scacchi</p>
       </div>
 

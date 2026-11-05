@@ -3,7 +3,7 @@
     <div class="px-6 py-5 space-y-3">
       <h3 id="pdf-notice-title" class="text-lg font-semibold text-neutral-900">PDF disponibile nell'app desktop</h3>
       <p class="text-sm text-neutral-600 leading-relaxed">
-        L'esportazione in PDF si fa con l'app desktop di MTC Book, che genera il file direttamente sul tuo computer.
+        L'esportazione in PDF si fa con l'app desktop di MTC Books, che genera il file direttamente sul tuo computer.
       </p>
       <p class="text-sm text-neutral-600 leading-relaxed">
         Puoi continuare a scrivere qui: salva il libro in un file .mtcbook e aprilo con l'app desktop per esportarlo.

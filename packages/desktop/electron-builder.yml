@@ -1,5 +1,5 @@
 appId: com.mtcbook.writer
-productName: MTC Book
+productName: MTC Books
 directories:
   output: release
 files:
@@ -14,7 +14,7 @@ extraResources:
   - from: resources/pdfjs
     to: pdfjs
 asar: true
-artifactName: MTC-Book-Setup-${version}.${ext}
+artifactName: MTC-Books-Setup-${version}.${ext}
 publish:
   provider: github
   owner: maxqua72
@@ -34,7 +34,7 @@ nsis:
   uninstallerIcon: build/icon.ico
 fileAssociations:
   - ext: mtcbook
-    name: Libro MTC Book
-    description: Libro MTC Book
+    name: Libro MTC Books
+    description: Libro MTC Books
     role: Editor
     icon: icon.ico

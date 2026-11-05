@@ -35,4 +35,4 @@ Se il libro è aperto in due schede, una sola può scrivere: scegli **Usa questa
 
 **Apri...** carica un file e **Nuovo** crea un libro. Entrambi sostituiscono il libro aperto e chiedono conferma se ci sono modifiche non salvate su file.
 
-L'app avvisa anche se stai aprendo una versione più vecchia dello stesso libro. Un file salvato da una versione più recente di MTC Book non si apre: aggiorna l'app.
+L'app avvisa anche se stai aprendo una versione più vecchia dello stesso libro. Un file salvato da una versione più recente di MTC Books non si apre: aggiorna l'app.

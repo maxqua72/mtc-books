@@ -1,7 +1,7 @@
 {
   "name": "@mtc/server",
   "version": "1.0.0",
-  "description": "Microservizio di generazione PDF ad alta fedelta per MTC Book",
+  "description": "Microservizio di generazione PDF ad alta fedelta per MTC Books",
   "main": "dist/server.js",
   "type": "module",
   "scripts": {

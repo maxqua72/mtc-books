@@ -3,8 +3,8 @@
     class="th-header h-14 bg-white border-b border-neutral-200 px-6 flex items-center justify-between shadow-sm shrink-0">
     <!-- Brand / Logo -->
     <div class="flex items-center gap-3">
-      <img :src="logo" alt="MTC Book" class="w-auto h-10 object-contain" />
-      <span class="text-md font-black text-neutral-950 tracking-tight uppercase">MTC Book</span>
+      <img :src="logo" alt="MTC Books" class="w-auto h-10 object-contain" />
+      <span class="text-md font-black text-neutral-950 tracking-tight uppercase">MTC Books</span>
       <span class="text-xs bg-neutral-100 text-neutral-500 px-2 py-0.5 rounded font-mono border border-neutral-200">
         v{{ appVersion }}
       </span>

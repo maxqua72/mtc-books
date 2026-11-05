@@ -1,8 +1,8 @@
 # Introduzione
 
-![La schermata iniziale di MTC Book Writer](/screenshots/schermata-iniziale.png)
+![La schermata iniziale di MTC Books](/screenshots/schermata-iniziale.png)
 
-MTC Book Writer serve a scrivere libri di scacchi: testo, diagrammi e partite commentate stanno nello stesso documento, che alla fine si esporta in PDF pronto per la lettura o la stampa.
+MTC Books serve a scrivere libri di scacchi: testo, diagrammi e partite commentate stanno nello stesso documento, che alla fine si esporta in PDF pronto per la lettura o la stampa.
 
 ## Cosa puoi fare
 

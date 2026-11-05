@@ -15,7 +15,9 @@ import { DOWNLOAD_URL } from '@mtc/shared'
 import { setupUpdater, type Updater } from './updater.js'
 import { blockDictionaryDownload, setupSpellcheck } from './spellcheck.js'
 
-app.setName('MTC Book')
+app.setName('MTC Books')
+// La cartella dati resta quella storica: rinominarla farebbe perdere copia interna e profili motore
+if (!app.commandLine.hasSwitch('user-data-dir')) app.setPath('userData', path.join(app.getPath('appData'), 'MTC Book'))
 registerSchemes()
 void app.whenReady().then(blockDictionaryDownload) // per primo, in ogni modalità di avvio
 
@@ -33,8 +35,8 @@ const findBookArg = (argv: string[]) => argv.find((a) => a.toLowerCase().endsWit
 function showAbout() {
     void dialog.showMessageBox({
         type: 'info',
-        title: 'MTC Book',
-        message: `MTC Book ${app.getVersion()}`,
+        title: 'MTC Books',
+        message: `MTC Books ${app.getVersion()}`,
         detail: `Electron ${process.versions.electron}\nChromium ${process.versions.chrome}\nNode ${process.versions.node}\n\nCartella dei dati:\n${app.getPath('userData')}`,
         buttons: ['OK'],
     })
@@ -62,7 +64,7 @@ function buildMenu() {
                 { label: 'Pagina di download e novità', click: () => void shell.openExternal(DOWNLOAD_URL) },
                 { label: 'Apri la cartella dei dati', click: () => void shell.openPath(app.getPath('userData')) },
                 { type: 'separator' },
-                { label: 'Informazioni su MTC Book…', click: showAbout },
+                { label: 'Informazioni su MTC Books…', click: showAbout },
             ],
         },
     ]

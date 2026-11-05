@@ -4,8 +4,8 @@ import { defineConfig } from 'vitepress'
 // L'indirizzo /manual/index.html è usato da AppHeader.vue e dal menu Aiuto del desktop.
 export default defineConfig({
   lang: 'it-IT',
-  title: 'Manuale di MTC Book',
-  description: 'Guida all’uso di MTC Book Writer',
+  title: 'Manuale di MTC Books',
+  description: 'Guida all’uso di MTC Books',
   base: '/manual/',
   outDir: '../app/dist/manual',
   metaChunk: true, // meno script inline: l'app ha una CSP rigida (vedi desktop/src/main/csp.ts)

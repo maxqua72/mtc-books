@@ -24,7 +24,7 @@ export function setupUpdater(getWindow: () => BrowserWindow | null, beforeInstal
   if (!app.isPackaged) {
     return {
       checkNow() {
-        void box({ type: 'info', title: 'MTC Book', message: 'Gli aggiornamenti funzionano solo nell\'applicazione installata.', buttons: ['OK'] })
+        void box({ type: 'info', title: 'MTC Books', message: 'Gli aggiornamenti funzionano solo nell\'applicazione installata.', buttons: ['OK'] })
       },
     }
   }
@@ -69,7 +69,7 @@ export function setupUpdater(getWindow: () => BrowserWindow | null, beforeInstal
 
   autoUpdater.on('update-not-available', () => {
     checking = false
-    if (manual) void box({ type: 'info', title: 'MTC Book', message: `Hai già l'ultima versione (${app.getVersion()}).`, buttons: ['OK'] })
+    if (manual) void box({ type: 'info', title: 'MTC Books', message: `Hai già l'ultima versione (${app.getVersion()}).`, buttons: ['OK'] })
     manual = false
   })
 
@@ -102,7 +102,7 @@ export function setupUpdater(getWindow: () => BrowserWindow | null, beforeInstal
     checkNow() {
       if (downloadedVersion) { void askRestart(downloadedVersion); return }
       if (checking) {
-        void box({ type: 'info', title: 'MTC Book', message: 'La verifica degli aggiornamenti è già in corso.', buttons: ['OK'] })
+        void box({ type: 'info', title: 'MTC Books', message: 'La verifica degli aggiornamenti è già in corso.', buttons: ['OK'] })
         return
       }
       manual = true

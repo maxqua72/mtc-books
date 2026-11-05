@@ -4,7 +4,7 @@
 La versione web non ha il motore.
 :::
 
-MTC Book usa un motore scacchistico UCI già presente sul computer, ad esempio Stockfish. Il motore non è incluso e l'app non lo scarica: lo trovi nella [pagina di download di Stockfish](https://stockfishchess.org/download/).
+MTC Books usa un motore scacchistico UCI già presente sul computer, ad esempio Stockfish. Il motore non è incluso e l'app non lo scarica: lo trovi nella [pagina di download di Stockfish](https://stockfishchess.org/download/).
 
 Analisi e valutazioni non entrano nel file `.mtcbook` né nel PDF. Il motore è un'impostazione dell'app, non del libro.
 

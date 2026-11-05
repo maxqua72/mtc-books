@@ -1,4 +1,4 @@
-# MTC Book Writer
+# MTC Books
 
 Editor per scrivere libri di scacchi. Monorepo pnpm: `app` (Vue), `shared`, `pdf-core`, `desktop` (Electron), `server` (opzionale).
 
@@ -90,9 +90,9 @@ L'icona di finestra, installer e file `.mtcbook` viene da questi file. Il comand
 
 | Attività | Come |
 |---|---|
-| Creare l'installer | `pnpm dist:desktop`: crea `packages\desktop\release\MTC-Book-Setup-<versione>.exe` |
+| Creare l'installer | `pnpm dist:desktop`: crea `packages\desktop\release\MTC-Books-Setup-<versione>.exe` |
 | Installare | Esegui il file; se compare SmartScreen: **Ulteriori informazioni** → **Esegui comunque** |
-| Disinstallare | **Impostazioni → App → App installate → MTC Book → Disinstalla** |
+| Disinstallare | **Impostazioni → App → App installate → MTC Books → Disinstalla** |
 | Ripartire da zero | Dopo la disinstallazione cancella `%APPDATA%\MTC Book` (libro di lavoro e profili motore) |
 
 L'app installata e `start` condividono i dati in `%APPDATA%\MTC Book`.
@@ -113,7 +113,7 @@ Per renderla disponibile, apri la bozza su GitHub e pubblicala: solo da quel mom
 
 ## Installazione per l'utente finale
 
-1. Scarica `MTC-Book-Setup-<versione>.exe` da <https://github.com/maxqua72/mtc-books-releases/releases/latest>.
+1. Scarica `MTC-Books-Setup-<versione>.exe` da <https://github.com/maxqua72/mtc-books-releases/releases/latest>.
 2. Esegui il file. L'app non è firmata: su SmartScreen scegli **Ulteriori informazioni** → **Esegui comunque**.
 3. Per il motore, scarica Stockfish da <https://stockfishchess.org/download/> e indicalo nel pannello **Motore**: non è incluso nell'app.
 

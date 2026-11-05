@@ -19,7 +19,7 @@ export function openManualWindow(url: string, origin: string) {
     height: 800,
     minWidth: 600,
     minHeight: 400,
-    title: 'Manuale di MTC Book',
+    title: 'Manuale di MTC Books',
     icon: app.isPackaged ? undefined : path.resolve(__dirname, '../build/icon.png'),
     autoHideMenuBar: true,
     webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },

@@ -7,7 +7,7 @@ import { LastBookStore } from './lastBook.js'
 
 const MAX_BYTES = 500 * 1024 * 1024
 const EXT = '.mtcbook'
-const FILTERS = [{ name: 'Libro MTC Book', extensions: ['mtcbook'] }]
+const FILTERS = [{ name: 'Libro MTC Books', extensions: ['mtcbook'] }]
 
 interface Deps {
   getWindow: () => BrowserWindow | null
@@ -112,7 +112,7 @@ export function registerFileIpc(d: Deps) {
     let askWhere = mode === 'save-as' || !target
     if (mode === 'auto' && !target) return { status: 'no-file' }
 
-    // Il file è stato modificato da altri dopo l'ultima lettura o scrittura di MTC Book?
+    // Il file è stato modificato da altri dopo l'ultima lettura o scrittura di MTC Books?
     if (target && currentStamp && mode !== 'save-as') {
       const now = await stampOf(target)
       if (now && !sameStamp(now, currentStamp)) {
@@ -120,7 +120,7 @@ export function registerFileIpc(d: Deps) {
         const { response } = await box(win, {
           type: 'warning',
           title: 'File modificato',
-          message: `Il file «${path.basename(target)}» è stato modificato da un altro programma dopo l’ultimo salvataggio di MTC Book.`,
+          message: `Il file «${path.basename(target)}» è stato modificato da un altro programma dopo l’ultimo salvataggio di MTC Books.`,
           detail: 'Sovrascrivendolo perderai quelle modifiche. In alternativa puoi salvare il libro con un altro nome.',
           buttons: ['Annulla', 'Sovrascrivi', 'Salva con nome…'],
           defaultId: 0,
@@ -202,4 +202,4 @@ export function registerFileIpc(d: Deps) {
       pending = null
     }
   })
-}
+}

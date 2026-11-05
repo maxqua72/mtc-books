@@ -25,7 +25,7 @@ export function useFileAutosave(canWrite: () => boolean) {
     const outcome = await saveToFile('auto')
     if (outcome === 'conflict') {
       autosavePaused.value = true
-      alert('Il file è stato modificato da un altro programma dopo l’ultimo salvataggio di MTC Book.\n\nIl salvataggio automatico su file è sospeso per non sovrascrivere quelle modifiche. Usa «Salva Lavoro» o «Salva con nome» per scegliere come procedere.')
+      alert('Il file è stato modificato da un altro programma dopo l’ultimo salvataggio di MTC Books.\n\nIl salvataggio automatico su file è sospeso per non sovrascrivere quelle modifiche. Usa «Salva Lavoro» o «Salva con nome» per scegliere come procedere.')
     }
   }
 

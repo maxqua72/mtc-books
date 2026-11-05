@@ -92,7 +92,7 @@ export function useBookFileActions() {
       }
 
       if (changed) {
-        const reload = confirm(`Il file «${book.name}» è stato modificato da un altro programma dopo l'ultimo salvataggio di MTC Book.\n\nOK: carica il libro dal file (le differenze nella copia interna andranno perse).\nAnnulla: resta sulla copia interna, senza file associato (per conservarla usa «Salva con nome»).`)
+        const reload = confirm(`Il file «${book.name}» è stato modificato da un altro programma dopo l'ultimo salvataggio di MTC Books.\n\nOK: carica il libro dal file (le differenze nella copia interna andranno perse).\nAnnulla: resta sulla copia interna, senza file associato (per conservarla usa «Salva con nome»).`)
         if (!reload) { platform.files.forgetCurrentFile?.(); return }
         await store.loadMtcBook(book.data)
       }

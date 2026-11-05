@@ -2,7 +2,7 @@
   <div class="space-y-2">
     <p v-if="!engine.profiles.length" class="text-[11px] text-neutral-600 leading-snug">
       Nessun motore configurato. Indica dove si trova il programma di un motore UCI (ad esempio Stockfish) già
-      installato sul computer: MTC Book lo avvia e lo ferma da solo. Non viene scaricato nulla.
+      installato sul computer: MTC Books lo avvia e lo ferma da solo. Non viene scaricato nulla.
       <a href="https://stockfishchess.org/download/" target="_blank" rel="noopener noreferrer"
         class="underline">Pagina di download di Stockfish</a>
     </p>

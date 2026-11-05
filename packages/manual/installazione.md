@@ -4,7 +4,7 @@ L'app desktop è disponibile per Windows.
 
 ## Installare l'app
 
-1. Scarica `MTC-Book-Setup-<versione>.exe` dalla [pagina di download](https://github.com/maxqua72/mtc-books-releases/releases/latest).
+1. Scarica `MTC-Books-Setup-<versione>.exe` dalla [pagina di download](https://github.com/maxqua72/mtc-books-releases/releases/latest).
 2. Esegui il file.
 3. Se compare l'avviso di SmartScreen, scegli **Ulteriori informazioni** e poi **Esegui comunque**: l'app non è ancora firmata digitalmente.
 
@@ -18,6 +18,6 @@ Per controllare a mano usa **Aiuto → Verifica aggiornamenti…**. Da **Aiuto �
 
 ## Disinstallare
 
-Usa **Impostazioni → App → App installate → MTC Book → Disinstalla** in Windows. I file `.mtcbook` restano dove sono.
+Usa **Impostazioni → App → App installate → MTC Books → Disinstalla** in Windows. I file `.mtcbook` restano dove sono.
 
 Il libro di lavoro interno e i profili del motore stanno in `%APPDATA%\MTC Book`. Puoi aprire questa cartella da **Aiuto → Apri la cartella dei dati**.

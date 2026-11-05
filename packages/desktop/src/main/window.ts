@@ -20,7 +20,7 @@ export function createMainWindow(useDist: boolean): BrowserWindow {
         minHeight: 700,
         show: false,
         backgroundColor: '#fafafa',
-        title: 'MTC Book',
+        title: 'MTC Books',
         icon: app.isPackaged ? undefined : path.resolve(__dirname, '../build/icon.png'),
         webPreferences: {
             preload: path.join(__dirname, 'preload.cjs'),
@@ -84,7 +84,7 @@ export function createMainWindow(useDist: boolean): BrowserWindow {
             buttons: ['Resta', 'Esci'],
             defaultId: 0,
             cancelId: 0,
-            title: 'MTC Book',
+            title: 'MTC Books',
             message: 'Il salvataggio automatico non è ancora terminato. Uscire comunque?',
         })
         if (choice === 1) event.preventDefault() // ignora il blocco e lascia chiudere
