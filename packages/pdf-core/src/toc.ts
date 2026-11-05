@@ -20,7 +20,10 @@ export async function prepareToc(page: PdfPage): Promise<number> {
       const mk = document.createElement('span');
       mk.className = 'toc-marker';
       mk.textContent = `[[TOC${i}]]`;
-      mk.style.cssText = 'position:absolute;font-size:2px;line-height:1;color:#ffffff;';
+      // Nelle colonne un marcatore fuori flusso può finire nella pagina prima del titolo: lì sta in linea, largo zero
+      mk.style.cssText = h.closest('.book-columns')
+        ? 'display:inline-block;width:0;height:0;white-space:nowrap;font-size:2px;line-height:0;color:#ffffff;'
+        : 'position:absolute;font-size:2px;line-height:1;color:#ffffff;';
       h.prepend(mk);
     });
 

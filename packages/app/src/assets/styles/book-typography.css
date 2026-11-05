@@ -83,6 +83,12 @@
     column-span: all;
 }
 
+/* A metà capitolo il testo sopra si ferma senza il suo margine: lo spazio lo dà il titolo */
+.is-two-columns .tiptap h2:not(:first-child),
+.book-columns h2:not(:first-child) {
+    margin-top: 6mm !important;
+}
+
 /* La didascalia segue la larghezza della scacchiera, non la allarga */
 .is-two-columns .tiptap .diagram-caption,
 .book-columns .diagram-caption {

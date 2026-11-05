@@ -412,11 +412,15 @@ body {
   break-inside: auto !important;
 }
 
-/* position: relative tiene il marcatore dell'indice nella stessa pagina del suo titolo */
+/* Nei diagrammi più piccoli il pallino del tratto non si sovrappone al badge, alto 24 px */
+.book-columns .turn-indicator {
+  top: calc(var(--diagram-size, 20px) * 1.07 + 24px + 1mm) !important;
+}
+
+/* Un titolo non resta da solo in fondo alla colonna */
 .book-columns h2,
 .book-columns h3,
 .book-columns h4 {
-  position: relative;
   break-after: avoid;
 }
 
