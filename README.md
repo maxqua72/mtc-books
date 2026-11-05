@@ -84,7 +84,7 @@ L'icona di finestra, installer e file `.mtcbook` viene da questi file. Il comand
 | File | Dove si vede |
 |---|---|
 | `packages/app/public/favicon.svg` | Scheda del browser nella versione web |
-| `packages/app/src/assets/mtcbooks-logo.png` | Intestazione e schermata iniziale dell'app |
+| `packages/app/src/assets/mtcbooks-logo.svg` | Intestazione e schermata iniziale dell'app |
 
 ## Installazione di prova (senza pubblicare)
 

@@ -85,7 +85,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useChessBookStore } from '../stores/chessBookStore'
-import logo from '../assets/mtcbooks-logo.png'
+import logo from '../assets/mtcbooks-logo.svg'
 
 const store = useChessBookStore()
 const showCreateModal = ref(false)

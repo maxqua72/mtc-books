@@ -1,6 +1,9 @@
 name: Screenshot del manuale
 on:
   workflow_dispatch:
+  push:
+    branches: [rename/mtc-books]
+    paths: [.github/workflows/manual-screenshots.yml]
 
 permissions:
   contents: write
@@ -17,6 +20,7 @@ jobs:
           cache: pnpm
       - run: sudo apt-get update && sudo apt-get install -y xvfb stockfish && sudo ln -sf /usr/games/stockfish /usr/local/bin/stockfish
       - run: pnpm install --frozen-lockfile
+      - run: pnpm check:boundaries && pnpm typecheck && pnpm test
       - run: pnpm --filter @mtc/app build
       - run: node scripts/copy-assets.mjs && pnpm exec tsup
         working-directory: packages/desktop
