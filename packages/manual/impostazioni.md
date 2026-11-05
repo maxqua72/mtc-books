@@ -6,9 +6,10 @@ Apri le impostazioni con l'icona a ingranaggio nell'intestazione. Restano su que
 
 ## Tema
 
-- **Tema standard**: lo stile originale dell'applicazione.
+- **Tema carta**: il tema predefinito, con interfaccia calda in stile carta.
+- **Tema classico**: interfaccia bianca e neutra.
 - **Tema scuro**: interfaccia scura, con il foglio sempre chiaro.
-- **Tema carta**: interfaccia calda, stile carta.
+- **Tema verde**: toni di salvia, come una scacchiera da torneo.
 
 ## Controllo ortografico
 

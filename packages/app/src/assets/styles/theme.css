@@ -7,7 +7,7 @@
 
    Struttura:
    1. Valori derivati (bordi, tinte dell'accento...): ogni tema può ridefinirli.
-   2. I DUE TEMI: qui si cambiano i colori.
+   2. I TEMI: qui si cambiano i colori.
    3. Regole che applicano le variabili ai componenti: di norma non si toccano.
    ========================================================================== */
 
@@ -27,7 +27,7 @@
 }
 
 /* ==========================================================================
-   2. I DUE TEMI
+   2. I TEMI
 
    Aree dell'app
      --t-header-bg   intestazione (header)
@@ -57,7 +57,7 @@
      "case della scacchiera" in fondo al file (altrimenti restano gli SVG)
    ========================================================================== */
 
-/* --- Tema standard: i colori attuali dell'applicazione ---------------------- */
+/* --- Tema classico (id "standard"): bianco e neutro ------------------------ */
 [data-theme="standard"] {
   color-scheme: light;
 
@@ -189,6 +189,37 @@
 
   --t-square-light: #f0d9b5;
   --t-square-dark: #b58863;
+}
+
+/* --- Tema verde: toni di salvia, come una scacchiera da torneo ------------- */
+[data-theme="green"] {
+  color-scheme: light;
+
+  --t-header-bg: #fbfcf8;
+  --t-left-bg: #f7f9f5;
+  --t-right-bg: #f7f9f5;
+  --t-main-bg: #eef2ea;
+  --t-toolbar-bg: #fbfcf8;
+  --t-desk-bg: #e0e7da;
+  --t-sheet-bg: #ffffff;
+  --t-surface-bg: #ffffff;
+
+  --t-text: #1e2a23;
+  --t-text-muted: #5c6b61;
+  --t-sheet-text: #171717;
+
+  --t-accent: #3f7d58;
+  --t-accent-fg: #ffffff;
+  --t-accent-strong: #356b4b;
+  --t-accent-ink: #27503a;
+  --t-link: #2f6b49;
+
+  --t-btn-bg: #24382e;
+  --t-btn-fg: #ffffff;
+  --t-btn-hover: #3a5345;
+
+  --t-square-light: #eeeed2;
+  --t-square-dark: #769656;
 }
 
 /* ==========================================================================

@@ -4,16 +4,17 @@ import { getSetting, putSetting } from '../db'
 
 // I colori dei temi stanno solo in src/assets/styles/theme.css.
 // Per aggiungere un tema: un nuovo blocco [data-theme="..."] nel CSS e una riga in THEMES.
-export type ThemeId = 'standard' | 'alt' | 'paper'
+export type ThemeId = 'paper' | 'standard' | 'alt' | 'green'
 
 export const THEMES: { id: ThemeId; title: string; description: string }[] = [
-  { id: 'standard', title: 'Tema standard', description: 'Lo stile originale dell’applicazione.' },
+  { id: 'paper', title: 'Tema carta', description: 'Il tema predefinito: interfaccia calda, stile carta.' },
+  { id: 'standard', title: 'Tema classico', description: 'Interfaccia bianca e neutra.' },
   { id: 'alt', title: 'Tema scuro', description: 'Interfaccia scura, con il foglio sempre chiaro.' },
-  { id: 'paper', title: 'Tema carta', description: 'Interfaccia calda, stile carta.' },
+  { id: 'green', title: 'Tema verde', description: 'Toni di salvia, come una scacchiera da torneo.' },
 ]
 
 const SETTING_ID = 'theme'
-const DEFAULT_THEME: ThemeId = 'standard'
+const DEFAULT_THEME: ThemeId = 'paper'
 
 const isThemeId = (value: unknown): value is ThemeId => THEMES.some(t => t.id === value)
 
@@ -26,7 +27,7 @@ export const useThemeStore = defineStore('theme', () => {
 
   const apply = () => { document.documentElement.dataset.theme = theme.value }
 
-  /** Da chiamare all'avvio, prima di montare l'app. Non lancia mai: in caso di errore resta il tema standard. */
+  /** Da chiamare all'avvio, prima di montare l'app. Non lancia mai: in caso di errore resta il tema predefinito. */
   async function init() {
     try {
       const raw = await getSetting(SETTING_ID)
