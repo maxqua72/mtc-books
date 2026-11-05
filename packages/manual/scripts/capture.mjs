@@ -102,6 +102,14 @@ try {
     await settle()
   })
 
+  await step('mosse-nel-testo', async () => {
+    await page.keyboard.type('Il punto chiave arriva con 10. Nxb5 cxb5 11. Bxb5+ Nbd7 12. O-O-O Rd8 13. Rxd7 Rxd7 14. Rd1: il Bianco sacrifica materiale, poi Qb8+ e Rd8# chiudono la partita.')
+    await page.waitForTimeout(600)
+    await shot('mosse-nel-testo', page.locator('.ProseMirror p').filter({ hasText: 'Il punto chiave' }))
+    await page.keyboard.press('Enter')
+    await settle()
+  })
+
   await step('import-pgn', async () => {
     await tab('Importa PGN')
     await right().locator('textarea').fill(PGN)

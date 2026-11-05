@@ -14,6 +14,14 @@ Il testo si scrive sul foglio al centro. I comandi sono nella barra degli strume
 - **Allineamento** del paragrafo.
 - **Aumenta rientro** (`Ctrl+]`) e **Riduci rientro** (`Ctrl+[`).
 
+## Mosse nel testo
+
+Mentre scrivi, le mosse in notazione inglese vengono riconosciute da sole: la lettera del pezzo diventa una figurina. Scrivendo `Nf3`, `Qxe5` o `Rad1` vedi il simbolo del cavallo, della donna o della torre. Vale anche per le promozioni, come `e8=Q`.
+
+![Le mosse scritte nel testo mostrate con le figurine](/screenshots/mosse-nel-testo.png)
+
+Le lettere usate sono `K`, `Q`, `R`, `B` e `N`. Una mossa dentro una parola più lunga non viene convertita.
+
 ## Link
 
 1. Seleziona il testo e clicca **Link** (`Ctrl+K`).
