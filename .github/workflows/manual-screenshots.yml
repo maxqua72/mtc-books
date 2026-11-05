@@ -1,9 +1,6 @@
 name: Screenshot del manuale
 on:
   workflow_dispatch:
-  push:
-    branches: [docs/privacy]
-    paths: [.github/workflows/manual-screenshots.yml]
 
 permissions:
   contents: write
