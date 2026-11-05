@@ -10,7 +10,7 @@ export const resetHistory = (ed: Editor) => {
     console.warn('[editor] Impossibile azzerare la cronologia annulla/ripristina:', e)
     return
   }
-  // Riallinea la toolbar a node view già montate (vedi il commento originale in useBookEditor)
+  // Riallinea la toolbar: una transazione vuota, a node view già montate
   requestAnimationFrame(() => {
     if (ed.isDestroyed) return
     try {

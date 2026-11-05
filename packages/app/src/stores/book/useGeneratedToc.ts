@@ -25,7 +25,7 @@ export function useGeneratedToc(
 
     let html = `<div class="toc-container"><h2 style="${FONT} font-size: 2rem; margin-bottom: 1.5rem;">Indice Generale</h2><ul style="list-style: none; padding: 0; margin: 0; ${FONT}">`
 
-    let entryIndex = 0   // progressivo globale: corrisponde all'id toc-h-N assegnato dal server
+    let entryIndex = 0   // progressivo globale: corrisponde all'id toc-h-N assegnato da pdf-core (prepareToc)
 
     chapters.forEach((ch, i) => {
       const mainCounter = i + 1
@@ -40,7 +40,6 @@ export function useGeneratedToc(
         let fontWeight = 'bold'
 
         if (h.level === '1') {
-          //numbering = `${mainCounter}. `
           numbering = numbered ? `${mainCounter}. ` : ''
           paddingLeft = '0px'
           fontSize = '1.1rem'
@@ -53,7 +52,6 @@ export function useGeneratedToc(
         } else {
           subCounter++
           subSubCounter = 0
-          //numbering = `${mainCounter}.${subCounter} `
           numbering = numbered ? `${mainCounter}.${subCounter} ` : ''
           paddingLeft = '20px'
           fontSize = '0.95rem'

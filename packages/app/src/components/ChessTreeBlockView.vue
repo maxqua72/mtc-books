@@ -159,8 +159,7 @@ const deleteBlock = () => {
   }
 }
 
-// Porta in vista la mossa attiva di QUESTO albero. Un solo watcher per blocco,
-// al posto di uno per ogni mossa (prima stava in ogni ChessMoveRenderer).
+// Porta in vista la mossa attiva di QUESTO albero. Un solo watcher per blocco, non uno per ogni mossa.
 const contentEl = ref<HTMLElement | null>(null)
 
 watch(
@@ -199,8 +198,6 @@ watch(
 
 /* Quando il mouse passa sopra il blocco intero della partita */
 .chess-tree-block-container:hover {
-  /*background-color: rgba(248, 250, 252, 0.7);
-  border-color: #cbd5e1;*/
   background-color: color-mix(in srgb, var(--t-accent-wash) 70%, transparent);
   border-color: color-mix(in srgb, var(--t-accent), #ffffff 80%);
 }
@@ -230,7 +227,7 @@ watch(
   background-color: var(--t-accent-wash, rgba(239, 246, 255, 0.4));
 }
 
-/* Stessa linea blu dei paragrafi (-12px), compensando il margin-left: -7px del blocco */
+/* Stessa linea dei paragrafi (-12px), compensando il margin-left: -7px del blocco */
 .chess-tree-block-container.is-active-tree::before {
   content: '';
   position: absolute;
@@ -361,8 +358,7 @@ watch(
   color: #525252;
 }
 
-/* REGOLA PER LA STAMPA / ESPORTAZIONE PDF:
-   Annulla completamente i margini negativi, i padding e nasconde l'interfaccia dell'hover */
+/* Stampa dal browser: il PDF del libro non riceve gli stili scoped e usa pdf-print.css */
 @media print {
   .chess-tree-block-container {
     padding: 0 !important;

@@ -101,10 +101,6 @@ export function useBlockInsertion(editor: EditorRef) {
 
       // Modalità libera: al cursore, senza toccare alberi
       if (!tree || !block) {
-        /*
-        ed.chain().focus()
-          .insertChessDiagram({ fen: diagramFen, flipped: treeStore.boardFlipped, shapes: diagramShapes })
-          .insertContent({ type: 'paragraph' }).run()*/
         const { selection } = ed.state
         const pos = selection instanceof NodeSelection || selection.$to.depth === 0
           ? selection.to                 // nodo selezionato (es. un diagramma): subito dopo

@@ -10,7 +10,7 @@ const key = new PluginKey<DecorationSet>('figurines')
 // Decorations di un solo blocco di testo (pos = posizione del blocco nel documento)
 function buildBlock(node: PMNode, pos: number): Decoration[] {
   const out: Decoration[] = []
-  // Si legge il blocco intero: una mossa può attraversare grassetto/corsivo
+  // Si legge il blocco intero: una mossa può attraversare grassetto/corsivo. I nodi inline valgono un carattere, così gli indici restano posizioni
   const text = node.textBetween(0, node.content.size, undefined, '\ufffc')
   for (const { index, letter } of findPieceLetters(text)) {
     const from = pos + 1 + index

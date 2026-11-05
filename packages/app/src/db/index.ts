@@ -47,7 +47,7 @@ export class MtcDatabase extends Dexie {
   constructor() {
     super('MtcBookDatabase')
 
-    // Schema aggiornato: rimossa la tabella 'trees'
+    // Versione 2: rimossa la tabella 'trees'
     this.version(2).stores({
       bookState: 'id',
       sections: 'id',
@@ -117,9 +117,6 @@ export async function setDirtyVsFile(flag: boolean) {
   await db.bookState.update('current_book', { dirtyVsFile: flag })
 }
 
-/**
- * Svuota completamente il database locale IndexedDB
- */
 export async function clearIndexedDB() {
   await db.bookState.clear()
   await db.sections.clear()

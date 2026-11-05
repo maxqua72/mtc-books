@@ -9,9 +9,6 @@
         }" contenteditable="false" @click.stop="selectMove(nodes[0].id)" tabindex="0"
           @keydown.stop="handleMoveKeydown(nodes[0].id, $event)">
           <span class="move-prefix">{{ getMovePrefix(nodes[0]) }}</span>
-          <!-- <span class="move-san">{{ nodes[0].san }}</span> -->
-          <!-- <span class="move-san" v-html="convertToChessFont(nodes[0].san)"></span> -->
-          <!-- <span class="move-san"><span v-if="sanParts(nodes[0].san).glyph" :class="sanParts(nodes[0].san).cls">{{ sanParts(nodes[0].san).glyph }}</span>{{ sanParts(nodes[0].san).rest }}</span> -->
           <span class="move-san"><template v-for="(p, i) in sanParts(nodes[0].san)" :key="i"><span v-if="p.cls"
                 :class="p.cls">{{ p.text }}</span><template v-else>{{ p.text }}</template></template></span>
           <span v-if="nagText(nodes[0])" class="move-nag">{{ nagText(nodes[0]) }}</span>
@@ -70,7 +67,7 @@ interface Props {
   isVariantRoot?: boolean
   afterBlock?: boolean
   treeId: string
-  figurineType?: string // Deve essere presente qui come opzionale con il "?"
+  figurineType?: string
   openIds?: ReadonlySet<string>   // radici di variante la cui parentesi chiude non si stampa (il testo continua nel blocco dopo)
 }
 
@@ -78,7 +75,7 @@ const props = withDefaults(defineProps<Props>(), {
   isVariantContext: false,
   isVariantRoot: false,
   afterBlock: false,
-  figurineType: 'goodcompanions', // Il valore di default ora combacia perfettamente
+  figurineType: 'goodcompanions',
   openIds: () => new Set<string>(),
 })
 
@@ -92,17 +89,12 @@ const applyEditable = (el: HTMLElement) => el.setAttribute('contenteditable', lo
 watch(locked, () => Object.values(commentRefs).forEach(applyEditable))
 
 // Numero e stato dei riferimenti nei commenti: il commento ha v-once, quindi si riallinea a mano
-//const refreshRefs = (el: HTMLElement) => refreshDiagramRefs(el, bookStore.diagramLabels)
 const refreshRefs = (el: HTMLElement) => {
   refreshDiagramRefs(el, bookStore.diagramLabels)
   applyFigurines(el)
 }
 
-// Mentre si digita: le mosse complete diventano figurine (non durante la composizione IME)
-/*const onCommentInput = (e: Event) => {
-  if (!(e as InputEvent).isComposing) applyFigurines(e.currentTarget as HTMLElement)
-}*/
-
+// Mentre si digita: le mosse complete diventano figurine (non durante la composizione IME). Senza mosse né figurine il testo non si riscrive
 const onCommentInput = (e: Event) => {
   if ((e as InputEvent).isComposing) return
   const el = e.currentTarget as HTMLElement
@@ -169,7 +161,7 @@ const activateThisTree = (nodeId: string) => {
   }
 }
 
-// Gestione blindata della tastiera
+// Il fuoco è su una mossa: i tasti vanno nel suo commento, non in ProseMirror
 const handleMoveKeydown = (nodeId: string, event: KeyboardEvent) => {
   if (event.ctrlKey || event.altKey || event.metaKey || event.key === 'Tab') return
 
@@ -219,7 +211,6 @@ const onCommentBlur = (nodeId: string, event: FocusEvent) => {
   if (!targetNode) return
 
   // Si salva sempre la versione sanificata, mai l'innerHTML grezzo
-  //const clean = target.innerText.trim() === '' ? '' : sanitizeCommentHtml(target.innerHTML)
   // si salva SEMPRE senza figurine
   const clean = target.innerText.trim() === '' ? '' : sanitizeCommentHtml(plainFigurineHtml(target))
   targetNode.comment = clean || null
@@ -251,12 +242,6 @@ const getMovePrefix = (node: ChessMoveNode): string => {
     return `${node.moveNumber}. `
   }
 
-  /*
-  const parentNode = treeStore.findNodeById(myTree.value?.rootNodes || [], node.parentId || '')
-  if (!parentNode) {
-    return `${node.moveNumber}... `
-  }
-    */
   // parentId null = prima mossa dell'albero (nessun padre)
   if (node.parentId === null) return `${node.moveNumber}... `
 
@@ -271,18 +256,6 @@ const getMovePrefix = (node: ChessMoveNode): string => {
 
   return ''
 }
-/*
-const FIGURINES: Record<string, { cls: string; map: Record<string, string> }> = {
-  cases: {
-    cls: 'chess-cases-figurine',
-    map: { K: 'k', Q: 'q', R: 'r', B: 'b', N: 'n' }
-  },
-  goodcompanions: {
-    cls: 'tgc-figurine',
-    map: { K: '0', Q: 'G', R: 'W', B: 'm', N: '©' }
-  }
-}
-*/
 interface SanPart { text: string; cls: string }   // cls vuota = testo normale, altrimenti classe della figurina
 
 // Restituisce segmenti di testo, mai HTML: l'escape lo fa l'interpolazione di Vue.
@@ -352,14 +325,12 @@ const nagText = (node: ChessMoveNode) => nagsToText(node.nags)
 }
 
 .comment-block {
-  /* font-style: italic; */
   text-indent: 0;
 }
 
 .comment-inline,
 .variant-inline-wrapper {
   display: inline;
-  /* font-style: italic; */
   padding: 0 4px;
 }
 
@@ -400,10 +371,10 @@ const nagText = (node: ChessMoveNode) => nagsToText(node.nags)
 :deep(.tgc-figurine) {
   font-family: 'Chess The Good Companions', sans-serif;
   font-size: 1.05em;
-  /* Leggermente più piccolo per uniformarlo alle lettere */
+  /* Misura che lo uniforma alle lettere */
   line-height: 1;
   margin-right: 1px;
   vertical-align: 1px;
-  /* Lo spinge più in basso perché i glifi da diagramma tendono a "volare" */
+  /* Lo alza di poco per allinearlo alle lettere */
 }
 </style>

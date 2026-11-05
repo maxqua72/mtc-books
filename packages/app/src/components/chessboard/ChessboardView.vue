@@ -23,7 +23,7 @@ const props = defineProps<{
   turnColor: 'white' | 'black'
   orientation?: 'white' | 'black'
   dests: Map<Key, Key[]>
-  linked?: boolean   // modalità albero: bordo azzurro
+  linked?: boolean   // modalità albero: scacchiera marrone
   shapes?: BoardShape[]   // frecce e marcatori della posizione mostrata
   autoShapes?: { orig: string; dest?: string; brush?: string }[]   // frecce temporanee, non disegnabili dall'utente
   editable?: boolean   // editor scacchiera: pezzi liberi, niente mosse né frecce
@@ -168,7 +168,6 @@ const onTransitionEnd = (e: Event) => {
 onMounted(() => {
   if (!boardElement.value) return
 
-  // 1. Inizializzazione standard di Chessground
   cgApi = Chessground(boardElement.value, {
     fen: props.fen,
     coordinates: true,
@@ -233,7 +232,6 @@ defineExpose({ redraw: remeasure, resync, getShapes, clearShapes, setPlacement, 
 .chessboard-outer {
   width: 402px;
   height: 402px;
-  /*box-sizing: border-box;*/
 }
 
 /* 2. La scacchiera si adatta all'interno e si posiziona al centro */
@@ -254,10 +252,6 @@ defineExpose({ redraw: remeasure, resync, getShapes, clearShapes, setPlacement, 
 :deep(cg-container) {
     outline: 2px solid black;
 }
-/*
-.chessboard-outer.linked :deep(cg-container) {
-    outline-color: #3b82f6;
-}*/
 
 /* Editor scacchiera con uno strumento scelto: il clic posa o toglie un pezzo */
 .chessboard-outer.painting :deep(cg-board) {

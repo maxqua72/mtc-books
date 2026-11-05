@@ -13,6 +13,5 @@ const app = createApp(App)
 const pinia = createPinia()
 
 app.use(pinia)
-//app.mount('#app')
 // Il tema si legge da IndexedDB prima del montaggio: così non si vede il passaggio da uno stile all'altro
 useThemeStore(pinia).init().finally(() => app.mount('#app'))

@@ -63,7 +63,7 @@ export function useFileState({ metadata, sectionIndex, zippedSectionsCache }: Fi
     if (fileBaselineSig !== null) fileDirty.value = contentSignature() !== fileBaselineSig
   }
 
-  /** Da chiamare dopo aver scaricato il file .mtcbook */
+  /** Da chiamare dopo aver scritto il file .mtcbook */
   async function markFileSaved() {
     fileBaselineSig = contentSignature()
     fileDirty.value = false

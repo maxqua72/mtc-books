@@ -146,12 +146,6 @@ const groups = computed<MenuButton[][]>(() => [
   z-index: -1;
 }
 
-/* Compare al passaggio del mouse sulla card del diagramma (che sta nel componente padre) */
-/*:global(.diagram-card:hover) .diagram-actions-menu {
-  opacity: 1;
-  pointer-events: auto;
-}*/
-
 .action-btn {
   width: 28px;
   height: 28px;

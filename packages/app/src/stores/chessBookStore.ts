@@ -16,14 +16,13 @@ import { parseMtcBook, buildMtcBook, type BookAsset, peekMtcBook } from './book/
 import { scanChapter } from './book/sectionScan'
 import { platform } from '../platform'
 
-// I tipi restano importabili da qui, come prima della divisione in moduli
+// I tipi restano importabili anche da qui
 export type { SectionType, PageFormat, SaveStatus, SectionIndexItem, BookMetadata } from './book/types'
 
 /**
  * Store del libro: stato di base, navigazione tra le sezioni e persistenza.
  * La logica specializzata sta in ./book/: copertina, numerazione diagrammi, indice,
  * stato della copia su disco, I/O del pacchetto .mtcbook.
- * Le chiavi restituite sono le stesse di sempre: i componenti non cambiano.
  */
 export const useChessBookStore = defineStore('chessBook', () => {
     // Sezioni già passate da sanitizeTrees: al ritorno non si ripete la ricostruzione

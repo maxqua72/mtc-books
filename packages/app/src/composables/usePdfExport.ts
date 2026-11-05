@@ -1,5 +1,5 @@
-// Esportazione PDF via server: capitolo corrente o libro intero.
-// Il server (pdfEngine) non cambia: qui si prepara solo l'HTML da inviare.
+// Esportazione PDF: capitolo corrente o libro intero.
+// Qui si prepara solo l'HTML: il PDF lo genera pdf-core, nell'app desktop o sul server.
 import { nextTick, ref, watch, type ShallowRef } from 'vue'
 import type { Editor } from '@tiptap/vue-3'
 import { useChessBookStore } from '../stores/chessBookStore'
@@ -18,11 +18,11 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
   const store = useChessBookStore()
   const pdfStore = usePdfStore()
 
-  /** true mentre il client assembla i capitoli (prima della chiamata al server) */
+  /** true mentre il client assembla i capitoli (prima di generare il PDF) */
   const isAssembling = ref(false)
   const assemblyLabel = ref('')
 
-  // CSS inviato al server: variabili del libro + tipografia condivisa + regole di stampa
+  // CSS del PDF: variabili del libro + tipografia condivisa + regole di stampa
   const buildCss = (chapterIndex: number) => {
     const { top, right, bottom, left } = layout.margins.value
     const { paragraph, diagram, variation } = layout.spacing.value
@@ -47,14 +47,13 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
       }`
 
     // Prima la tipografia condivisa con l'editor, poi le regole di stampa (nessuna proprietà in comune)
-    //return `${variables}\n${typographyStyles}\n${pdfPrintStyles}`
     return `${variables}\n${typographyStyles}\n${pdfPrintStyles}\n${noNumbering}`
 
   }
 
   /**
    * HTML reale del DOM dell'editor (con i componenti Vue già espansi), ripulito dall'interfaccia di lavoro.
-   * Il numero di capitolo non si imposta qui: lo applica il server con `--chapter-index` sulla sezione.
+   * Il numero di capitolo non si imposta qui: lo applica pdf-core con `--chapter-index` sulla sezione.
    */
   const captureEditorHtml = (): string | null => {
     const root = editor.value?.view.dom ?? document.querySelector('.tiptap')
@@ -182,7 +181,6 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
 
         let html = ''
         if (section.type === 'index') {
-          //html = store.generatedTocHtml
           html = figurinizeHtml(store.generatedTocHtml)
         } else if (section.type === 'cover') {
           html = await store.buildCoverHtml(section.id)
@@ -195,7 +193,7 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
         sections.push({ id: section.id, title: section.title, type: section.type, chapterNumber: chapterCounter, html })
       }
 
-      // Si riporta l'utente dov'era PRIMA della chiamata di rete (che può essere lunga)
+      // Si riporta l'utente dov'era PRIMA di generare il PDF (che può essere lungo)
       await restoreOriginalSection()
 
       await pdfStore.exportFullBook({

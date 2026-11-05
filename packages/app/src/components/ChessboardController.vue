@@ -138,9 +138,6 @@ const playableDests = computed(() => {
   return dests
 })
 
-// Mossa fisica dell'utente:
-// - modalità albero: registrata nell'albero (o navigazione al nodo esistente se la mossa c'è già)
-// - modalità libera: registrata nella cronologia temporanea, che non viene mai salvata
 type PromotionPiece = 'q' | 'r' | 'b' | 'n'
 
 // Mossa di promozione in attesa della scelta del pezzo (la scacchiera mostra già il pedone sulla casella di arrivo)
@@ -171,6 +168,7 @@ const cancelPromotion = () => {
   chessboardRef.value?.resync()   // il pedone torna dov'era
 }
 
+// Registra la mossa:
 // - modalità albero: registrata nell'albero (o navigazione al nodo esistente se la mossa c'è già)
 // - modalità libera: registrata nella cronologia temporanea, che non viene mai salvata
 const playMove = (orig: Key, dest: Key, promotion?: PromotionPiece) => {

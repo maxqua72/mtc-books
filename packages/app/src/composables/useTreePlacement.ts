@@ -1,4 +1,4 @@
-// Dove finisce un nuovo albero (importazione PGN): posizione, descrizione, riquadro tratteggiato, richieste di inserimento
+// Dove finisce un nuovo albero: posizione, descrizione, riquadro tratteggiato, richieste di inserimento
 import { nextTick, watch, type ShallowRef } from 'vue'
 import type { Editor } from '@tiptap/vue-3'
 import { useChessBookStore } from '../stores/chessBookStore'

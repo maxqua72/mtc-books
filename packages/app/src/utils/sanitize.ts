@@ -13,7 +13,7 @@ const MAX_NODES = 50000
 const MAX_DEPTH = 2000
 
 // ---------------------------------------------------------------------------
-// Commenti delle mosse: solo formattazione minima, nessun attributo
+// Commenti delle mosse: solo formattazione minima; gli attributi ammessi servono ai riferimenti ai diagrammi
 // ---------------------------------------------------------------------------
 const COMMENT_CONFIG = {
   ALLOWED_TAGS: ['b', 'strong', 'i', 'em', 'u', 'sub', 'sup', 'br', 'span'],
@@ -201,7 +201,7 @@ export function sanitizeTrees(raw: unknown): ChessTree[] {
 }
 
 // ---------------------------------------------------------------------------
-// Indice delle sezioni: gli id finiscono in attributi HTML (export server)
+// Indice delle sezioni: gli id finiscono in attributi HTML (export PDF)
 // ---------------------------------------------------------------------------
 export function sanitizeSectionIndex(raw: unknown): SectionIndexItem[] {
   if (!Array.isArray(raw)) return []

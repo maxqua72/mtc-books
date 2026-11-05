@@ -89,7 +89,7 @@ export function useBookEditor() {
         }
         return false
       },
-      // Click nel testo fuori da alberi e diagrammi: si torna in modalità libera
+      // Ctrl+clic su un link: lo apre. Clic nel testo fuori da alberi e diagrammi: si torna in modalità libera
       handleClick(_view, _pos, event) {
         const target = event.target as HTMLElement | null
         const anchor = target?.closest('a[href]') as HTMLAnchorElement | null

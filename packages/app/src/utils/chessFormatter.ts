@@ -1,9 +1,9 @@
-// utils/chessFormatter.ts
 import { isValidFen } from './sanitize'
 
 export function fenToBoardString(fen: string, flipped = false): string {
   if (!isValidFen(fen)) return ''
 
+  // Font Chess Merida: ogni pezzo ha un glifo per la casa chiara e uno per la scura
   const keymap: Record<string, { light: string; dark: string }> = {
     'P': { light: 'p', dark: 'P' }, 'p': { light: 'o', dark: 'O' },
     'N': { light: 'n', dark: 'N' }, 'n': { light: 'm', dark: 'M' },
@@ -25,6 +25,7 @@ export function fenToBoardString(fen: string, flipped = false): string {
     return cells
   })
 
+  // Glifi del bordo con le coordinate: traverse dall'ottava alla prima, colonne dalla a alla h
   let leftBorderCodes = [199, 198, 197, 196, 195, 194, 193, 192]
   let bottomCoords = 'ÈÉÊËÌÍÎÏ'
 

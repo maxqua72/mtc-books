@@ -1,9 +1,9 @@
 /* ==========================================================================
    TEMI DELL'INTERFACCIA
 
-   Il tema attivo è l'attributo <html data-theme="standard|alt"> (lo imposta
+   Il tema attivo è l'attributo <html data-theme="paper|standard|alt|green"> (lo imposta
    stores/themeStore.ts). Questo file NON è incluso nell'esportazione PDF, che
-   usa solo pdf-print.css: i temi non cambiano mai il PDF.
+   usa solo book-typography.css e pdf-print.css: i temi non cambiano mai il PDF.
 
    Struttura:
    1. Valori derivati (bordi, tinte dell'accento...): ogni tema può ridefinirli.
@@ -12,7 +12,7 @@
    ========================================================================== */
 
 /* ==========================================================================
-   1. VALORI DERIVATI (valgono per entrambi i temi)
+   1. VALORI DERIVATI (valgono per tutti i temi)
    Per forzarne uno, basta scriverlo nel blocco del tema (viene dopo e vince).
    ========================================================================== */
 [data-theme] {
@@ -96,7 +96,7 @@
   --t-link-ring: #93c5fd;
 }
 
-/* --- Tema alternativo: da rifinire cambiando i valori qui sotto ------------- */
+/* --- Tema scuro (id "alt"): da rifinire cambiando i valori qui sotto ------------- */
 [data-theme="alt"] {
   color-scheme: dark;
 
@@ -128,39 +128,6 @@
 }
 
 /* --- Tema carta: da rifinire cambiando i valori qui sotto ------------- */
-/*
-[data-theme="paper"] {
-  color-scheme: light;
-
-  --t-header-bg: #ffffff;
-  --t-left-bg: #faf9f5;
-  --t-right-bg: #ffffff;
-  --t-main-bg: #f2efe7;
-  --t-toolbar-bg: #fafafa;
-  --t-desk-bg: #E6E1D5;
-  --t-sheet-bg: #ffffff;
-  --t-surface-bg: #ffffff;
-
-  --t-text: #171717;
-  --t-text-muted: #737373;
-  --t-sheet-text: #171717;
-
-  --t-accent: #c77359;
-  --t-accent-fg: #ffffff;
-  --t-accent-strong: #d07a5a;
-  --t-accent-ink: #995B44;
-  --t-link: #f1efeb;
-
-  --t-btn-bg: #171717;
-  --t-btn-fg: #ffffff;
-  --t-btn-hover: #404040;
-
-  --t-square-light: #f0d9b5;
-  --t-square-dark: #b58863;
-
- 
-}*/
-
 [data-theme="paper"] {
   color-scheme: light;
 
@@ -179,9 +146,9 @@
 
   --t-accent: #b45f44;          /* bianco sopra ≈ 4,5:1 */
   --t-accent-fg: #ffffff;
-  --t-accent-strong: #a3513a;   /* ora più scuro di accent: 5,5:1 */
+  --t-accent-strong: #a3513a;   /* più scuro di accent: 5,5:1 */
   --t-accent-ink: #84402b;      /* più scuro di strong, per hover e testi su tinta */
-  --t-link: #9a4c33;            /* era quasi bianco */
+  --t-link: #9a4c33;
 
   --t-btn-bg: #2a251f;
   --t-btn-fg: #ffffff;

@@ -11,7 +11,7 @@
     <!-- Altrimenti, sblocca l'ambiente di lavoro completo a 3 Colonne -->
     <div v-else class="flex flex-1 overflow-hidden animate-fade-in">
 
-      <!-- Colonna Sinistra (Nuova): Organizzatore dei capitoli -->
+      <!-- Colonna Sinistra: Organizzatore dei capitoli -->
       <BookOrganizer />
 
       <!-- Colonna Centrale: Editor del Libro -->
@@ -22,8 +22,6 @@
       <!-- Colonna Destra: Console di Supporto e Scacchiera -->
       <aside
         class="th-right w-[460px] bg-white border-l border-neutral-200 py-6 px-3 flex flex-col items-center justify-start overflow-y-auto shrink-0 no-print">
-        <!-- <ChessBoard />  -->
-        <!-- Sostituito ChessBoard con ChessboardController passandogli l'istanza dell'editor -->
         <ChessboardController />
       </aside>
 

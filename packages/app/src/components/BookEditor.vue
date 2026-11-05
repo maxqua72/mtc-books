@@ -129,24 +129,18 @@ const handleCanvasClick = (event: MouseEvent) => {
     box-sizing: border-box;
 }
 
-/* Wrapper per la centratura sicura in caso di overflow */
+/* Ancorato a sinistra: centrato, un foglio più largo dello spazio verrebbe tagliato a sinistra */
 .editor-scroll-wrapper {
     display: flex;
     flex-direction: column;
-    /*align-items: center;*/
-    /* Centra l'elemento solo lungo l'asse verticale/orizzontale senza tagliare a sinistra */
     align-items: flex-start;
-    /* CAMBIATO: da 'center' a 'flex-start' per ancorare a sinistra */
     min-width: min-content;
     /* Permette all'elemento di espandere il contenitore nativo di scorrimento */
     width: 100%;
 }
 
 .zoom-transform-wrapper {
-    /*margin: 0 auto; */
-    /* Centra automaticamente quando c'è spazio sufficiente */
     margin-left: 0 !important;
-    /* CAMBIATO: rimuove la centratura orizzontale automatica */
     margin-right: auto !important;
     box-sizing: border-box;
     will-change: transform;
@@ -212,26 +206,6 @@ const handleCanvasClick = (event: MouseEvent) => {
 
     margin: 0 auto 2rem 0 !important;
     box-sizing: border-box;
-
-    /* Posizionamento millimetrico esatto dell'area grigia di overflow */
-    /*
-    background-image:
-        linear-gradient(to bottom,
-            transparent calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm) - 1px),
-            #ef4444 calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm) - 1px),
-            #ef4444 calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm) + 1px),
-            transparent calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm) + 1px)),
-        linear-gradient(to bottom,
-            transparent 0px,
-            transparent calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm)),
-            #f9fafb calc(var(--page-height, 297mm) - var(--page-margin-bottom, 25mm)),
-            #f9fafb calc(var(--page-height, 297mm) - 1px),
-            #cbd5e1 calc(var(--page-height, 297mm) - 1px),
-            #cbd5e1 var(--page-height, 297mm));
-
-    background-size: 100% var(--page-height, 297mm);
-    background-repeat: repeat-y;
-    background-position: 0 0; */
 }
 
 .tiptap:focus {
@@ -247,15 +221,13 @@ const handleCanvasClick = (event: MouseEvent) => {
     overflow-wrap: break-word;
 }
 
-/* Applica il rientro della prima riga ai paragrafi standard dell'editor */
+/* Nessun rientro della prima riga nei paragrafi */
 .tiptap p,
 .ProseMirror p {
     text-indent: 0em;
-    /* Regola il valore (es. 1.5em o 20px) in base alle tue preferenze */
 }
 
-/* IMPORTANTE: Rimuovi il rientro dai paragrafi che si trovano dentro nodi personalizzati 
-   o strutture speciali (es. il tuo blocco scacchi) per evitare conflitti visivi */
+/* Stesso azzeramento per i paragrafi dentro i blocchi albero */
 .tiptap [data-type="chess-tree-block"] p,
 .ProseMirror [data-type="chess-tree-block"] p {
     text-indent: 0;
@@ -264,10 +236,10 @@ const handleCanvasClick = (event: MouseEvent) => {
 /* Personalizzazione Caret (Cursore di Scrittura) */
 .ProseMirror {
     caret-color: var(--t-accent-text, #2563eb) !important;
-    /* Cursore blu visibile ed elegante */
+    /* Segue il colore di accento del tema */
 }
 
-/* Quando l'editor è in focus, assicura che il cursore sia sempre visibile e marcato */
+/* Nessun contorno del browser attorno all'editor a fuoco */
 .ProseMirror-focused {
     outline: none !important;
 }
@@ -279,7 +251,6 @@ const handleCanvasClick = (event: MouseEvent) => {
 .ProseMirror h4.is-node-focused {
     position: relative;
     background-color: var(--t-accent-wash, rgba(239, 246, 255, 0.4));
-    /* Un leggerissimo azzurro di background */
     border-radius: 2px;
 }
 

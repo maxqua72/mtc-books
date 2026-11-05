@@ -1,4 +1,4 @@
-// Generatori di identificativi condivisi (prima ripetuti in chessTreeStore, pgnImport, sanitize, cover, ChessDiagram)
+// Generatori di identificativi condivisi
 
 /** 9 caratteri casuali in base 36 */
 export const randomToken = (): string => Math.random().toString(36).slice(2, 11)

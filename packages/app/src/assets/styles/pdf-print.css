@@ -1,5 +1,4 @@
-/* src/assets/styles/pdf-print.css */
-
+/* La misura del foglio viene dalle opzioni del PDF, non da size: qui contano i margini */
 @page {
   size: A4;
   margin: var(--page-margin-top) var(--page-margin-right) var(--page-margin-bottom) var(--page-margin-left) !important;
@@ -14,7 +13,6 @@ body {
   background-color: #ffffff;
 }
 
-/* Assicura che il contenitore principale rispetti la larghezza e non azzeri i margini */
 
 
 * {
@@ -29,7 +27,6 @@ body {
 }
 
 .tiptap-container {
-  /* counter-reset: chapter-count var(--chapter-index) section-count 0 !important; */
   box-shadow: none !important;
   border: none !important;
   margin: 0 !important;
@@ -63,12 +60,11 @@ body {
   break-before: avoid;
 }
 
-/* Rimuovi completamente counter-reset da .book-print-container e .tiptap-container */
+/* Il conteggio riparte solo da .book-section: i contenitori non azzerano i contatori */
 .book-print-container,
 .tiptap-container {
   counter-reset: none !important;
 }
-/* ----- */
 
 /* Tipografia di base (font, paragrafi, titoli, spaziatura prima dei blocchi): book-typography.css,
    anteposto a questo file e condiviso con l'editor. Qui restano le regole del solo PDF. */
@@ -130,7 +126,7 @@ body {
 .chess-pure-text {
   font-family: 'Chess Merida', serif !important;
   font-size: var(--diagram-size, 20px) !important;
-  line-height: 1.0 !important; /* CORRETTO: A 1.0 le righe non si staccano */
+  line-height: 1.0 !important; /* A 1.0 le righe non si staccano */
   letter-spacing: 0px !important;
   white-space: pre !important;
   color: #000000 !important;

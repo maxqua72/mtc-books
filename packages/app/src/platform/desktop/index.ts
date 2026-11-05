@@ -8,7 +8,7 @@ export function createDesktopPlatform(): Platform {
       cloudPdf: false,
       localPdf: true,
       nativeFiles: true,
-      engine: true,      // fase 5
+      engine: true,
       multiTabLock: false, // istanza unica garantita dal main
       spellcheckLanguages: true
     },

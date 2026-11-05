@@ -11,7 +11,7 @@ import { shouldShowHeaderByDefault } from '../utils/pgnHeader'
 export type PgnPlacement = 'after-active' | 'cursor' | 'end'
 export type PgnImportMode = 'new-tree' | 'into-active'
 
-// Funzioni fornite da BookEditor (che possiede l'editor)
+// Funzioni fornite da useTreePlacement, che conosce l'editor
 export interface PlacementApi {
   resolve: (placement: PgnPlacement) => number | null
   describe: (placement: PgnPlacement) => string

@@ -38,7 +38,7 @@ html, body, #app {
   font-display: block;
 }
 
-/* NUOVO: Registrazione del font per le figurine nel testo */
+/* Registrazione del font per le figurine nel testo */
 @font-face {
   font-family: 'Chess Cases';
   src: url('./assets/fonts/case.woff2') format('woff2'),
@@ -126,7 +126,7 @@ html, body, #app {
 }
 
 /* ==========================================================================
-   CONFIGURAZIONE TIPOGRAFICA PER ESPORTAZIONE PDF (STILE QUALITY CHESS)
+   STAMPA DAL BROWSER: il PDF del libro non usa questo file, ma pdf-print.css
    ========================================================================== */
 @media print {
   /* 1. Nasconde i bottoni, la scacchiera interattiva e tutta la UI di lavoro */

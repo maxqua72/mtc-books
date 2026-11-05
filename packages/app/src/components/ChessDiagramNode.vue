@@ -115,7 +115,7 @@ const onCaptionEnter = (event: KeyboardEvent) => {
   disableCaptionEditing()
 }
 
-// Attiva la didascalia e la mette a fuoco con il testo selezionato
+// Attiva o disattiva la didascalia, poi la mette a fuoco con il testo selezionato
 const toggleOrFocusCaption = async () => {
   if (!isCaptionEditable.value) props.updateAttributes({ captionEditable: true })
   else disableCaptionEditing()
@@ -150,15 +150,10 @@ const toggleOrFocusCaption = async () => {
 .diagram-card {
   position: relative;
   background-color: transparent;
-  /* Rende invisibile lo sfondo del riquadro */
   padding: 0.5rem 0;
-  /* Mantiene solo un leggero distacco sopra/sotto */
   border: none;
-  /* Rimuove il bordo grigio */
   border-radius: 0;
-  /* Rimuove gli angoli arrotondati */
   box-shadow: none;
-  /* Rimuove l'ombra */
 }
 
 .board-wrapper {
@@ -227,11 +222,9 @@ const toggleOrFocusCaption = async () => {
   position: absolute;
   top: calc(var(--diagram-size) * 1.07);
 
-  /*left: -70px;  Posizionato a sinistra del numero '8' */
-
   /* Ancoraggio al bordo sinistro del wrapper della scacchiera */
   right: 100%; 
-  /* Distanza fissa dal margine sinistro della scacchiera (regola a piacere) */
+  /* Distanza fissa dal margine sinistro della scacchiera */
   margin-right: 10px;
 
   font-family: ui-sans-serif, system-ui, sans-serif;
@@ -250,14 +243,11 @@ const toggleOrFocusCaption = async () => {
   position: absolute;
   /* Allinea verticalmente con il numero '8' della scacchiera */
   top: calc(var(--diagram-size) * 2.8);
-  /*bottom:34px;*/
-  /*left: -22px; */
 
   /* Ancoraggio a destra per allinearlo visivamente al centro del badge sopra */
   right: 100%;
   margin-right: 10px;
   
-  /* Dimensione incrementata per renderlo ben visibile */
   width: calc(var(--diagram-size) * 0.8);
   height: calc(var(--diagram-size) * 0.8);
   border-radius: 50%;

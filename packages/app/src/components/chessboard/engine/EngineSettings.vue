@@ -67,6 +67,7 @@ import EngineOptionField from './EngineOptionField.vue'
 
 const engine = useEngineStore()
 
+// Stesse opzioni di FEATURED in desktop/src/main/engine/engineManager.ts
 const ORDER = ['multipv', 'threads', 'hash', 'skill level', 'uci_limitstrength', 'uci_elo', 'syzygypath']
 const LABELS: Record<string, string> = {
   multipv: 'Numero di linee',

@@ -4,10 +4,6 @@
       
       <!-- Logo / Icona Brand -->
       <div class="space-y-3">
-        <!--
-        <div class="w-16 h-16 bg-black rounded-2xl flex items-center justify-center text-white font-serif font-black text-3xl mx-auto shadow-md">
-          M
-        </div> -->
         <img :src="logo" alt="MTC Books" class="w-auto h-18 object-contain mx-auto" />
         <h1 class="text-2xl font-black text-neutral-900 tracking-tight uppercase">MTC Books</h1>
         <p class="text-sm text-neutral-500">Piattaforma di Micro-Publishing per Libri e Manuali di Scacchi</p>
@@ -109,8 +105,6 @@ const processFile = async (file: File) => {
   try {
     const buffer = await file.arrayBuffer()
     await store.loadMtcBook(buffer)
-    // @ts-ignore
-    //store.isBookLoaded = true
   } catch (e) {
     alert('Errore nel caricamento del progetto.')
   }
@@ -126,23 +120,6 @@ const handleFileDrop = (e: DragEvent) => {
   const file = e.dataTransfer?.files?.[0]
   if (file) processFile(file)
 }
-
-/*
-const handleCreateBook = () => {
-  if (!form.title.trim()) return alert('Inserisci un titolo')
-  
-  store.metadata.title = form.title
-  store.metadata.author = form.author || 'Autore'
-  store.sectionIndex = []
-  store.zippedSectionsCache = {}
-  
-  const firstId = store.createNewSection("Capitolo 1", "chapter")
-  store.changeActiveSection(firstId)
-  
-  // @ts-ignore
-  store.isBookLoaded = true
-  showCreateModal.value = false
-}*/
 
 const handleCreateBook = async () => {
   if (!form.title.trim()) return alert('Inserisci un titolo')

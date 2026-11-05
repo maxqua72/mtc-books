@@ -47,7 +47,7 @@ export const ChessDiagram = Node.create({
         },
       },
       size: {
-        default: null, // Se è null, userà la dimensione globale dello store
+        default: null, // null = dimensione media
       },
       align: {
         default: 'center',
@@ -122,7 +122,7 @@ export const ChessDiagram = Node.create({
           [
             'div',
             { class: 'diagram-number-badge', title: 'Numero diagramma' },
-            ['div', { class: 'badge-text' }] // Verrà popolato o stilizzato via CSS
+            ['div', { class: 'badge-text' }] // Il numero lo genera il CSS (::before)
           ],
           ['div', { class: `turn-indicator ${turnClass}` }],
           ['pre', { class: 'chess-pure-text' }, boardText]
@@ -142,19 +142,6 @@ export const ChessDiagram = Node.create({
 
   addCommands() {
     return {
-      /*
-      insertChessDiagram: (options) => ({ chain }) => {
-        if (!isValidFen(options.fen)) return false
-        const shapes = cleanShapes(options.shapes)
-        const caption = options.caption?.trim()
-        return chain()
-          .insertContent({
-            type: this.name,
-            attrs: { fen: options.fen, flipped: !!options.flipped, shapes: shapes.length ? shapes : null },
-            ...(caption ? { content: [{ type: 'text', text: caption }] } : {}),
-          })
-          .run()
-      },*/
       insertChessDiagram: (options) => ({ commands }) => {
         if (!isValidFen(options.fen)) return false
         const shapes = cleanShapes(options.shapes)

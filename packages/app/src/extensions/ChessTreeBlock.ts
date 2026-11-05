@@ -2,7 +2,6 @@ import { Node, mergeAttributes } from '@tiptap/core'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { VueNodeViewRenderer } from '@tiptap/vue-3'
 import { useChessTreeStore } from '../stores/chessTreeStore'
-// CORREZIONE: Importa il componente come default export, senza l'asterisco *
 import ChessTreeBlockView from '../components/ChessTreeBlockView.vue'
 
 export const ChessTreeBlock = Node.create({
@@ -11,9 +10,9 @@ export const ChessTreeBlock = Node.create({
   atom: true, // Impedisce a Tiptap di far entrare il cursore all'interno del blocco come testo normale
   draggable: true, // Permette di spostare il blocco, ma non interferisce con i click interni
   inline: false,
-  // 2. IMPEDISCE A TIPTAP DI SELEZIONARE E SOVRASCRIVERE L'INTERO BLOCCO CON LA TASTIERA
+  // Impedisce a Tiptap di selezionare e sovrascrivere l'intero blocco con la tastiera
   selectable: false,
-  // 3. Isola gli eventi di cancellazione (Backspace/Canc) all'interno del blocco
+  // Isola gli eventi di cancellazione (Backspace/Canc) all'interno del blocco
   isolating: true,
 
   addAttributes() {
@@ -43,7 +42,7 @@ export const ChessTreeBlock = Node.create({
         tag: 'div[tree-id]',
       },
       {
-        // Compatibilità legacy se in precedenza usavi il tag custom
+        // Compatibilità con il vecchio tag personalizzato
         tag: 'chess-tree-block',
       },
     ]
@@ -56,13 +55,12 @@ export const ChessTreeBlock = Node.create({
       'data-type': 'chess-tree-block',
       class: 'chess-tree-block-container'
     }),
-    // 0 indica a Tiptap di inserire il contenuto HTML passato durante l'esportazione
+    // Nodo atom, senza contenuto: nel PDF le mosse arrivano dal DOM dell'editor (usePdfExport)
     ['div', { class: 'block-content' }]
   ]
 },
 
   addNodeView() {
-    // Ora riceve il componente corretto e VueNodeViewRenderer saprà come montarlo
     return VueNodeViewRenderer(ChessTreeBlockView)
   },
 

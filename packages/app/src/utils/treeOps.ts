@@ -1,4 +1,4 @@
-// Operazioni pure sugli alberi di mosse (prima dentro chessTreeStore.ts e pgnImport.ts)
+// Operazioni pure sugli alberi di mosse
 import type { ChessMoveNode, ChessTree } from '../stores/chessTreeStore'
 import { newId } from './ids'
 import { samePosition } from './fen'
