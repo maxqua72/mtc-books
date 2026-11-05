@@ -334,7 +334,8 @@ body {
 }
 
 /* Parentesi per varianti */
-.bracket {
+.bracket,
+.tree-closers {
   font-weight: normal !important;
   color: #111827 !important;
 }

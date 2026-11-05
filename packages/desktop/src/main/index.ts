@@ -120,8 +120,11 @@ if (renderIdx >= 0 || probeIdx >= 0) {
         registerPdfIpc()
         await setupSpellcheck(() => mainWindow)
         engineService = await setupEngine(() => mainWindow) // prima della finestra: la pagina lo chiama subito
-        mainWindow = createMainWindow(useDist)
-        mainWindow.on('closed', () => { mainWindow = null })
+        const openMainWindow = () => {
+            mainWindow = createMainWindow(useDist)
+            mainWindow.on('closed', () => { mainWindow = null })
+        }
+        openMainWindow()
 
         updater = setupUpdater(() => mainWindow, async () => { await engineService?.shutdown() })
 
@@ -129,7 +132,7 @@ if (renderIdx >= 0 || probeIdx >= 0) {
         if (file) void openPath(file)
 
         app.on('activate', () => {
-            if (BrowserWindow.getAllWindows().length === 0) mainWindow = createMainWindow(useDist)
+            if (BrowserWindow.getAllWindows().length === 0) openMainWindow()
         })
     })
 

@@ -358,6 +358,12 @@ watch(
   color: #525252;
 }
 
+/* Stesso aspetto delle parentesi di ChessMoveRenderer */
+.tree-closers {
+  font-weight: normal;
+  color: #111827;
+}
+
 /* Stampa dal browser: il PDF del libro non riceve gli stili scoped e usa pdf-print.css */
 @media print {
   .chess-tree-block-container {
@@ -375,11 +381,6 @@ watch(
 
   .block-header {
     display: none !important;
-  }
-
-  .tree-closers {
-    font-weight: normal;
-    color: #111827;
   }
 }
 </style>
