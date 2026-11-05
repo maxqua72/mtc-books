@@ -15,7 +15,7 @@ Comandi per PowerShell, da eseguire nella cartella principale del progetto.
 
 | Attività | Comando | Note |
 |---|---|---|
-| Web app | `pnpm dev:app` | Vite su `localhost:5174` |
+| Web app | `pnpm dev:app` | Vite su `localhost:5174`; avvia anche il manuale su `localhost:5175` |
 | Desktop | `pnpm dev:app`, poi in un secondo terminale `pnpm dev:desktop` | Serve Vite già avviato; aggiornamento a caldo |
 | Server PDF (opzionale) | `pnpm dev:server` | Non serve al prodotto |
 
@@ -25,7 +25,7 @@ I testi sono file Markdown in `packages/manual`; il menu laterale è in `package
 
 | Attività | Comando | Note |
 |---|---|---|
-| Anteprima con aggiornamento a caldo | `pnpm dev:manual` | Su `localhost:5175/manual/`; con `pnpm dev:app` è raggiungibile anche dal pulsante «?» |
+| Anteprima del solo manuale | `pnpm dev:manual` | Su `localhost:5175/manual/`, con aggiornamento a caldo; non serve se è già attivo `pnpm dev:app`, che usa la stessa porta |
 | Controllo | `pnpm --filter @mtc/manual docs:build` | Fallisce se un link interno è rotto |
 
 Gli screenshot in `packages/manual/public/screenshots` sono file versionati: build e installer usano quelli presenti e **non li rigenerano**. Vanno rigenerati con un comando separato quando cambia l'aspetto di una schermata, in uno di questi due modi:
