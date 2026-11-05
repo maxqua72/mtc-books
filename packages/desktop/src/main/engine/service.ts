@@ -29,7 +29,7 @@ const obj = (x: unknown): Record<string, unknown> => {
 export class EngineService {
   private readonly settings: SettingsStore
   private readonly manager: EngineManager
-  private readonly detected = new Map<string, string>()
+  private readonly detected = new Map<string, string>() // token -> percorso, dall'ultima ricerca: la pagina usa solo il token
 
   constructor(private readonly deps: EngineServiceDeps) {
     this.settings = new SettingsStore(path.join(deps.userDataDir, 'engine-settings.json'))

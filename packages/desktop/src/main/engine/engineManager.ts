@@ -50,6 +50,7 @@ const DEFAULT_TIMEOUTS: Timeouts = {
   pingEveryMs: 15_000, pingTimeoutMs: 5_000, updateEveryMs: 120,
 }
 
+// In evidenza nel pannello: ordine ed etichette stanno in EngineSettings.vue
 const FEATURED = new Set(['multipv', 'threads', 'hash', 'skill level', 'uci_limitstrength', 'uci_elo', 'syzygypath'])
 
 interface Waiter { resolve(): void; reject(e: Error): void }
@@ -88,7 +89,7 @@ export class EngineManager {
   private job: Job | null = null
   private wanted: AnalysisRequest | null = null
   private pumping = false
-  private cancelEpoch = 0
+  private cancelEpoch = 0 // cresce a ogni annullamento: startJob scopre così se è stato fermato mentre attendeva
   private pingTimer: ReturnType<typeof setInterval> | null = null
   private ops: Promise<unknown> = Promise.resolve()
 
@@ -494,8 +495,9 @@ export class EngineManager {
   }
 
   // ---------------------------------------------------------------------------
-  // Opzioni: si applicano a motore fermo e l'analisi riparte da sola
+  // Opzioni: si applicano ad analisi ferma e l'analisi riparte da sola
   // ---------------------------------------------------------------------------
+  // In coda: ogni modifica ferma e fa ripartire l'analisi, due insieme si intralcerebbero
   private serial<T>(fn: () => Promise<T>): Promise<T> {
     const run = this.ops.then(fn, fn)
     this.ops = run.catch(() => undefined)
