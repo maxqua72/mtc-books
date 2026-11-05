@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useChessBookStore } from '../stores/chessBookStore'
 import { getPageSizeCss } from '../utils/pageFormats'
+import { COLUMN_GAP_MM, columnWidthMm as columnWidth, twoColumnsAvailable } from '../utils/twoColumns'
 
 const clampSpacing = (v: unknown, def: number) => {
   if (v === '' || v === null || v === undefined) return def
@@ -33,6 +34,15 @@ export function usePageLayout() {
     variation: clampSpacing(store.metadata.variationSpacing, 4),
   }))
 
+  /** Vale solo per i capitoli: copertina e indice restano a colonna unica */
+  const twoColumns = computed(() =>
+    !!store.metadata.isTwoColumns
+    && twoColumnsAvailable(store.metadata.pageFormat)
+    && store.activeSectionInfo?.type === 'chapter')
+
+  const columnWidthMm = computed(() =>
+    columnWidth(store.metadata.pageFormat, margins.value.left, margins.value.right))
+
   /** Variabili CSS del foglio nell'editor */
   const cssVars = computed(() => ({
     '--chapter-index': store.currentChapterNumber,
@@ -45,9 +55,10 @@ export function usePageLayout() {
     '--paragraph-spacing': spacing.value.paragraph + 'mm',
     '--diagram-spacing': spacing.value.diagram + 'mm',
     '--variation-spacing': spacing.value.variation + 'mm',
+    '--column-gap': COLUMN_GAP_MM + 'mm',
   }))
 
-  return { pageSize, margins, spacing, cssVars }
+  return { pageSize, margins, spacing, twoColumns, columnWidthMm, cssVars }
 }
 
 export type PageLayout = ReturnType<typeof usePageLayout>

@@ -103,6 +103,7 @@ const onPickCoverImage = async (file: File) => {
 // --- Foglio ---
 const pageClasses = computed(() => ({
     'show-numbering': store.metadata.showNumbering,
+    'is-two-columns': layout.twoColumns.value,
     'is-structural-page': store.activeSectionInfo?.type === 'cover' || store.activeSectionInfo?.type === 'index'
 }))
 

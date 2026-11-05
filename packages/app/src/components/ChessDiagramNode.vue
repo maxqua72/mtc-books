@@ -14,6 +14,7 @@
           :title="activeColor === 'white' ? 'Mossa al Bianco' : 'Mossa al Nero'"></div>
 
         <DiagramActionsMenu v-if="!store.isLocked" :size-level="sizeLevel" :align="align" :flipped="flipped"
+          :show-align="!layout.twoColumns.value"
           :caption-editable="isCaptionEditable" @size="setSizeLevel" @align="setAlign"
           @toggle-caption="toggleOrFocusCaption" @flip="toggleFlip" @load-on-board="loadOnBoard"
           @paragraph="insertParagraph" @remove="deleteNode" />
@@ -40,7 +41,8 @@ import { ref, computed, nextTick } from 'vue'
 import { nodeViewProps, NodeViewWrapper, NodeViewContent } from '@tiptap/vue-3'
 import { useChessBookStore } from '../stores/chessBookStore'
 import { useChessTreeStore } from '../stores/chessTreeStore'
-import { normalizeSizeLevel, diagramFontPx, type DiagramSizeLevel } from '../utils/diagramSizes'
+import { usePageLayout } from '../composables/usePageLayout'
+import { badgeReservePx, normalizeSizeLevel, diagramFontPx, type DiagramSizeLevel } from '../utils/diagramSizes'
 import { isLegalFen } from '../utils/fen'
 import { fenToBoardString } from '../utils/chessFormatter'
 import { useInsertParagraph } from '../composables/useInsertParagraph'
@@ -52,17 +54,21 @@ const treeStore = useChessTreeStore()
 const props = defineProps(nodeViewProps)
 
 const insertParagraph = useInsertParagraph(props)
+const layout = usePageLayout()
 
 // --- Attributi del nodo ---
 const flipped = computed(() => !!props.node.attrs.flipped)
 const toggleFlip = () => props.updateAttributes({ flipped: !flipped.value })
 
 const sizeLevel = computed<DiagramSizeLevel>(() => normalizeSizeLevel(props.node.attrs.size))
-const currentSizePx = computed(() => diagramFontPx(sizeLevel.value, store.metadata.pageFormat))
+const currentSizePx = computed(() => diagramFontPx(sizeLevel.value, store.metadata.pageFormat,
+  layout.twoColumns.value ? layout.columnWidthMm.value : undefined))
 // 'medium' è il valore predefinito: si salva come null
 const setSizeLevel = (level: DiagramSizeLevel) => props.updateAttributes({ size: level === 'medium' ? null : level })
 
+// A due colonne il diagramma è sempre centrato; l'allineamento salvato torna valido a colonna unica
 const align = computed<'left' | 'center' | 'right'>(() => {
+  if (layout.twoColumns.value) return 'center'
   const value = props.node.attrs.align
   return value === 'left' || value === 'right' ? value : 'center'
 })
@@ -76,14 +82,12 @@ const boardString = computed(() => fenToBoardString(props.node.attrs.fen, flippe
 const diagramNumber = computed(() => store.diagramLabels.get(props.node.attrs.id)?.label ?? '')
 
 // Spazio a sinistra della scacchiera per badge e pallino (che sono position:absolute).
-// Serve solo con il diagramma a margine: il box float deve includerli,
+// Serve con il diagramma a margine: il box float deve includerli,
 // altrimenti escono dal foglio (sinistra) o finiscono sotto il testo (destra).
+// Serve anche a due colonne: altrimenti invaderebbero il margine o la colonna accanto.
 const containerStyle = computed(() => {
-  if (align.value === 'center') return {}
-  const chars = Math.max(diagramNumber.value.length, 4)       // "12.34" nel caso peggiore
-  const badgeFontPx = currentSizePx.value * 0.8               // come font-size del badge
-  const badgeWidthPx = badgeFontPx * 0.6 * chars + 12         // ~0.6em a carattere + padding 2×6px
-  return { paddingLeft: Math.ceil(badgeWidthPx + 10) + 'px' } // + margin-right del badge
+  if (align.value === 'center' && !layout.twoColumns.value) return {}
+  return { paddingLeft: badgeReservePx(currentSizePx.value, diagramNumber.value) + 'px' }
 })
 
 // Porta posizione e orientamento del diagramma sulla scacchiera, in modalità libera (nessun albero collegato)

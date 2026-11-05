@@ -404,6 +404,22 @@ body {
   display: flow-root;
 }
 
+/* --- DUE COLONNE (la disposizione è in book-typography.css) --- */
+
+/* Una variante lunga prosegue nella colonna accanto: tenuta intera lascerebbe un vuoto */
+.book-columns .chess-tree-block-container {
+  page-break-inside: auto !important;
+  break-inside: auto !important;
+}
+
+/* position: relative tiene il marcatore dell'indice nella stessa pagina del suo titolo */
+.book-columns h2,
+.book-columns h3,
+.book-columns h4 {
+  position: relative;
+  break-after: avoid;
+}
+
 .pgn-insert-marker,
 .pgn-target-badge {
   display: none !important;

@@ -69,6 +69,27 @@
     clear: both;
 }
 
+/* --- Layout a due colonne: .is-two-columns sul foglio dell'editor, .book-columns attorno al capitolo nel PDF --- */
+.is-two-columns .tiptap,
+.book-columns {
+    column-count: 2;
+    column-gap: var(--column-gap, 8mm);
+    overflow-wrap: break-word;
+}
+
+/* Il Titolo 1 attraversa le due colonne */
+.is-two-columns .tiptap h2,
+.book-columns h2 {
+    column-span: all;
+}
+
+/* La didascalia segue la larghezza della scacchiera, non la allarga */
+.is-two-columns .tiptap .diagram-caption,
+.book-columns .diagram-caption {
+    width: 0;
+    min-width: 100%;
+}
+
 /* Prima di un diagramma centrato o di una partita lo spazio è esattamente quello del blocco:
    il margine del paragrafo non si somma e non collassa con quello del blocco.
    Prima di un diagramma a margine (sinistra/destra) il paragrafo mantiene il suo spazio. */

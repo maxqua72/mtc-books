@@ -72,13 +72,20 @@
           </label>
 
           <!-- Doppia Colonna -->
-          <label class="flex items-center gap-3 cursor-pointer select-none">
-            <input type="checkbox" v-model="store.metadata.isTwoColumns" class="rounded border-neutral-300 text-neutral-900 focus:ring-neutral-500 h-4 w-4" />
+          <label class="flex items-center gap-3 select-none" :class="columnsAvailable ? 'cursor-pointer' : 'cursor-not-allowed'">
+            <input type="checkbox" v-model="twoColumnsChecked" :disabled="!columnsAvailable" class="rounded border-neutral-300 text-neutral-900 focus:ring-neutral-500 h-4 w-4" />
             <div>
-              <span class="text-sm font-medium text-neutral-800">Layout a due colonne</span>
-              <p class="text-xs text-neutral-400">Dispone il testo in due colonne affiancate (stile rivista di scacchi)</p>
+              <span class="text-sm font-medium" :class="columnsAvailable ? 'text-neutral-800' : 'text-neutral-400'">Layout a due colonne</span>
+              <p class="text-xs text-neutral-400">
+                {{ columnsAvailable
+                  ? 'Dispone il testo in due colonne affiancate (stile rivista di scacchi)'
+                  : 'Non disponibile con B-Format: le colonne sarebbero troppo strette.' }}
+              </p>
             </div>
           </label>
+          <p v-if="!columnsAvailable && store.metadata.isTwoColumns" class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+            Il libro resta a colonna unica. Le due colonne tornano se scegli A4 o Crown Quarto.
+          </p>
         </div>
       </fieldset>
 
@@ -93,7 +100,9 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useChessBookStore } from '../stores/chessBookStore'
+import { twoColumnsAvailable } from '../utils/twoColumns'
 import BaseModal from './BaseModal.vue'
 
 defineProps<{
@@ -103,6 +112,14 @@ defineProps<{
 const emit = defineEmits(['close'])
 
 const store = useChessBookStore()
+
+const columnsAvailable = computed(() => twoColumnsAvailable(store.metadata.pageFormat))
+
+// Con un formato escluso la casella appare spenta, ma la preferenza salvata resta per quando si cambia formato
+const twoColumnsChecked = computed({
+  get: () => columnsAvailable.value && store.metadata.isTwoColumns,
+  set: (value: boolean) => { store.metadata.isTwoColumns = value },
+})
 
 const close = () => {
   emit('close')

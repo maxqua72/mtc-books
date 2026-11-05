@@ -11,6 +11,7 @@ import pdfPrintStyles from '../assets/styles/pdf-print.css?raw'
 import { figurinizeHtml } from '../utils/figurines'
 import { capabilities } from '../platform'
 import { showPdfDesktopNotice } from '../platform/pdfNotice'
+import { COLUMN_GAP_MM } from '../utils/twoColumns'
 
 type EditorRef = ShallowRef<Editor | undefined>
 
@@ -37,6 +38,7 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
       --paragraph-spacing: ${paragraph}mm;
       --diagram-spacing: ${diagram}mm;
       --variation-spacing: ${variation}mm;
+      --column-gap: ${COLUMN_GAP_MM}mm;
     }
   `
     // Numerazione spenta: stessa specificità delle regole di pdf-print.css ma più in basso, quindi vince
@@ -67,7 +69,8 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
     clone.querySelectorAll('.move-comment-box').forEach(el => {
       if (!el.textContent?.trim()) el.remove()
     })
-    return clone.innerHTML
+    // Qui passano solo i capitoli: copertina e indice hanno un HTML proprio e restano a colonna unica
+    return layout.twoColumns.value ? `<div class="book-columns">${clone.innerHTML}</div>` : clone.innerHTML
   }
 
   // Dopo changeActiveSection i watcher hanno già fatto setContent: si attende che i blocchi albero attesi siano nel DOM

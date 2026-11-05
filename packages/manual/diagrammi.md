@@ -27,7 +27,7 @@ Passando sul diagramma compare una barra a destra.
 - **Inserisci un paragrafo sopra** o **sotto**.
 - **Elimina diagramma**.
 
-Le misure reali dipendono dal formato di pagina del libro.
+Le misure reali dipendono dal formato di pagina del libro. Con il [layout a due colonne](./struttura-libro#layout-a-due-colonne) i diagrammi si adattano alla larghezza della colonna e sono sempre centrati, quindi i comandi di allineamento non compaiono. L'allineamento scelto torna valido se riporti il libro a colonna unica.
 
 ## Riferimenti nel testo
 

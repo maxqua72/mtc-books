@@ -24,6 +24,7 @@ type Align = 'left' | 'center' | 'right'
 const props = defineProps<{
   sizeLevel: DiagramSizeLevel
   align: Align
+  showAlign: boolean
   flipped: boolean
   captionEditable: boolean
 }>()
@@ -70,15 +71,15 @@ const groups = computed<MenuButton[][]>(() => [
     sizeBtn('medium', 'Dimensione media', 16, '<rect x="4" y="4" width="16" height="16" rx="2" />'),
     sizeBtn('large', 'Dimensione grande', 18, '<rect x="2" y="2" width="20" height="20" rx="2" />'),
   ],
-  // Riga 2: allineamento
-  [
+  // Riga 2: allineamento (assente a due colonne, dove il diagramma è sempre centrato)
+  ...(props.showAlign ? [[
     alignBtn('left', 'A sinistra: il testo scorre accanto',
       '<rect x="3" y="3" width="8" height="8" rx="1" /><path d="M15 5h6M15 9h6M3 15h18M3 19h18" />'),
     alignBtn('center', 'Al centro',
       '<rect x="8" y="3" width="8" height="8" rx="1" /><path d="M3 15h18M3 19h18" />'),
     alignBtn('right', 'A destra: il testo scorre accanto',
       '<rect x="13" y="3" width="8" height="8" rx="1" /><path d="M3 5h6M3 9h6M3 15h18M3 19h18" />'),
-  ],
+  ]] : []),
   // Riga 3: didascalia, inversione, scacchiera
   [
     {
