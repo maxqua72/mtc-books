@@ -11,7 +11,7 @@
 
         <!-- Copertina: una pagina fissa, non un documento di testo -->
         <CoverEditor v-if="isCoverActive && store.coverModel" v-model="coverProxy" class="flex-1 min-h-0"
-            :inert="store.isLocked ? '' : undefined" :image-url="store.coverImageUrl" :page-width-mm="coverPageMm.width"
+            :read-only="store.isLocked" :image-url="store.coverImageUrl" :page-width-mm="coverPageMm.width"
             :page-height-mm="coverPageMm.height" @pick-image="onPickCoverImage"
             @remove-image="store.removeCoverImage()" />
 

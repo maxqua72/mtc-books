@@ -1,7 +1,8 @@
 <template>
   <div class="th-desk flex flex-col h-full min-h-0 bg-neutral-100">
     <!-- Barra degli strumenti -->
-    <div class="th-toolbar shrink-0 border-b border-neutral-200 bg-white px-3 py-2 space-y-2">
+    <div class="th-toolbar shrink-0 border-b border-neutral-200 bg-white px-3 py-2 space-y-2"
+      :inert="readOnly">
       <div class="flex flex-wrap items-center gap-2">
         <button class="cv-btn" @click="fileInput?.click()">
           <i class="fa-solid fa-image"></i>
@@ -78,10 +79,10 @@
       </div>
     </div>
 
-    <!-- Area di lavoro: la pagina è scalata per stare in larghezza -->
+    <!-- Area di lavoro: la pagina è scalata per stare in larghezza. In sola lettura si blocca il foglio, non lo scorrimento -->
     <div ref="viewport" class="flex-1 min-h-0 overflow-auto p-8" @pointerdown.self="selectedId = null">
       <div class="mx-auto" :style="{ width: pagePxW * scale + 'px', height: pagePxH * scale + 'px' }">
-        <div ref="pageEl" class="cover-page-editor" tabindex="0"
+        <div ref="pageEl" class="cover-page-editor" tabindex="0" :inert="readOnly"
           :style="{ width: pagePxW + 'px', height: pagePxH + 'px', transform: `scale(${scale})` }"
           @pointerdown.self="selectedId = null" @keydown="onPageKeydown">
 
@@ -125,6 +126,7 @@ const props = defineProps<{
   imageUrl: string | null
   pageWidthMm: number
   pageHeightMm: number
+  readOnly?: boolean
 }>()
 
 const cover = defineModel<BookCover>({ required: true })
