@@ -1,6 +1,5 @@
-/* La misura del foglio viene dalle opzioni del PDF, non da size: qui contano i margini */
+/* La misura del foglio (size) la aggiunge buildCss in usePdfExport.ts: qui contano i margini */
 @page {
-  size: A4;
   margin: var(--page-margin-top) var(--page-margin-right) var(--page-margin-bottom) var(--page-margin-left) !important;
 }
 

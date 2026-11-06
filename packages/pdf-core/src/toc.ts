@@ -16,14 +16,12 @@ export async function prepareToc(page: PdfPage): Promise<number> {
 
     headings.forEach((h, i) => {
       h.id = `toc-h-${i}`;
-      // Marcatore invisibile (bianco, minuscolo, fuori flusso): serve solo a trovare la pagina nel PDF
+      // Marcatore invisibile (bianco, minuscolo, largo zero): serve solo a trovare la pagina nel PDF.
+      // Sta in linea perché, fuori flusso, per un titolo in cima alla pagina finirebbe nella pagina prima.
       const mk = document.createElement('span');
       mk.className = 'toc-marker';
       mk.textContent = `[[TOC${i}]]`;
-      // Nelle colonne un marcatore fuori flusso può finire nella pagina prima del titolo: lì sta in linea, largo zero
-      mk.style.cssText = h.closest('.book-columns')
-        ? 'display:inline-block;width:0;height:0;white-space:nowrap;font-size:2px;line-height:0;color:#ffffff;'
-        : 'position:absolute;font-size:2px;line-height:1;color:#ffffff;';
+      mk.style.cssText = 'display:inline-block;width:0;height:0;white-space:nowrap;font-size:2px;line-height:0;color:#ffffff;';
       h.prepend(mk);
     });
 

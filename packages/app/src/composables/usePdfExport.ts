@@ -48,13 +48,13 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
         content: none !important;
       }`
 
-    // Con size: A4 (pdf-print.css) Chromium impagina su A4 e poi riduce tutto al foglio scelto: le colonne
-    // non avrebbero la larghezza dell'editor. A due colonne il foglio deve essere quello vero.
+    // Il foglio di @page deve coincidere con quello delle opzioni del PDF: se è diverso, Chromium impagina
+    // sul foglio di @page e poi riduce tutto al formato scelto (testo più piccolo di 11 pt, margini sbagliati).
     const { width, height } = layout.pageSize.value
-    const columnsPage = layout.bookHasTwoColumns.value ? `@page { size: ${width} ${height}; }` : ''
+    const pageRule = `@page { size: ${width} ${height}; }`
 
     // Prima la tipografia condivisa con l'editor, poi le regole di stampa (nessuna proprietà in comune)
-    return `${variables}\n${typographyStyles}\n${pdfPrintStyles}\n${noNumbering}\n${columnsPage}`
+    return `${variables}\n${typographyStyles}\n${pdfPrintStyles}\n${noNumbering}\n${pageRule}`
 
   }
 

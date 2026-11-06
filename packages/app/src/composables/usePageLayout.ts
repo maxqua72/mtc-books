@@ -59,7 +59,7 @@ export function usePageLayout() {
     '--column-gap': COLUMN_GAP_MM + 'mm',
   }))
 
-  return { pageSize, margins, spacing, bookHasTwoColumns, twoColumns, columnWidthMm, cssVars }
+  return { pageSize, margins, spacing, twoColumns, columnWidthMm, cssVars }
 }
 
 export type PageLayout = ReturnType<typeof usePageLayout>
