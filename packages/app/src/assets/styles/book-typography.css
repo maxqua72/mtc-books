@@ -89,6 +89,12 @@
     margin-top: 6mm !important;
 }
 
+/* Una didascalia più larga della scacchiera allarga il riquadro del diagramma: la scacchiera,
+   che è inline-block, resterebbe a sinistra mentre la didascalia è centrata. Si centra nel riquadro. */
+.chess-diagram-container .diagram-card {
+    text-align: center;
+}
+
 /* La didascalia segue la larghezza della scacchiera, non la allarga */
 .is-two-columns .tiptap .diagram-caption,
 .book-columns .diagram-caption {
