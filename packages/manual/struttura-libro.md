@@ -15,7 +15,9 @@ Un libro è un elenco di sezioni, visibile nella colonna sinistra. Le sezioni so
 | Rinominare | Passa sulla voce e clicca la matita |
 | Eliminare | Passa sulla voce e clicca il cestino |
 
-Il libro può avere una sola copertina e un solo indice. Si possono trascinare solo i capitoli, e non sopra la copertina.
+Il libro può avere una sola copertina e un solo indice. L'ordine segue quello dei libri di scacchi: prima la copertina, poi l'indice, poi i capitoli. Si possono trascinare solo i capitoli: un capitolo lasciato sulla copertina o sull'indice diventa il primo capitolo.
+
+Un libro salvato con una versione precedente dell'app, che metteva l'indice in fondo, si apre con l'indice dopo la copertina.
 
 ::: warning Eliminare una sezione
 Dopo la conferma il testo della sezione va perduto.

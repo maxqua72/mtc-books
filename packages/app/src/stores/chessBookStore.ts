@@ -5,6 +5,7 @@ import { createEmptyCover, normalizeCover } from '../utils/cover'
 import { extractTreeIds } from '../utils/html'
 import { randomToken } from '../utils/ids'
 import { sanitizeTrees, sanitizeSectionIndex } from '../utils/sanitize'
+import { orderSections } from '../utils/sectionOrder'
 import type { BoardShape } from '../utils/shapes'
 import { useChessTreeStore, type ChessTree } from './chessTreeStore'
 import { defaultMetadata, savedMetadata, type BookMetadata, type SaveStatus, type SectionIndexItem, type SectionType } from './book/types'
@@ -163,10 +164,10 @@ export const useChessBookStore = defineStore('chessBook', () => {
         else cover.clearCoverImageUrl()
     }
 
-    /** Crea una nuova sezione (es. un nuovo capitolo) */
+    /** Crea una nuova sezione al suo posto: copertina in testa, poi indice, un capitolo dopo gli altri */
     function createNewSection(title: string, type: SectionType = 'chapter') {
         const id = `sec-${randomToken()}`
-        sectionIndex.value.push({ id, type, title })
+        sectionIndex.value = orderSections([...sectionIndex.value, { id, type, title }])
         zippedSectionsCache.value[id] = JSON.stringify(
             type === 'cover'
                 ? { id, html: '', trees: [], cover: createEmptyCover() }
@@ -224,7 +225,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
             fileState.setLocked(true)   // dopo un ricaricamento si riparte in sola lettura
 
             metadata.value = { ...defaultMetadata(), ...savedState.metadata }
-            sectionIndex.value = sanitizeSectionIndex(savedState.sectionIndex)
+            sectionIndex.value = orderSections(sanitizeSectionIndex(savedState.sectionIndex))
 
             // Si mantiene la stringa JSON integra ({ id, html, trees })
             zippedSectionsCache.value = {}
@@ -275,7 +276,8 @@ export const useChessBookStore = defineStore('chessBook', () => {
         useChessTreeStore().setChapterTrees([])
 
         metadata.value = pkg.metadata
-        sectionIndex.value = pkg.sectionIndex
+        // Libri salvati con l'indice in fondo: si apre con l'indice dopo la copertina
+        sectionIndex.value = orderSections(pkg.sectionIndex)
         zippedSectionsCache.value = pkg.sections
         sanitizedSections.clear()
 

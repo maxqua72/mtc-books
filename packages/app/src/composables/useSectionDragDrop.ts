@@ -1,4 +1,4 @@
-// Riordino dei capitoli nella barra laterale con drag & drop (la copertina resta in testa, l'indice in coda)
+// Riordino dei capitoli nella barra laterale con drag & drop (copertina e indice restano in testa)
 import { ref, type Ref } from 'vue'
 import type { SectionIndexItem } from '../stores/chessBookStore'
 
@@ -34,22 +34,22 @@ export function useSectionDragDrop(sections: Ref<SectionIndexItem[]>, locked: Re
     const dragged = list[fromIndex]
     const target = list[targetIndex]
     if (dragged.type !== 'chapter') return
-    if (target.type === 'cover') return
 
-    // Sull'Indice: il capitolo si ferma subito prima
-    let finalIndex = targetIndex
-    if (target.type === 'index' && fromIndex < targetIndex) finalIndex = targetIndex - 1
+    // Su copertina o indice: il capitolo diventa il primo, subito dopo di loro.
+    // Il capitolo trascinato sta già dopo il primo capitolo, quindi toglierlo non sposta quella posizione.
+    const finalIndex = target.type === 'chapter'
+      ? targetIndex
+      : list.findIndex((s) => s.type === 'chapter')
 
     list.splice(fromIndex, 1)
     list.splice(finalIndex, 0, dragged)
   }
 
-  // Linea di inserimento: sopra se si sale, sotto se si scende, sempre sopra sull'Indice
+  // Linea di inserimento: sopra se si sale, sotto se si scende; sotto copertina e indice, dove va il capitolo
   const dropClass = (index: number, section: SectionIndexItem): string => {
     if (activeDropIndex.value !== index || draggedIndex.value === null) return ''
-    if (section.type === 'cover') return ''
-    const movingDown = draggedIndex.value < index && section.type === 'chapter'
-    return movingDown
+    const below = section.type !== 'chapter' || draggedIndex.value < index
+    return below
       ? 'bg-neutral-100 shadow-[inset_0_-2px_0_0_#171717]'
       : 'bg-neutral-100 shadow-[inset_0_2px_0_0_#171717]'
   }

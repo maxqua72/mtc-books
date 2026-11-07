@@ -90,25 +90,8 @@ const addSection = (type: SectionType) => {
         chapter: `Capitolo ${store.sectionIndex.filter(s => s.type === 'chapter').length + 1}`
     }
 
+    // La sezione nasce già al suo posto: copertina in testa, poi indice, poi i capitoli
     const id = store.createNewSection(titles[type], type)
-
-    if (type === 'cover' && store.sectionIndex.length > 1) {
-        // La copertina va sempre in testa
-        const currentIndex = store.sectionIndex.findIndex(s => s.id === id)
-        if (currentIndex !== -1) {
-            const [coverItem] = store.sectionIndex.splice(currentIndex, 1)
-            store.sectionIndex.unshift(coverItem)
-        }
-    } else if (type === 'chapter') {
-        // I capitoli stanno prima dell'indice
-        const indexPosition = store.sectionIndex.findIndex(s => s.type === 'index')
-        const currentPosition = store.sectionIndex.findIndex(s => s.id === id)
-        if (indexPosition !== -1 && currentPosition > indexPosition) {
-            const [chapterItem] = store.sectionIndex.splice(currentPosition, 1)
-            store.sectionIndex.splice(indexPosition, 0, chapterItem)
-        }
-    }
-
     handleSectionClick(id)
 }
 
