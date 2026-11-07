@@ -23,7 +23,9 @@ export function useGeneratedToc(
 `
     }
 
-    let html = `<div class="toc-container"><h2 style="${FONT} font-size: 2rem; margin-bottom: 1.5rem;">Indice Generale</h2><ul style="list-style: none; padding: 0; margin: 0; ${FONT}">`
+    // Gli !important in linea battono le regole degli elenchi di book-typography.css (pallini, rientro e spazi
+    // degli elenchi del testo), che nel PDF valgono anche qui
+    let html = `<div class="toc-container"><h2 style="${FONT} font-size: 2rem; margin-bottom: 1.5rem;">Indice Generale</h2><ul style="list-style: none !important; padding: 0 !important; margin: 0 !important; ${FONT}">`
 
     let entryIndex = 0   // progressivo globale: corrisponde all'id toc-h-N assegnato da pdf-core (prepareToc)
 
@@ -59,7 +61,7 @@ export function useGeneratedToc(
         }
 
         html += `
-    <li class="toc-entry" data-toc-n="${entryIndex++}" style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 8px; padding-left: ${paddingLeft}; font-size: ${fontSize}; font-weight: ${fontWeight}; break-inside: avoid;">
+    <li class="toc-entry" data-toc-n="${entryIndex++}" style="display: flex !important; align-items: baseline; gap: 6px; margin: 0 0 8px 0 !important; padding-left: ${paddingLeft} !important; font-size: ${fontSize}; font-weight: ${fontWeight}; break-inside: avoid;">
       <span class="toc-title">${numbering}${text}</span>
       <span class="toc-leader" style="flex: 1; border-bottom: 1px dotted #a3a3a3; transform: translateY(-3px);"></span>
       <span class="toc-page" style="min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums; color: #404040;">…</span>

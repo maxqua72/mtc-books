@@ -108,7 +108,8 @@ const onPickCoverImage = async (file: File) => {
 const pageClasses = computed(() => ({
     'show-numbering': store.metadata.showNumbering,
     'is-two-columns': layout.twoColumns.value,
-    'is-structural-page': store.activeSectionInfo?.type === 'cover' || store.activeSectionInfo?.type === 'index'
+    'is-structural-page': store.activeSectionInfo?.type === 'cover' || store.activeSectionInfo?.type === 'index',
+    'is-index-page': store.activeSectionInfo?.type === 'index'
 }))
 
 const bindingTooltip = computed(() => layout.binding.value === 'duplex'
@@ -216,6 +217,12 @@ const handleCanvasClick = (event: MouseEvent) => {
     margin: 0 auto 2rem 0 !important;
     box-sizing: border-box;
     position: relative;
+}
+
+/* Indice: l'editor perde gli stili in linea delle voci, quindi qui niente pallini degli elenchi del testo */
+.is-index-page .tiptap ul {
+    list-style: none !important;
+    padding-left: 0 !important;
 }
 
 /* Fascia della rilegatura: tenue, sul bordo sinistro, larga quanto lo spazio aggiunto al margine */
