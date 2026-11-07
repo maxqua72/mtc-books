@@ -42,8 +42,10 @@ const place = (el: HTMLElement) => {
   const left = Math.max(EDGE_PX, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w - EDGE_PX))
   const below = r.bottom + GAP_PX
   const top = below + h > window.innerHeight - EDGE_PX ? r.top - h - GAP_PX : below
+  // Un elemento più alto della finestra (la fascia della rilegatura) ha i bordi fuori vista: il fumetto resta dentro
+  const maxTop = window.innerHeight - h - EDGE_PX
   box.style.left = `${left}px`
-  box.style.top = `${top}px`
+  box.style.top = `${Math.max(EDGE_PX, Math.min(top, maxTop))}px`
 }
 
 const hide = () => {

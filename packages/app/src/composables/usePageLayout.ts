@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useChessBookStore } from '../stores/chessBookStore'
 import { getPageSizeCss } from '../utils/pageFormats'
+import { bindingMm, normalizeBinding } from '../utils/binding'
 import { COLUMN_GAP_MM, columnWidthMm as columnWidth, twoColumnsAvailable } from '../utils/twoColumns'
 
 const clampSpacing = (v: unknown, def: number) => {
@@ -21,11 +22,16 @@ export function usePageLayout() {
 
   const pageSize = computed(() => getPageSizeCss(store.metadata.pageFormat))
 
+  const binding = computed(() => normalizeBinding(store.metadata.binding))
+  const gutterMm = computed(() => bindingMm(binding.value))
+
+  // Margini delle pagine dispari, già con la rilegatura a sinistra: nell'editor si vede questo foglio.
+  // Nel fronte/retro le pagine pari li scambiano (bindingPageCss), e la larghezza del testo resta la stessa.
   const margins = computed(() => ({
     top: margin(store.metadata.pageMarginTop, 25),
     right: margin(store.metadata.pageMarginRight, 20),
     bottom: margin(store.metadata.pageMarginBottom, 25),
-    left: margin(store.metadata.pageMarginLeft, 20),
+    left: margin(store.metadata.pageMarginLeft, 20) + gutterMm.value,
   }))
 
   const spacing = computed(() => ({
@@ -57,9 +63,10 @@ export function usePageLayout() {
     '--diagram-spacing': spacing.value.diagram + 'mm',
     '--variation-spacing': spacing.value.variation + 'mm',
     '--column-gap': COLUMN_GAP_MM + 'mm',
+    '--binding-width': gutterMm.value + 'mm',
   }))
 
-  return { pageSize, margins, spacing, twoColumns, columnWidthMm, cssVars }
+  return { pageSize, margins, binding, gutterMm, spacing, twoColumns, columnWidthMm, cssVars }
 }
 
 export type PageLayout = ReturnType<typeof usePageLayout>

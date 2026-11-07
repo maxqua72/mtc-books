@@ -12,6 +12,7 @@ import { figurinizeHtml } from '../utils/figurines'
 import { capabilities } from '../platform'
 import { showPdfDesktopNotice } from '../platform/pdfNotice'
 import { COLUMN_GAP_MM } from '../utils/twoColumns'
+import { bindingPageCss } from '../utils/binding'
 
 type EditorRef = ShallowRef<Editor | undefined>
 
@@ -52,9 +53,11 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
     // sul foglio di @page e poi riduce tutto al formato scelto (testo più piccolo di 11 pt, margini sbagliati).
     const { width, height } = layout.pageSize.value
     const pageRule = `@page { size: ${width} ${height}; }`
+    // Fronte/retro: nelle pagine pari la rilegatura passa a destra (dopo pdf-print.css, che fissa i margini di @page)
+    const bindingRule = bindingPageCss(layout.binding.value, left, right)
 
     // Prima la tipografia condivisa con l'editor, poi le regole di stampa (nessuna proprietà in comune)
-    return `${variables}\n${typographyStyles}\n${pdfPrintStyles}\n${noNumbering}\n${pageRule}`
+    return `${variables}\n${typographyStyles}\n${pdfPrintStyles}\n${noNumbering}\n${pageRule}\n${bindingRule}`
 
   }
 

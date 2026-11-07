@@ -46,11 +46,28 @@ Clicca l'icona **Proprietà Libro** accanto al titolo, nella colonna sinistra.
 |---|---|
 | Titolo del Libro, Autore | Dati del libro |
 | Formato di Stampa | A4 (210 x 297 mm), Crown Quarto (189 x 246 mm), B-Format (129 x 198 mm) |
+| Rilegatura | Lascia 10 mm in più sul lato da rilegare: vedi [Rilegatura](#rilegatura) |
 | Spaziatura | Distanza in mm tra paragrafi, intorno ai diagrammi e intorno alle varianti, da 0 a 30 |
 | Mostra numerazione automatica | Aggiunge i prefissi 1., 1.1 ai titoli nell'editor e nell'indice |
 | Layout a due colonne | Dispone il testo dei capitoli in due colonne affiancate: vedi [Layout a due colonne](#layout-a-due-colonne) |
 
 La spaziatura vale per tutto il libro, nell'editor e nel PDF. In sola lettura le proprietà non si possono cambiare.
+
+## Rilegatura
+
+Se rileghi il libro stampato, con una spirale, degli anelli o dei punti metallici, scegli **Rilegatura** nella finestra **Proprietà del Libro**. Lo spazio in più fa sì che i fori o la piega non tocchino il testo.
+
+| Voce | Effetto |
+|---|---|
+| **Nessuna** | Margini normali su tutte le pagine |
+| **A sinistra (solo fronte)** | 10 mm in più sul margine sinistro di ogni pagina. Per stampare su una sola facciata |
+| **Fronte/retro** | 10 mm in più sul margine interno: a sinistra nelle pagine dispari, a destra nelle pari. Per stampare su entrambe le facciate |
+
+Il testo diventa più stretto di 10 mm, quindi il libro può avere qualche pagina in più. Con il [layout a due colonne](#layout-a-due-colonne) ogni colonna si restringe di 5 mm e i diagrammi si adattano.
+
+Nell'editor una fascia tratteggiata chiara sul bordo sinistro del foglio indica lo spazio per la rilegatura; passaci sopra per vederne la misura. La fascia non compare nel PDF, dove resta solo lo spazio bianco. L'editor non è diviso in pagine: con **Fronte/retro** la fascia sta sempre a sinistra, e l'alternanza tra pagine pari e dispari si vede nel PDF.
+
+La copertina resta a pagina piena, senza margini: se la rileghi, tieni lontani dal bordo sinistro testi e immagini importanti.
 
 ## Layout a due colonne
 

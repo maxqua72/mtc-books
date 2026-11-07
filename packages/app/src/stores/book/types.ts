@@ -1,4 +1,5 @@
 import { newUuid } from '../../utils/ids'
+import { normalizeBinding, type Binding } from '../../utils/binding'
 // Tipi e valori predefiniti del libro
 export type SectionType = 'cover' | 'index' | 'chapter'
 export type PageFormat = 'a4' | 'crown-quarto' | 'b-format'
@@ -28,6 +29,7 @@ export interface BookMetadata {
   pageMarginRight: number
   pageMarginBottom: number
   pageMarginLeft: number
+  binding: Binding           // spazio per la rilegatura, in più rispetto ai margini
   paragraphSpacing: number   // mm: tra due paragrafi
   diagramSpacing: number     // mm: sopra e sotto i diagrammi
   variationSpacing: number   // mm: sopra e sotto i blocchi di partita/varianti
@@ -48,6 +50,7 @@ export const defaultMetadata = (): BookMetadata => ({
   pageMarginRight: 20,
   pageMarginBottom: 25,
   pageMarginLeft: 20,
+  binding: 'none',
   paragraphSpacing: 4.5,
   diagramSpacing: 5,
   variationSpacing: 4
@@ -83,6 +86,7 @@ export function normalizeMetadata(raw: any): BookMetadata {
     pageMarginRight: num(raw.pageMarginRight, d.pageMarginRight),
     pageMarginBottom: num(raw.pageMarginBottom, d.pageMarginBottom),
     pageMarginLeft: num(raw.pageMarginLeft, d.pageMarginLeft),
+    binding: normalizeBinding(raw.binding),
     paragraphSpacing: num(raw.paragraphSpacing, d.paragraphSpacing),
     diagramSpacing: num(raw.diagramSpacing, d.diagramSpacing),
     variationSpacing: num(raw.variationSpacing, d.variationSpacing)

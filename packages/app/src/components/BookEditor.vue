@@ -25,6 +25,9 @@
                     :style="wrapperStyle">
                     <div @click.self="handlePageClick" class="tiptap-container" :class="pageClasses" :style="cssVars"
                         :spellcheck="spellcheck.settings.enabled ? 'true' : 'false'">
+                        <!-- Spazio per la rilegatura: solo un promemoria nell'editor, nel PDF resta bianco -->
+                        <div v-if="layout.gutterMm.value" class="binding-band" v-tooltip.desc="bindingTooltip"
+                            @click="handlePageClick"></div>
                         <editor-content :editor="editor" />
                     </div>
                 </div>
@@ -51,6 +54,7 @@ import EditorToolbar from './EditorToolbar.vue'
 import CoverEditor from './cover/CoverEditor.vue'
 import PdfLoadingOverlay from './PdfLoadingOverlay.vue'
 import { platform } from '../platform'
+import { vTooltip } from '../directives/tooltip'
 import '../assets/styles/book-typography.css'
 
 const store = useChessBookStore()
@@ -106,6 +110,10 @@ const pageClasses = computed(() => ({
     'is-two-columns': layout.twoColumns.value,
     'is-structural-page': store.activeSectionInfo?.type === 'cover' || store.activeSectionInfo?.type === 'index'
 }))
+
+const bindingTooltip = computed(() => layout.binding.value === 'duplex'
+    ? `Spazio per la rilegatura: ${layout.gutterMm.value} mm. Nel PDF sta a destra nelle pagine pari.`
+    : `Spazio per la rilegatura: ${layout.gutterMm.value} mm.`)
 
 // Clic nello spazio vuoto della pagina (sotto l'ultimo paragrafo): cursore in fondo al documento
 const handlePageClick = () => {
@@ -207,6 +215,18 @@ const handleCanvasClick = (event: MouseEvent) => {
 
     margin: 0 auto 2rem 0 !important;
     box-sizing: border-box;
+    position: relative;
+}
+
+/* Fascia della rilegatura: tenue, sul bordo sinistro, larga quanto lo spazio aggiunto al margine */
+.binding-band {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: var(--binding-width);
+    background: repeating-linear-gradient(135deg, rgba(120, 110, 90, 0.07) 0 4px, transparent 4px 8px);
+    border-right: 1px dashed rgba(120, 110, 90, 0.28);
 }
 
 .tiptap:focus {

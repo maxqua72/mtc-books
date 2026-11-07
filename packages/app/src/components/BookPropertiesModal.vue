@@ -37,6 +37,17 @@
           </select>
         </div>
 
+        <!-- Rilegatura -->
+        <div>
+          <label for="book-binding" class="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1">Rilegatura</label>
+          <select id="book-binding" v-model="binding" class="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-500 bg-white">
+            <option value="none">Nessuna</option>
+            <option value="left">A sinistra (solo fronte)</option>
+            <option value="duplex">Fronte/retro</option>
+          </select>
+          <p class="text-xs text-neutral-400 mt-1">{{ bindingHint }}</p>
+        </div>
+
         <!-- Spaziatura -->
         <div>
           <label class="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Spaziatura (mm)</label>
@@ -103,6 +114,7 @@
 import { computed } from 'vue'
 import { useChessBookStore } from '../stores/chessBookStore'
 import { twoColumnsAvailable } from '../utils/twoColumns'
+import { BINDING_MM, normalizeBinding, type Binding } from '../utils/binding'
 import BaseModal from './BaseModal.vue'
 
 defineProps<{
@@ -120,6 +132,18 @@ const twoColumnsChecked = computed({
   get: () => columnsAvailable.value && store.metadata.isTwoColumns,
   set: (value: boolean) => { store.metadata.isTwoColumns = value },
 })
+
+// I libri salvati prima della rilegatura non hanno il campo: la tendina mostra «Nessuna»
+const binding = computed({
+  get: () => normalizeBinding(store.metadata.binding),
+  set: (value: Binding) => { store.metadata.binding = value },
+})
+
+const bindingHint = computed(() => ({
+  none: 'Margini normali su tutte le pagine.',
+  left: `Aggiunge ${BINDING_MM} mm al margine sinistro di ogni pagina, per stampare su una sola facciata.`,
+  duplex: `Aggiunge ${BINDING_MM} mm al margine interno: a sinistra nelle pagine dispari, a destra nelle pari.`,
+})[binding.value])
 
 const close = () => {
   emit('close')
