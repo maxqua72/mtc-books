@@ -9,7 +9,7 @@ import type { PdfPage } from './types.js'
 export async function prepareToc(page: PdfPage): Promise<number> {
   return page.evaluate(() => {
     const headings = Array.from(document.querySelectorAll<HTMLElement>(
-      'section[data-section-type="chapter"] [data-toc-level="1"], ' +
+      'section[data-section-type] [data-toc-level="1"], ' +
       'section[data-section-type="chapter"] [data-toc-level="2"], ' +
       'section[data-section-type="chapter"] [data-toc-level="3"]'
     ));

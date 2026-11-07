@@ -5,7 +5,7 @@ import { createEmptyCover, normalizeCover } from '../utils/cover'
 import { extractTreeIds } from '../utils/html'
 import { randomToken } from '../utils/ids'
 import { sanitizeTrees, sanitizeSectionIndex } from '../utils/sanitize'
-import { orderSections } from '../utils/sectionOrder'
+import { isContentSection, orderSections, withNewSection } from '../utils/sectionOrder'
 import type { BoardShape } from '../utils/shapes'
 import { useChessTreeStore, type ChessTree } from './chessTreeStore'
 import { defaultMetadata, savedMetadata, type BookMetadata, type SaveStatus, type SectionIndexItem, type SectionType } from './book/types'
@@ -78,7 +78,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
     function diagramIdsOutsideActive(): Set<string> {
         const ids = new Set<string>()
         for (const s of sectionIndex.value) {
-            if (s.type !== 'chapter' || s.id === activeSectionId.value) continue
+            if (!isContentSection(s.type) || s.id === activeSectionId.value) continue
             for (const d of scanChapter(s.id, scanSources).diagrams) if (d.id) ids.add(d.id)
         }
         return ids
@@ -164,10 +164,11 @@ export const useChessBookStore = defineStore('chessBook', () => {
         else cover.clearCoverImageUrl()
     }
 
-    /** Crea una nuova sezione al suo posto: copertina in testa, poi indice, un capitolo dopo gli altri */
-    function createNewSection(title: string, type: SectionType = 'chapter') {
+    /** Crea una nuova sezione al suo posto: copertina in testa, poi indice, un capitolo dopo gli altri,
+     *  una sezione senza numero in fondo alle sezioni iniziali (place 'front') o finali ('back') */
+    function createNewSection(title: string, type: SectionType = 'chapter', place: 'front' | 'back' = 'front') {
         const id = `sec-${randomToken()}`
-        sectionIndex.value = orderSections([...sectionIndex.value, { id, type, title }])
+        sectionIndex.value = withNewSection(sectionIndex.value, { id, type, title }, place)
         zippedSectionsCache.value[id] = JSON.stringify(
             type === 'cover'
                 ? { id, html: '', trees: [], cover: createEmptyCover() }
@@ -184,7 +185,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
     /** Porta il nome del capitolo al testo del titolo, se il collegamento è attivo. Un titolo vuoto non cancella il nome. */
     function applyHeadingTitle(sectionId: string, headingText: string) {
         const item = sectionIndex.value.find(s => s.id === sectionId)
-        if (!item || item.type !== 'chapter' || item.syncTitle === false) return
+        if (!item || !isContentSection(item.type) || item.syncTitle === false) return
         const title = headingText.replace(/\s+/g, ' ').trim().slice(0, 200)
         if (title && item.title !== title) item.title = title
     }
@@ -192,7 +193,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
     /** Opzione del capitolo: il nome segue (true) o no (false) il primo titolo. Riattivandola, il nome si riallinea subito. */
     function setSyncTitle(sectionId: string, value: boolean) {
         const item = sectionIndex.value.find(s => s.id === sectionId)
-        if (!item || item.type !== 'chapter' || fileState.isLocked.value) return
+        if (!item || !isContentSection(item.type) || fileState.isLocked.value) return
         if (value) {
             delete item.syncTitle
             applyHeadingTitle(sectionId, firstHeadingTitle(sectionId))

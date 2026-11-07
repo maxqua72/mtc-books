@@ -266,8 +266,12 @@ body {
 }
 .is-structural-page h2::before, 
 .is-structural-page h3::before,
-.is-structural-page h4::before { 
-  content: none !important; 
+.is-structural-page h4::before {
+  content: none !important;
+}
+/* Nelle sezioni senza numero i diagrammi non hanno numero: il pallino del tratto resta */
+.is-structural-page .diagram-number-badge {
+  display: none !important;
 }
 
 

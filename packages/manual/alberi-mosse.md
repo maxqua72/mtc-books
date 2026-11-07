@@ -10,7 +10,7 @@ Un albero di mosse contiene una partita o una linea con le sue varianti. Nel tes
 - **+ Nuovo albero da questa posizione** nella console lo crea dopo l'albero attivo o dopo il punto del cursore.
 - [L'importazione PGN](./import-pgn) crea alberi da partite esistenti.
 
-Gli alberi stanno nei capitoli, non in copertina o nell'indice.
+Gli alberi stanno nei capitoli e nelle [sezioni senza numero](./struttura-libro#sezioni-senza-numero), non in copertina o nell'indice.
 
 ## Registrare le mosse
 

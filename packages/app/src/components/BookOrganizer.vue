@@ -45,6 +45,29 @@
                     class="flex-1 py-1.5 border border-neutral-200 text-[10px] font-bold text-neutral-600 rounded hover:bg-neutral-50 flex items-center justify-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed">
                     <i class="fa-solid fa-list-ol text-[10px] text-neutral-500"></i> Indice
                 </button>
+                <!-- Altre sezioni: il menu si apre verso l'alto, sopra i pulsanti -->
+                <div class="relative flex-1 flex">
+                    <button @click="moreOpen = !moreOpen" :disabled="locked" aria-haspopup="menu" :aria-expanded="moreOpen"
+                        v-tooltip.desc="'Sezioni senza numero, prima o dopo i capitoli'"
+                        class="flex-1 py-1.5 border border-neutral-200 text-[10px] font-bold text-neutral-600 rounded hover:bg-neutral-50 flex items-center justify-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed">
+                        <i class="fa-solid fa-plus text-[10px] text-neutral-500"></i> Altro
+                    </button>
+                    <template v-if="moreOpen">
+                        <div class="fixed inset-0 z-[60]" @click="moreOpen = false"></div>
+                        <div role="menu" @keydown.esc="moreOpen = false"
+                            class="absolute bottom-full right-0 mb-1 w-60 bg-white border border-neutral-200 rounded-lg shadow-lg py-1 z-[61]">
+                            <button v-for="item in moreItems" :key="item.label" role="menuitem" type="button"
+                                @click="moreOpen = false; item.run()"
+                                class="w-full text-left px-3 py-1.5 hover:bg-neutral-100 flex items-start gap-2">
+                                <i :class="item.icon" class="text-[11px] text-neutral-500 mt-0.5 w-3.5 text-center"></i>
+                                <span>
+                                    <span class="block text-xs font-medium text-neutral-800">{{ item.label }}</span>
+                                    <span class="block text-[11px] text-neutral-400">{{ item.hint }}</span>
+                                </span>
+                            </button>
+                        </div>
+                    </template>
+                </div>
             </div>
         </div>
     </aside>
@@ -60,6 +83,7 @@
 import { ref, computed } from 'vue'
 import { useChessBookStore, type SectionType, type SectionIndexItem } from '../stores/chessBookStore'
 import { useSectionDragDrop } from '../composables/useSectionDragDrop'
+import { isContentSection } from '../utils/sectionOrder'
 import BookPropertiesModal from './BookPropertiesModal.vue'
 import SectionListItem from './SectionListItem.vue'
 import ChapterOptionsModal from './ChapterOptionsModal.vue'
@@ -77,9 +101,9 @@ const handleSectionClick = async (id: string) => {
     await store.changeActiveSection(id, store.activeSectionHtml)
 }
 
-const addSection = (type: SectionType) => {
+const addSection = (type: SectionType, place: 'front' | 'back' = 'front') => {
     if (locked.value) return
-    if (type !== 'chapter' && store.sectionIndex.some(s => s.type === type)) {
+    if ((type === 'cover' || type === 'index') && store.sectionIndex.some(s => s.type === type)) {
         alert(`Il libro contiene già una sezione di tipo: ${type === 'cover' ? 'Copertina' : 'Indice'}`)
         return
     }
@@ -87,22 +111,30 @@ const addSection = (type: SectionType) => {
     const titles: Record<SectionType, string> = {
         cover: 'Copertina',
         index: 'Indice Generale',
-        chapter: `Capitolo ${store.sectionIndex.filter(s => s.type === 'chapter').length + 1}`
+        chapter: `Capitolo ${store.sectionIndex.filter(s => s.type === 'chapter').length + 1}`,
+        text: 'Nuova sezione',
     }
 
-    // La sezione nasce già al suo posto: copertina in testa, poi indice, poi i capitoli
-    const id = store.createNewSection(titles[type], type)
+    // La sezione nasce già al suo posto: copertina, indice, sezioni iniziali, capitoli, sezioni finali
+    const id = store.createNewSection(titles[type], type, place)
     handleSectionClick(id)
 }
+
+// Menu «Altro»
+const moreOpen = ref(false)
+const moreItems = [
+    { label: 'Sezione prima dei capitoli', hint: 'Senza numero: prefazione, introduzione…', icon: 'fa-solid fa-file-pen', run: () => addSection('text', 'front') },
+    { label: 'Sezione dopo i capitoli', hint: 'Senza numero: conclusioni, bibliografia…', icon: 'fa-solid fa-file-pen', run: () => addSection('text', 'back') },
+]
 
 const promptRename = (section: SectionIndexItem) => {
     if (locked.value) return
     const newTitle = prompt(`Inserisci il nuovo nome identificativo per l'indice:`, section.title)
     if (!newTitle || !newTitle.trim()) return
 
-    if (section.type === 'chapter') {
+    if (isContentSection(section.type)) {
         if (section.syncTitle !== false &&
-            !confirm('Il nome di questo capitolo segue il primo titolo. Rinominandolo, il collegamento verrà disattivato. Continuare?')) return
+            !confirm('Il nome di questa sezione segue il primo titolo. Rinominandolo, il collegamento verrà disattivato. Continuare?')) return
         section.syncTitle = false
     }
     section.title = newTitle.trim()

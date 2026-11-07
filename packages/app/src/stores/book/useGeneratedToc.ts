@@ -2,6 +2,7 @@
 import { computed, type Ref } from 'vue'
 import { escapeHtml } from '../../utils/html'
 import { scanChapter, type ScanSources } from './sectionScan'
+import { isContentSection } from '../../utils/sectionOrder'
 import type { BookMetadata, SectionIndexItem } from './types'
 
 const FONT = 'font-family: Lora, Georgia, serif;'
@@ -12,9 +13,10 @@ export function useGeneratedToc(
     metadata: Ref<BookMetadata>) {
   return computed(() => {
     const numbered = metadata.value.showNumbering
-    const chapters = sectionIndex.value.filter(s => s.type === 'chapter')
+    // Nell'ordine del libro: capitoli con tutti i titoli, sezioni senza numero con il solo Titolo 1
+    const sections = sectionIndex.value.filter(s => isContentSection(s.type))
 
-    if (chapters.length === 0) {
+    if (sections.length === 0) {
       return `
   <div class="toc-container">
     <h2>Indice Generale</h2>
@@ -28,13 +30,16 @@ export function useGeneratedToc(
     let html = `<div class="toc-container"><h2 style="${FONT} font-size: 2rem; margin-bottom: 1.5rem;">Indice Generale</h2><ul style="list-style: none !important; padding: 0 !important; margin: 0 !important; ${FONT}">`
 
     let entryIndex = 0   // progressivo globale: corrisponde all'id toc-h-N assegnato da pdf-core (prepareToc)
+    let mainCounter = 0
 
-    chapters.forEach((ch, i) => {
-      const mainCounter = i + 1
+    sections.forEach((sec) => {
+      const isChapter = sec.type === 'chapter'
+      if (isChapter) mainCounter++
       let subCounter = 0
       let subSubCounter = 0
 
-      for (const h of scanChapter(ch.id, src).headings) {
+      for (const h of scanChapter(sec.id, src).headings) {
+        if (!isChapter && h.level !== '1') continue
         const text = escapeHtml(h.text || 'Titolo senza testo')
         let numbering: string
         let paddingLeft: string
@@ -42,7 +47,7 @@ export function useGeneratedToc(
         let fontWeight = 'bold'
 
         if (h.level === '1') {
-          numbering = numbered ? `${mainCounter}. ` : ''
+          numbering = numbered && isChapter ? `${mainCounter}. ` : ''
           paddingLeft = '0px'
           fontSize = '1.1rem'
         } else if (h.level === '3') {

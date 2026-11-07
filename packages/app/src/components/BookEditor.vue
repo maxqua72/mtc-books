@@ -108,7 +108,8 @@ const onPickCoverImage = async (file: File) => {
 const pageClasses = computed(() => ({
     'show-numbering': store.metadata.showNumbering,
     'is-two-columns': layout.twoColumns.value,
-    'is-structural-page': store.activeSectionInfo?.type === 'cover' || store.activeSectionInfo?.type === 'index',
+    // Solo i capitoli numerano i titoli
+    'is-structural-page': store.activeSectionInfo?.type !== 'chapter',
     'is-index-page': store.activeSectionInfo?.type === 'index'
 }))
 

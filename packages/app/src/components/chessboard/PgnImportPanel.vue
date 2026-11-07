@@ -3,7 +3,7 @@
     <p v-if="!canUse" class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
       {{ locked
         ? 'Documento in sola lettura: abilita le modifiche dall’intestazione per importare un PGN.'
-        : 'Apri un capitolo per importare un PGN: gli alberi di mosse stanno nei capitoli.' }}
+        : 'Apri un capitolo o una sezione di testo per importare un PGN: copertina e indice non contengono alberi di mosse.' }}
     </p>
 
     <template v-else>

@@ -98,6 +98,7 @@ import PgnImportPanel from './PgnImportPanel.vue'
 import { capabilities } from '../../platform'
 import { vTooltip } from '../../directives/tooltip'
 import { canSplitAt } from '../../utils/treeOps'
+import { isContentSection } from '../../utils/sectionOrder'
 
 defineProps<{
   currentFen: string
@@ -127,14 +128,14 @@ const activeTab = ref<'fen' | 'pgn' | 'engine' | 'nags'>('fen')
 const tree = computed(() => treeStore.currentTree)
 const fenLocked = computed(() => treeStore.isFenLocked)
 const showReset = computed(() => !tree.value || treeStore.isCurrentTreeEmpty)
-// Diagrammi e alberi si inseriscono solo in un capitolo (copertina e indice non hanno testo)
-const inChapter = computed(() => bookStore.activeSectionInfo?.type === 'chapter')
+// Diagrammi e alberi si inseriscono nei capitoli e nelle sezioni senza numero (copertina e indice non hanno testo)
+const inChapter = computed(() => isContentSection(bookStore.activeSectionInfo?.type))
 // Sola lettura: l'albero del documento non si modifica; la posizione libera e la navigazione restano attive
 const locked = computed(() => bookStore.isLocked)
 
 // Tooltip dei comandi: dove finisce ciò che si inserisce, oppure perché il comando è disattivato
 const blockedReason = computed(() =>
-  !inChapter.value ? 'Apri un capitolo: diagrammi e alberi stanno nei capitoli'
+  !inChapter.value ? 'Apri un capitolo o una sezione di testo: copertina e indice non contengono diagrammi e alberi'
     : locked.value ? 'Documento in sola lettura: abilita le modifiche dall’intestazione'
       : null)
 

@@ -40,13 +40,14 @@ export function createPdfEngine(deps: PdfEngineDeps) {
       return render({ sectionsHtml, customCss, pageSize, debugName: 'debug_output.html' })
     },
 
-    /** is-structural-page: copertina e indice non numerano i titoli. data-section-type: l'indice raccoglie solo i capitoli */
+    /** is-structural-page: solo i capitoli numerano titoli e diagrammi. data-section-type: l'indice raccoglie
+     *  tutti i titoli dei capitoli e il solo Titolo 1 delle altre sezioni */
     generateBook({ sections, customCss, pageSize = 'A4' }: BookRequest) {
       const sectionsHtml = sections
         .map(
           (sec) => `
-        <section 
-          class="book-section ${sec.type === 'cover' || sec.type === 'index' ? 'is-structural-page' : ''}" 
+        <section
+          class="book-section ${sec.type === 'chapter' ? '' : 'is-structural-page'}"
           data-section-id="${sec.id}" 
           data-section-type="${sec.type}" 
           style="--chapter-index: ${sec.chapterNumber || 1};"

@@ -1,7 +1,8 @@
 import { newUuid } from '../../utils/ids'
 import { normalizeBinding, type Binding } from '../../utils/binding'
 // Tipi e valori predefiniti del libro
-export type SectionType = 'cover' | 'index' | 'chapter'
+// text: sezione senza numero (prefazione, introduzione, bibliografia...), prima o dopo i capitoli
+export type SectionType = 'cover' | 'index' | 'chapter' | 'text'
 export type PageFormat = 'a4' | 'crown-quarto' | 'b-format'
 export type SaveStatus = 'saved' | 'saving' | 'unsaved'
 
@@ -9,7 +10,7 @@ export interface SectionIndexItem {
   id: string
   type: SectionType
   title: string
-  syncTitle?: boolean   // solo capitoli: false = il nome non segue il primo titolo (assente = segue)
+  syncTitle?: boolean   // capitoli e sezioni di testo: false = il nome non segue il primo titolo (assente = segue)
 }
 
 export interface BookMetadata {

@@ -1,6 +1,7 @@
-// Riordino dei capitoli nella barra laterale con drag & drop (copertina e indice restano in testa)
+// Riordino delle sezioni nella barra laterale con drag & drop; le regole sono in utils/sectionOrder
 import { ref, type Ref } from 'vue'
 import type { SectionIndexItem } from '../stores/chessBookStore'
+import { dropTarget, moveSection } from '../utils/sectionOrder'
 
 export function useSectionDragDrop(sections: Ref<SectionIndexItem[]>, locked: Ref<boolean>) {
   const draggedIndex = ref<number | null>(null)
@@ -28,27 +29,16 @@ export function useSectionDragDrop(sections: Ref<SectionIndexItem[]>, locked: Re
   const onDrop = (targetIndex: number) => {
     const fromIndex = draggedIndex.value
     reset()
-    if (locked.value || fromIndex === null || fromIndex === targetIndex) return
-
-    const list = sections.value
-    const dragged = list[fromIndex]
-    const target = list[targetIndex]
-    if (dragged.type !== 'chapter') return
-
-    // Su copertina o indice: il capitolo diventa il primo, subito dopo di loro.
-    // Il capitolo trascinato sta già dopo il primo capitolo, quindi toglierlo non sposta quella posizione.
-    const finalIndex = target.type === 'chapter'
-      ? targetIndex
-      : list.findIndex((s) => s.type === 'chapter')
-
-    list.splice(fromIndex, 1)
-    list.splice(finalIndex, 0, dragged)
+    if (locked.value || fromIndex === null) return
+    moveSection(sections.value, fromIndex, targetIndex)
   }
 
-  // Linea di inserimento: sopra se si sale, sotto se si scende; sotto copertina e indice, dove va il capitolo
+  // Linea di inserimento solo dove la sezione può andare: sotto se scende (o su copertina e indice), sopra se sale
   const dropClass = (index: number, section: SectionIndexItem): string => {
-    if (activeDropIndex.value !== index || draggedIndex.value === null) return ''
-    const below = section.type !== 'chapter' || draggedIndex.value < index
+    const from = draggedIndex.value
+    if (activeDropIndex.value !== index || from === null) return ''
+    if (dropTarget(sections.value, from, index) === null) return ''
+    const below = section.type === 'cover' || section.type === 'index' || from < index
     return below
       ? 'bg-neutral-100 shadow-[inset_0_-2px_0_0_#171717]'
       : 'bg-neutral-100 shadow-[inset_0_2px_0_0_#171717]'

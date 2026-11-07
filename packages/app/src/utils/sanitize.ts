@@ -212,12 +212,12 @@ export function sanitizeSectionIndex(raw: unknown): SectionIndexItem[] {
     if (!item || typeof item !== 'object') continue
     const { id, type, title, syncTitle } = item as Record<string, unknown>
     if (typeof id !== 'string' || !SAFE_ID.test(id) || seen.has(id)) continue
-    if (type !== 'cover' && type !== 'index' && type !== 'chapter') continue
+    if (type !== 'cover' && type !== 'index' && type !== 'chapter' && type !== 'text') continue
     seen.add(id)
     out.push({
       id, type,
       title: (typeof title === 'string' ? title : '').slice(0, 200) || 'Senza titolo',
-      ...(type === 'chapter' && syncTitle === false ? { syncTitle: false } : {}),
+      ...((type === 'chapter' || type === 'text') && syncTitle === false ? { syncTitle: false } : {}),
     })
   }
   return out

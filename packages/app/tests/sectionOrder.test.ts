@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { ref } from 'vue'
-import { orderSections } from '../src/utils/sectionOrder'
+import { orderSections, withNewSection } from '../src/utils/sectionOrder'
 import { useSectionDragDrop } from '../src/composables/useSectionDragDrop'
 import type { SectionIndexItem } from '../src/stores/book/types'
 
@@ -37,4 +37,51 @@ test('trascinamento: sulla copertina o sull’indice il capitolo diventa il prim
 test('trascinamento: copertina e indice non si spostano', () => {
   assert.equal(drag(1, 4), 'cop ind c1 c2 c3')
   assert.equal(drag(0, 3), 'cop ind c1 c2 c3')
+})
+
+// Libro con sezioni senza numero: p1 p2 in testa, b1 b2 in fondo
+const book = () => [sec('cop', 'cover'), sec('ind', 'index'), sec('p1', 'text'), sec('p2', 'text'),
+  sec('c1'), sec('c2'), sec('b1', 'text'), sec('b2', 'text')]
+const dragBook = (from: string, to: string) => {
+  const list = ref(book())
+  const dnd = useSectionDragDrop(list, ref(false))
+  dnd.onDragStart(list.value.findIndex((s) => s.id === from))
+  dnd.onDrop(list.value.findIndex((s) => s.id === to))
+  return ids(list.value)
+}
+
+test('sezioni senza numero: restano in testa o in fondo secondo la posizione', () => {
+  assert.equal(ids(orderSections(book())), 'cop ind p1 p2 c1 c2 b1 b2')
+  // Senza capitoli stanno tutte in testa
+  assert.equal(ids(orderSections([sec('t1', 'text'), sec('ind', 'index')])), 'ind t1')
+})
+
+test('sezioni senza numero: le nuove vanno in fondo al gruppo scelto', () => {
+  assert.equal(ids(withNewSection(book(), sec('n', 'text'), 'front')), 'cop ind p1 p2 n c1 c2 b1 b2')
+  assert.equal(ids(withNewSection(book(), sec('n', 'text'), 'back')), 'cop ind p1 p2 c1 c2 b1 b2 n')
+  assert.equal(ids(withNewSection(book(), sec('c3'))), 'cop ind p1 p2 c1 c2 c3 b1 b2')
+  assert.equal(ids(withNewSection([sec('c1')], sec('ind', 'index'))), 'ind c1')
+})
+
+test('sezioni senza numero: si riordinano nel proprio gruppo', () => {
+  assert.equal(dragBook('p1', 'p2'), 'cop ind p2 p1 c1 c2 b1 b2')
+  assert.equal(dragBook('b2', 'b1'), 'cop ind p1 p2 c1 c2 b2 b1')
+})
+
+test('sezioni senza numero: passano dalla testa al fondo e viceversa', () => {
+  assert.equal(dragBook('p1', 'b1'), 'cop ind p2 c1 c2 b1 p1 b2')
+  assert.equal(dragBook('b2', 'p1'), 'cop ind b2 p1 p2 c1 c2 b1')
+  // Sull'ultimo capitolo, scendendo: prima delle sezioni finali
+  assert.equal(dragBook('p2', 'c2'), 'cop ind p1 c1 c2 p2 b1 b2')
+  // Sul primo capitolo, salendo: ultima delle sezioni iniziali
+  assert.equal(dragBook('b1', 'c1'), 'cop ind p1 p2 b1 c1 c2 b2')
+  // Sull'indice: prima delle sezioni iniziali
+  assert.equal(dragBook('b2', 'ind'), 'cop ind b2 p1 p2 c1 c2 b1')
+})
+
+test('sezioni senza numero e capitoli non si mescolano', () => {
+  assert.equal(dragBook('p1', 'c1'), 'cop ind p1 p2 c1 c2 b1 b2')     // scendendo sul primo capitolo: resta
+  assert.equal(dragBook('c1', 'p1'), 'cop ind p1 p2 c1 c2 b1 b2')
+  assert.equal(dragBook('c2', 'b1'), 'cop ind p1 p2 c1 c2 b1 b2')
+  assert.equal(dragBook('c2', 'ind'), 'cop ind p1 p2 c2 c1 b1 b2')
 })

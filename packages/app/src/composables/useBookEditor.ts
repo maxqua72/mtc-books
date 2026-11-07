@@ -23,6 +23,7 @@ import { treeIdsInDoc } from '../utils/editorDoc'
 import { pasteTreeFromClipboard } from './useBlockInsertion'
 import { resetHistory } from '../utils/editorHistory'
 import { goToDiagram } from './useGoToDiagram'
+import { isContentSection } from '../utils/sectionOrder'
 
 
 
@@ -107,7 +108,7 @@ export function useBookEditor() {
     // Durante la digitazione lo store riceve l'HTML aggiornato (base dell'autosave)
     onUpdate({ editor }) {
       store.activeSectionHtml = editor.getHTML()
-      if (store.activeSectionInfo?.type === 'chapter' && !store.isLocked) {
+      if (isContentSection(store.activeSectionInfo?.type) && !store.isLocked) {
         store.applyHeadingTitle(store.activeSectionId!, firstH2Text(editor.state.doc))
       }
     },
@@ -161,7 +162,7 @@ export function useBookEditor() {
 
   // Sola lettura: l'editor si blocca (l'indice resta sempre non modificabile)
   watch(() => store.isLocked, (locked) => {
-    if (editor.value && store.activeSectionInfo?.type === 'chapter') editor.value.setEditable(!locked, false)
+    if (editor.value && isContentSection(store.activeSectionInfo?.type)) editor.value.setEditable(!locked, false)
   })
 
   // L'editor viene creato dopo il montaggio: al primo istante i watcher sopra non scattano

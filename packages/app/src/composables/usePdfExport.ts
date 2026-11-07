@@ -77,7 +77,9 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
     clone.querySelectorAll('.move-comment-box').forEach(el => {
       if (!el.textContent?.trim()) el.remove()
     })
-    // Qui passano solo i capitoli: copertina e indice hanno un HTML proprio e restano a colonna unica
+    // Qui passano capitoli e sezioni senza numero: copertina e indice hanno un HTML proprio e restano a colonna unica.
+    // Una sezione senza numero esportata da sola non ha la classe della sezione del libro: la porta con sé.
+    if (store.activeSectionInfo?.type === 'text') return `<div class="is-structural-page">${clone.innerHTML}</div>`
     return layout.twoColumns.value ? `<div class="book-columns">${clone.innerHTML}</div>` : clone.innerHTML
   }
 

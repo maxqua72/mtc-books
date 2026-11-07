@@ -8,6 +8,7 @@ import { findTreeBlockPos, treeIdsInDoc } from '../utils/editorDoc'
 import { canSplitAt, findMergeableChild } from '../utils/treeOps'
 import { resetHistory } from '../utils/editorHistory'
 import { NodeSelection } from '@tiptap/pm/state'
+import { isContentSection } from '../utils/sectionOrder'
 
 type EditorRef = ShallowRef<Editor | undefined>
 
@@ -19,7 +20,7 @@ const MERGE_CONFIRM =
 /** Incolla l'albero copiato o tagliato (anche da un altro capitolo): nuovo albero indipendente, nel punto del cursore */
 export function pasteTreeFromClipboard() {
   const store = useChessBookStore()
-  if (store.activeSectionInfo?.type !== 'chapter') return
+  if (!isContentSection(store.activeSectionInfo?.type)) return
   const tree = useChessTreeStore().cloneTreeFromClipboard()
   if (!tree) return
   usePgnImportStore().addTrees([tree], 'cursor')
@@ -32,7 +33,7 @@ export function useBlockInsertion(editor: EditorRef) {
 
   // Toolbar: nuovo albero dopo il paragrafo del cursore, che parte dalla posizione corrente della scacchiera
   const insertNewChessTreeBlock = () => {
-    if (!editor.value || store.activeSectionInfo?.type !== 'chapter') return
+    if (!editor.value || !isContentSection(store.activeSectionInfo?.type)) return
     const tree = treeStore.buildTree(`Albero #${treeStore.trees.length + 1}`)
     pgnStore.addTrees([tree], 'cursor')
   }
@@ -91,7 +92,7 @@ export function useBlockInsertion(editor: EditorRef) {
   // "Inserisci Diagramma" dalla console: la posizione è sempre treeStore.activeFen
   watch(() => store.insertSignal, () => {
     const ed = editor.value
-    if (!ed || store.activeSectionInfo?.type !== 'chapter') return
+    if (!ed || !isContentSection(store.activeSectionInfo?.type)) return
 
     try {
       const diagramFen = treeStore.activeFen

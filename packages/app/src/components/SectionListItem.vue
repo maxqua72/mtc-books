@@ -28,11 +28,11 @@
     <div v-if="!locked"
       class="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity pl-1 shrink-0">
 
-      <!-- Opzioni del capitolo -->
-      <button v-if="section.type === 'chapter'" @click.stop="emit('options')" :class="[
+      <!-- Opzioni del capitolo o della sezione senza numero -->
+      <button v-if="isContentSection(section.type)" @click.stop="emit('options')" :class="[
         'w-5 h-5 flex items-center justify-center rounded text-[10px] transition-colors',
         active ? 'hover:bg-neutral-800 text-neutral-300 hover:text-white' : 'hover:bg-neutral-200 text-neutral-500 hover:text-neutral-900'
-      ]" v-tooltip="'Opzioni del capitolo'">
+      ]" v-tooltip="section.type === 'chapter' ? 'Opzioni del capitolo' : 'Opzioni della sezione'">
         <i class="fa-solid fa-sliders text-[9px]"></i>
       </button>
 
@@ -59,6 +59,7 @@
 import { computed } from 'vue'
 import type { SectionIndexItem } from '../stores/chessBookStore'
 import { vTooltip } from '../directives/tooltip'
+import { isContentSection, isFreeSection } from '../utils/sectionOrder'
 
 const props = defineProps<{
   section: SectionIndexItem
@@ -79,8 +80,8 @@ const emit = defineEmits<{
   (e: 'options'): void
 }>()
 
-// Solo i capitoli si riordinano, e solo se il documento non è in sola lettura
-const draggable = computed(() => props.section.type === 'chapter' && !props.locked)
+// Si riordinano capitoli e sezioni senza numero, e solo se il documento non è in sola lettura
+const draggable = computed(() => (props.section.type === 'chapter' || isFreeSection(props.section.type)) && !props.locked)
 
 // Calcola le classi CSS (Icona + Colore) in base a tipo, stato attivo e locked
 const iconClass = computed(() => {
@@ -88,6 +89,7 @@ const iconClass = computed(() => {
   let baseIcon = 'fa-solid fa-file-lines'
   if (props.section.type === 'cover') baseIcon = 'fa-solid fa-book-open'
   if (props.section.type === 'index') baseIcon = 'fa-solid fa-list-ol'
+  if (props.section.type === 'text') baseIcon = 'fa-solid fa-file-pen'
 
   // 2. Determina la classe di colore
   let colorClass = 'text-neutral-700 group-hover:text-neutral-900' // Sbloccato (Scuro/Nero)

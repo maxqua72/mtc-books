@@ -1,6 +1,6 @@
 # Struttura e proprietà del libro
 
-Un libro è un elenco di sezioni, visibile nella colonna sinistra. Le sezioni sono di tre tipi: **capitolo**, **copertina** e **indice**.
+Un libro è un elenco di sezioni, visibile nella colonna sinistra. Le sezioni sono di quattro tipi: **copertina**, **indice**, **capitolo** e **sezione senza numero**.
 
 ![La colonna sinistra con copertina, capitoli e indice](/screenshots/sezioni.png)
 
@@ -11,13 +11,32 @@ Un libro è un elenco di sezioni, visibile nella colonna sinistra. Le sezioni so
 | Aprire una sezione | Clic sulla voce |
 | Aggiungere un capitolo | **Nuovo Capitolo** |
 | Aggiungere copertina o indice | **Copertina** o **Indice** |
-| Riordinare i capitoli | Trascina la voce |
+| Aggiungere una sezione senza numero | **Altro** → **Sezione prima dei capitoli** o **Sezione dopo i capitoli** |
+| Riordinare capitoli e sezioni senza numero | Trascina la voce |
 | Rinominare | Passa sulla voce e clicca la matita |
 | Eliminare | Passa sulla voce e clicca il cestino |
 
-Il libro può avere una sola copertina e un solo indice. L'ordine segue quello dei libri di scacchi: prima la copertina, poi l'indice, poi i capitoli. Si possono trascinare solo i capitoli: un capitolo lasciato sulla copertina o sull'indice diventa il primo capitolo.
+Il libro può avere una sola copertina e un solo indice. L'ordine segue quello dei libri di scacchi: copertina, indice, sezioni senza numero iniziali, capitoli, sezioni senza numero finali. Copertina e indice non si spostano. Un capitolo lasciato sulla copertina o sull'indice diventa il primo capitolo.
 
 Un libro salvato con una versione precedente dell'app, che metteva l'indice in fondo, si apre con l'indice dopo la copertina.
+
+## Sezioni senza numero
+
+Prefazione, introduzione, ringraziamenti, conclusioni, bibliografia: sono sezioni che stanno prima o dopo i capitoli e non hanno numero. Le scrivi come un capitolo, con testo, alberi di mosse e diagrammi, e il nome lo decidi tu: di solito è il primo **Titolo 1**.
+
+| Elemento | Nella sezione senza numero |
+|---|---|
+| Titoli | Senza numero. Nell'indice compare solo il **Titolo 1**, senza numero |
+| Diagrammi | Senza numero; resta il pallino del tratto |
+| Capitoli | La numerazione dei capitoli non cambia |
+
+Trascinando una sezione senza numero puoi:
+
+- cambiarne l'ordine rispetto alle altre sezioni dello stesso gruppo;
+- spostarla dall'inizio alla fine del libro, o viceversa: lasciala su una sezione dell'altro gruppo, oppure sull'ultimo capitolo (scendendo) o sul primo (salendo);
+- portarla prima di tutte le sezioni iniziali, lasciandola sull'indice.
+
+Una sezione senza numero non va mai tra due capitoli.
 
 ::: warning Eliminare una sezione
 Dopo la conferma il testo della sezione va perduto.
@@ -25,16 +44,16 @@ Dopo la conferma il testo della sezione va perduto.
 
 ## Opzioni del capitolo
 
-Il pulsante **Opzioni del capitolo** compare passando sulla voce. Contiene:
+Il pulsante **Opzioni del capitolo** compare passando sulla voce; per le sezioni senza numero si chiama **Opzioni della sezione**. Contiene:
 
-- **Nome uguale al primo titolo**: il nome nell'elenco segue il primo **Titolo 1** del capitolo.
-- **Nome del capitolo**: modificabile quando il collegamento è disattivato.
+- **Nome uguale al primo titolo**: il nome nell'elenco segue il primo **Titolo 1** della sezione.
+- **Nome del capitolo** (o **Nome della sezione**): modificabile quando il collegamento è disattivato.
 
-Se rinomini dall'elenco un capitolo collegato, l'app chiede conferma e disattiva il collegamento.
+Se rinomini dall'elenco una sezione collegata, l'app chiede conferma e disattiva il collegamento.
 
 ## Indice
 
-L'indice si genera dai titoli dei capitoli (**Titolo 1**, **Titolo 2**, **Titolo 3**), senza doverlo scrivere. I numeri di pagina si calcolano durante l'esportazione del libro intero.
+L'indice si genera dai titoli dei capitoli (**Titolo 1**, **Titolo 2**, **Titolo 3**) e dal **Titolo 1** delle sezioni senza numero, senza doverlo scrivere. I numeri di pagina si calcolano durante l'esportazione del libro intero.
 
 ![L’indice generato dai titoli](/screenshots/indice.png)
 

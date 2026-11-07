@@ -5,6 +5,7 @@ import { useChessBookStore } from '../stores/chessBookStore'
 import { usePgnImportStore } from '../stores/pgnImportStore'
 import { parsePgnText, buildTreeFromGame, nodeLabel, type PgnGameInfo, type ImportStats } from '../utils/pgnImport'
 import { samePosition } from '../utils/fen'
+import { isContentSection } from '../utils/sectionOrder'
 
 const CONFIRM_THRESHOLD = 50          // oltre questo numero di alberi si chiede conferma
 const PREVIEW_LIMIT = 30              // oltre questo numero di partite non si calcolano le statistiche per riga
@@ -18,7 +19,7 @@ export function usePgnImportForm() {
   const pgn = usePgnImportStore()
 
   const locked = computed(() => bookStore.isLocked)
-  const canUse = computed(() => bookStore.activeSectionInfo?.type === 'chapter' && !bookStore.isLocked)
+  const canUse = computed(() => isContentSection(bookStore.activeSectionInfo?.type) && !bookStore.isLocked)
 
   // Il pannello aperto attiva i riferimenti nel documento (riquadro tratteggiato e cartellino)
   watch(canUse, (v) => { pgn.isOpen = v }, { immediate: true })

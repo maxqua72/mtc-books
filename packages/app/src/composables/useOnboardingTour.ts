@@ -22,8 +22,9 @@ const canExportPdf = capabilities.localPdf || capabilities.cloudPdf
 const STEPS: TourStep[] = [
   {
     target: 'sections', side: 'right', title: 'Sezioni del libro',
-    description: 'Qui trovi copertina, capitoli e indice. Con <b>Nuovo Capitolo</b> aggiungi un capitolo; '
-      + 'con <b>Copertina</b> e <b>Indice</b> la pagina iniziale e l’indice generato dai titoli.',
+    description: 'Qui trovi copertina, indice e capitoli. Con <b>Nuovo Capitolo</b> aggiungi un capitolo; '
+      + 'con <b>Copertina</b> e <b>Indice</b> la pagina iniziale e l’indice generato dai titoli; '
+      + 'con <b>Altro</b> le sezioni senza numero, come la prefazione.',
   },
   {
     target: 'lock', side: 'bottom', title: 'Sola lettura', onlyLocked: true,
