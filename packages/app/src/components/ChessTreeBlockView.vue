@@ -9,18 +9,18 @@
         {{ currentTree?.title || 'Albero di mosse' }}
       </span>
       <button v-if="!locked" @click.stop="insertParagraph('before')" class="action-btn"
-        title="Inserisci un paragrafo sopra">¶↑</button>
+        v-tooltip="'Inserisci un paragrafo sopra'">¶↑</button>
       <button v-if="!locked" @click.stop="insertParagraph('after')" class="action-btn"
-        title="Inserisci un paragrafo sotto">¶↓</button>
+        v-tooltip="'Inserisci un paragrafo sotto'">¶↓</button>
       <button v-if="currentTree" @click.stop="copyBlock" class="action-btn"
-        :title="copied ? 'Copiato' : 'Copia l\'albero (poi Ctrl+V o «Incolla albero»)'">
+        v-tooltip="copied ? 'Copiato' : 'Copia l\'albero (poi Ctrl+V o «Incolla albero»)'">
         <i :class="['fa-solid', copied ? 'fa-check' : 'fa-copy']"></i>
       </button>
       <button v-if="currentTree && !locked" @click.stop="cutBlock" class="action-btn"
-        title="Taglia l'albero (poi Ctrl+V o «Incolla albero»)">
+        v-tooltip="'Taglia l\'albero (poi Ctrl+V o «Incolla albero»)'">
         <i class="fa-solid fa-scissors"></i>
       </button>
-      <button v-if="!locked" @click.stop="deleteBlock" class="delete-btn" title="Elimina il blocco albero">
+      <button v-if="!locked" @click.stop="deleteBlock" class="delete-btn" v-tooltip="'Elimina il blocco albero'">
         <i class="fa-solid fa-trash-can"></i>
       </button>
     </div>
@@ -66,6 +66,7 @@ import { getHeaderView } from '../utils/pgnHeader'
 import { variationRootsOnPath } from '../utils/treeOps'
 import { writeTreeClipMarker } from '../utils/treeClipboard'
 import { useInsertParagraph } from '../composables/useInsertParagraph'
+import { vTooltip } from '../directives/tooltip'
 
 defineOptions({
   name: 'ChessTreeBlockView'

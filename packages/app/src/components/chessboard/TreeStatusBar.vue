@@ -8,14 +8,15 @@
       </div>
       <div class="text-[11px]" :class="tree ? 'text-blue-700' : 'text-neutral-500'">{{ subtitle }}</div>
       <label v-if="tree && hasHeader"
-        class="mt-1.5 flex items-center gap-1.5 text-[11px] text-blue-800 cursor-pointer select-none">
+        class="mt-1.5 flex items-center gap-1.5 text-[11px] text-blue-800 cursor-pointer select-none"
+        v-tooltip.desc="'Mostra sopra il blocco giocatori, risultato, evento e apertura presi dal PGN'">
         <input type="checkbox" :checked="!!tree.showHeader" :disabled="locked" @change="onToggleHeader" />
         Mostra intestazione nel documento
       </label>
     </div>
     <button v-if="tree" @click="treeStore.deactivateTree()"
       class="shrink-0 text-[11px] font-semibold text-blue-800 underline underline-offset-2 hover:text-blue-950"
-      title="Scollega dall'albero: la posizione resta sulla scacchiera e le mosse non vengono più registrate">
+      v-tooltip.desc="'Scollega dall\'albero: la posizione resta sulla scacchiera e le mosse non vengono più registrate'">
       Scollega
     </button>
   </div>
@@ -26,6 +27,7 @@ import { computed } from 'vue'
 import { useChessTreeStore } from '../../stores/chessTreeStore'
 import { useChessBookStore } from '../../stores/chessBookStore'
 import { hasDisplayableHeader } from '../../utils/pgnHeader'
+import { vTooltip } from '../../directives/tooltip'
 
 const treeStore = useChessTreeStore()
 const bookStore = useChessBookStore()

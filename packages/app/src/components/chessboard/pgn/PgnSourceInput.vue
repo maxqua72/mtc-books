@@ -5,10 +5,11 @@
       <span class="text-[11px] font-medium text-neutral-500">1. Incolla il PGN o carica un file</span>
       <div class="flex items-center gap-3">
         <button v-if="text" class="text-[11px] font-semibold text-neutral-500 underline" @click="emit('clear')"
-          title="Svuota il PGN incollato e l'elenco delle partite">
+          v-tooltip.desc="'Svuota il PGN incollato e l\'elenco delle partite'">
           Pulisci
         </button>
-        <button class="text-[11px] font-semibold text-neutral-700 underline" @click="fileInput?.click()">
+        <button class="text-[11px] font-semibold text-neutral-700 underline" @click="fileInput?.click()"
+          v-tooltip.desc="'Apre un file .pgn o .txt con una o più partite'">
           Carica file…
         </button>
       </div>
@@ -22,6 +23,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { vTooltip } from '../../../directives/tooltip'
 
 const text = defineModel<string>({ required: true })
 defineProps<{ error?: string }>()

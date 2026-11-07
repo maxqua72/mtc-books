@@ -121,21 +121,33 @@ const install = () => {
   window.addEventListener('resize', hide)
 }
 
-const apply = (el: HTMLElement, value: string) => {
+// Senza title un pulsante con sola icona resterebbe senza nome per gli screen reader: il testo diventa il nome.
+// Con .desc l'elemento ha già un testo visibile, che resta il nome: il tooltip diventa la descrizione.
+const apply = (el: HTMLElement, value: string | null | undefined, describe: boolean) => {
+  const attr = describe ? 'aria-description' : 'aria-label'
+  if (!value) {   // nessun testo in questo stato: niente tooltip
+    if (anchor === el) hide()
+    delete el.dataset.tooltip
+    el.removeAttribute(attr)
+    return
+  }
   if (el.dataset.tooltip === value) return
   el.dataset.tooltip = value
-  el.setAttribute('aria-label', value)   // senza title resterebbe senza nome per gli screen reader
+  el.setAttribute(attr, value)
   if (anchor === el && bubble && !bubble.hidden) show(el)
 }
 
-/** v-tooltip="testo": un solo riquadro condiviso, un testo finale «(Ctrl+…)» appare come scorciatoia */
-export const vTooltip: Directive<HTMLElement, string> = {
+/**
+ * v-tooltip="testo": un solo riquadro condiviso; un testo finale «(Ctrl+…)», «(Esc)» o «(Q)» appare come scorciatoia.
+ * v-tooltip.desc per gli elementi che hanno già un testo visibile.
+ */
+export const vTooltip: Directive<HTMLElement, string | null | undefined> = {
   mounted(el, binding) {
     install()
-    apply(el, binding.value)
+    apply(el, binding.value, !!binding.modifiers.desc)
   },
   updated(el, binding) {
-    apply(el, binding.value)
+    apply(el, binding.value, !!binding.modifiers.desc)
   },
   unmounted(el) {
     if (anchor === el) hide()

@@ -5,7 +5,7 @@
     <template v-else>
       <div class="flex items-center gap-2">
         <button type="button" role="switch" :aria-checked="engine.isRunning" :disabled="starting || !engine.activeProfile"
-          :title="engine.isRunning ? 'Spegni il motore' : 'Avvia il motore'" @click="toggle"
+          v-tooltip="engine.isRunning ? 'Spegni il motore' : 'Avvia il motore'" @click="toggle"
           class="relative inline-block w-9 h-5 rounded-full shrink-0 transition-colors disabled:opacity-40 cursor-pointer"
           :class="engine.isRunning ? 'bg-blue-600' : 'bg-neutral-300'">
           <span class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform"
@@ -53,6 +53,7 @@ import { formatArgs } from '../../utils/engineArgs'
 import EngineProfiles from './engine/EngineProfiles.vue'
 import EngineAnalysis from './engine/EngineAnalysis.vue'
 import EngineSettings from './engine/EngineSettings.vue'
+import { vTooltip } from '../../directives/tooltip'
 
 const engine = useEngineStore()
 const treeStore = useChessTreeStore()

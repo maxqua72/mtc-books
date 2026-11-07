@@ -9,7 +9,7 @@
         <span class="min-w-0 flex-1 pt-0.5 text-[12px] leading-4 line-clamp-2 break-words" :title="slot.row?.pv.text">
           {{ slot.row?.pv.text }}<span v-if="slot.row && !slot.row.pv.complete">…</span>
         </span>
-        <button type="button" :disabled="!slot.row || !canAdd || stale" :title="addTitle" @click="slot.row && add(slot.row)"
+        <button type="button" :disabled="!slot.row || !canAdd || stale" v-tooltip="addTitle" @click="slot.row && add(slot.row)"
           class="shrink-0 w-6 h-5 mt-0.5 rounded border border-neutral-300 text-[11px] font-bold hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed transition">+</button>
       </li>
     </ol>
@@ -28,7 +28,7 @@
 
     <button type="button" :disabled="!canSaveArrow" @click="saveArrow"
       class="w-full py-1 text-[11px] font-semibold border border-neutral-300 rounded hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
-      title="Salva la freccia della mossa migliore tra le frecce di questa posizione">Salva freccia nella posizione</button>
+      v-tooltip.desc="'Salva la freccia della mossa migliore tra le frecce di questa posizione'">Salva freccia nella posizione</button>
 
     <p class="h-4 text-[11px] truncate" :class="feedback ? 'text-blue-700' : 'text-neutral-500'"
       :title="hint" aria-live="polite">{{ hint }}</p>
@@ -44,6 +44,7 @@ import { formatScore, pvToSan, type PvResult } from '../../../utils/uciPv'
 import { reorderBlockedReason } from '../../../utils/treeOps'
 import { cleanShapes } from '../../../utils/shapes'
 import type { AnalysisLine } from '@mtc/shared'
+import { vTooltip } from '../../../directives/tooltip'
 
 const MAX_ROWS = 10   // righe riservate al massimo
 const EVEN_CP = 15    // entro questo valore (centesimi di pedone) la posizione è «pari»

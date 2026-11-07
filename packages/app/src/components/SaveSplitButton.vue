@@ -1,14 +1,14 @@
 <template>
   <!-- Stesso schema di «Esporta»: l'azione principale esegue la scelta, la freccia la cambia. Nel web c'è solo Salva -->
   <div class="relative inline-flex items-center" v-click-outside="close">
-    <button @click="execute" :title="title"
+    <button @click="execute" v-tooltip.desc="title"
       class="px-4 py-1.5 text-xs font-bold text-white shadow transition cursor-pointer flex items-center gap-1.5"
       :class="[colors, canSaveAs ? 'rounded-l border-r border-white/25' : 'rounded']">
       <span v-if="store.fileDirty" class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
       {{ current.label }}
     </button>
 
-    <button v-if="canSaveAs" @click="isOpen = !isOpen" title="Scegli come salvare" aria-haspopup="true" :aria-expanded="isOpen"
+    <button v-if="canSaveAs" @click="isOpen = !isOpen" v-tooltip="'Scegli come salvare'" aria-haspopup="true" :aria-expanded="isOpen"
       class="px-2 py-1.5 text-xs font-bold text-white rounded-r shadow transition cursor-pointer self-stretch flex items-center justify-center"
       :class="colors">
       <svg class="w-3 h-3 transition-transform duration-200" :class="{ 'rotate-180': isOpen }" fill="none"
@@ -41,6 +41,7 @@ import { platform } from '../platform'
 import { useBookFileActions } from '../composables/useBookFileActions'
 import { useChessBookStore } from '../stores/chessBookStore'
 import { vClickOutside } from '../directives/clickOutside'
+import { vTooltip } from '../directives/tooltip'
 
 type SaveMode = 'save' | 'save-as'
 

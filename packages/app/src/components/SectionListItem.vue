@@ -32,7 +32,7 @@
       <button v-if="section.type === 'chapter'" @click.stop="emit('options')" :class="[
         'w-5 h-5 flex items-center justify-center rounded text-[10px] transition-colors',
         active ? 'hover:bg-neutral-800 text-neutral-300 hover:text-white' : 'hover:bg-neutral-200 text-neutral-500 hover:text-neutral-900'
-      ]" title="Opzioni del capitolo">
+      ]" v-tooltip="'Opzioni del capitolo'">
         <i class="fa-solid fa-sliders text-[9px]"></i>
       </button>
 
@@ -40,7 +40,7 @@
       <button @click.stop="emit('rename')" :class="[
         'w-5 h-5 flex items-center justify-center rounded text-[10px] transition-colors',
         active ? 'hover:bg-neutral-800 text-neutral-300 hover:text-white' : 'hover:bg-neutral-200 text-neutral-500 hover:text-neutral-900'
-      ]" title="Rinomina voce indice">
+      ]" v-tooltip="'Rinomina voce indice'">
         <i class="fa-solid fa-pen text-[9px]"></i>
       </button>
 
@@ -48,7 +48,7 @@
       <button @click.stop="emit('remove')" :class="[
         'w-5 h-5 flex items-center justify-center rounded text-[10px] transition-colors',
         active ? 'hover:bg-neutral-800 text-red-400 hover:text-red-300' : 'hover:bg-neutral-200 text-neutral-500 hover:text-red-600'
-      ]" title="Elimina sezione">
+      ]" v-tooltip="'Elimina sezione'">
         <i class="fa-solid fa-trash text-[9px]"></i>
       </button>
     </div>
@@ -58,6 +58,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { SectionIndexItem } from '../stores/chessBookStore'
+import { vTooltip } from '../directives/tooltip'
 
 const props = defineProps<{
   section: SectionIndexItem

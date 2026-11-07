@@ -2,7 +2,7 @@
   <div class="w-[400px] bg-white border border-neutral-200 rounded-lg p-4 shadow-sm space-y-3">
     <div class="flex items-center justify-between border-b border-neutral-100 pb-2">
       <span class="text-xs font-bold text-neutral-400 uppercase tracking-wider">Editor scacchiera</span>
-      <button type="button" @click="emit('flip')" title="Inverti la scacchiera"
+      <button type="button" @click="emit('flip')" v-tooltip.desc="'Inverti la scacchiera'"
         class="text-xs font-semibold text-neutral-500 hover:text-neutral-900 transition underline underline-offset-4">
         Inverti
       </button>
@@ -11,7 +11,7 @@
     <div class="space-y-1">
       <div v-for="color in COLORS" :key="color" class="flex gap-1">
         <button v-for="role in ROLES" :key="role" type="button" class="tool-btn"
-          :class="{ active: isTool(color, role) }" :title="`${pieceLabel(role)} ${color === 'white' ? 'bianco' : 'nero'}`"
+          :class="{ active: isTool(color, role) }" v-tooltip="`${pieceLabel(role)} ${color === 'white' ? 'bianco' : 'nero'}`"
           :aria-pressed="isTool(color, role)" @mousedown.left.prevent="emit('dragPiece', { color, role }, $event)"
           @touchstart="emit('dragPiece', { color, role }, $event)" @click="toggleTool({ color, role })">
           <span class="cg-wrap cburnett tool-cell">
@@ -21,11 +21,11 @@
       </div>
       <div class="flex gap-1">
         <button type="button" class="tool-btn tool-text" :class="{ active: tool === null }" :aria-pressed="tool === null"
-          title="Trascina i pezzi sulla scacchiera; fuori dalla scacchiera vengono rimossi" @click="emit('update:tool', null)">
+          v-tooltip.desc="'Trascina i pezzi sulla scacchiera; fuori dalla scacchiera vengono rimossi'" @click="emit('update:tool', null)">
           <i class="fa-solid fa-arrow-pointer"></i> Sposta
         </button>
         <button type="button" class="tool-btn tool-text" :class="{ active: tool === 'trash' }" :aria-pressed="tool === 'trash'"
-          title="Clic su una casa per togliere il pezzo" @click="emit('update:tool', 'trash')">
+          v-tooltip.desc="'Clic su una casa per togliere il pezzo'" @click="emit('update:tool', 'trash')">
           <i class="fa-solid fa-trash-can"></i> Togli
         </button>
       </div>
@@ -46,7 +46,8 @@
           class="w-full text-xs border border-neutral-200 rounded px-2 py-1 bg-white" />
       </label>
       <label v-for="c in CASTLES" :key="c.key" class="flex items-center gap-1.5"
-        :class="{ 'opacity-40': !available[c.key] }">
+        :class="{ 'opacity-40': !available[c.key] }"
+        v-tooltip.desc="available[c.key] ? null : 'Non disponibile: re o torre non sono sulla casa iniziale'">
         <input type="checkbox" :disabled="!available[c.key]" :checked="options.castling[c.key] && available[c.key]"
           @change="options.castling[c.key] = ($event.target as HTMLInputElement).checked" />
         {{ c.label }}
@@ -54,8 +55,10 @@
     </div>
 
     <div class="flex gap-2">
-      <button type="button" class="action-btn" @click="setStandard">Posizione iniziale</button>
-      <button type="button" class="action-btn" @click="emit('setPlacement', EMPTY_PLACEMENT)">Svuota</button>
+      <button type="button" class="action-btn" @click="setStandard"
+        v-tooltip.desc="'Dispone i pezzi come all’inizio della partita'">Posizione iniziale</button>
+      <button type="button" class="action-btn" @click="emit('setPlacement', EMPTY_PLACEMENT)"
+        v-tooltip.desc="'Toglie tutti i pezzi dalla scacchiera'">Svuota</button>
     </div>
 
     <div class="space-y-1">
@@ -68,12 +71,13 @@
 
     <div class="flex gap-2">
       <button type="button" :disabled="!!error" @click="emit('apply', fen)"
+        v-tooltip.desc="error ? error : hasTree ? 'Diventa la posizione iniziale di questo albero' : 'Porta la scacchiera su questa posizione'"
         class="flex-1 py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded text-xs font-bold uppercase tracking-wide transition disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed">
         Applica
       </button>
       <button type="button" @click="emit('cancel')"
         class="flex-1 py-2 bg-white hover:bg-neutral-50 text-neutral-700 rounded text-xs font-bold uppercase tracking-wide transition border border-neutral-300"
-        title="Chiude l'editor senza cambiare la posizione (Esc)">
+        v-tooltip.desc="'Chiude l\'editor senza cambiare la posizione (Esc)'">
         Annulla
       </button>
     </div>
@@ -88,6 +92,7 @@ import {
   type CastlingRights, type EditorTool,
 } from '../../utils/boardEditor'
 import { STANDARD_FEN } from '../../utils/fen'
+import { vTooltip } from '../../directives/tooltip'
 
 const props = defineProps<{
   startFen: string

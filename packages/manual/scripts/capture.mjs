@@ -181,7 +181,7 @@ try {
   })
 
   await step('proprieta', async () => {
-    await page.getByTitle('Proprietà Libro').click()
+    await page.getByRole('button', { name: 'Proprietà Libro' }).click()
     await settle()
     await shot('proprieta-libro')
     await button('Salva e Chiudi').click()
@@ -189,7 +189,7 @@ try {
   })
 
   await step('impostazioni', async () => {
-    await page.getByTitle(/^Impostazioni/).click()
+    await page.getByRole('button', { name: /^Impostazioni/ }).click()
     await settle()
     await shot('impostazioni')
     await page.keyboard.press('Escape')
@@ -223,7 +223,7 @@ try {
     await page.keyboard.type('Le partite immortali')
     await page.keyboard.press('Escape')
     await settle()
-    await page.locator('main input[title="Colore"]').fill('#ffffff')
+    await page.locator('main input[aria-label="Colore"]').fill('#ffffff')
     await page.locator('main input[max="300"]').fill('40')
     await page.keyboard.press('Tab')
     await settle()
@@ -251,11 +251,11 @@ try {
   await step('menu-file', async () => {
     await left().getByText('La partita dell’Opera').first().click()
     await settle()
-    await page.getByTitle('Scegli come salvare').click()
+    await page.getByRole('button', { name: 'Scegli come salvare' }).click()
     await settle()
     const width = page.viewportSize()?.width ?? await page.evaluate(() => innerWidth)
     await page.screenshot({ path: path.join(outDir, 'menu-salva.png'), clip: { x: width - 560, y: 0, width: 560, height: 170 } })
-    await page.getByTitle('Scegli come salvare').click()
+    await page.getByRole('button', { name: 'Scegli come salvare' }).click()
     await page.locator('header [aria-haspopup="true"]').first().click()
     await settle()
     await page.screenshot({ path: path.join(outDir, 'menu-esporta.png'), clip: { x: width - 620, y: 0, width: 620, height: 190 } })
@@ -281,7 +281,7 @@ try {
   // Prova del manuale nella finestra vera, con la CSP vera
   await step('manuale', async () => {
     const opened = app.waitForEvent('window')
-    await page.getByTitle('Manuale utente').click()
+    await page.getByRole('button', { name: 'Manuale utente' }).click()
     const manual = await opened
     await manual.setViewportSize({ width: 1100, height: 760 }).catch(() => {})
     const problems = []

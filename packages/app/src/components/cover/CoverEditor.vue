@@ -8,7 +8,7 @@
           <i class="fa-solid fa-image"></i>
           {{ imageUrl ? 'Cambia immagine' : 'Scegli immagine' }}
         </button>
-        <button v-if="imageUrl" class="cv-btn" title="Rimuovi immagine" @click="emit('remove-image')">
+        <button v-if="imageUrl" class="cv-btn" v-tooltip="'Rimuovi immagine'" @click="emit('remove-image')">
           <i class="fa-solid fa-trash"></i>
         </button>
         <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp" class="hidden"
@@ -54,26 +54,26 @@
             @change="updateSelected({ fontSize: clamp(Number(val($event)) || 4, 4, 300) })" />
         </label>
 
-        <button class="cv-btn" :class="{ active: selected.bold }" title="Grassetto"
+        <button class="cv-btn" :class="{ active: selected.bold }" v-tooltip="'Grassetto'"
           @click="updateSelected({ bold: !selected.bold })"><i class="fa-solid fa-bold"></i></button>
-        <button class="cv-btn" :class="{ active: selected.italic }" title="Corsivo"
+        <button class="cv-btn" :class="{ active: selected.italic }" v-tooltip="'Corsivo'"
           @click="updateSelected({ italic: !selected.italic })"><i class="fa-solid fa-italic"></i></button>
 
         <span class="w-px h-6 bg-neutral-200 mx-1"></span>
 
-        <button class="cv-btn" :class="{ active: selected.align === 'left' }" title="Allinea a sinistra"
+        <button class="cv-btn" :class="{ active: selected.align === 'left' }" v-tooltip="'Allinea a sinistra'"
           @click="updateSelected({ align: 'left' })"><i class="fa-solid fa-align-left"></i></button>
-        <button class="cv-btn" :class="{ active: selected.align === 'center' }" title="Centra"
+        <button class="cv-btn" :class="{ active: selected.align === 'center' }" v-tooltip="'Centra'"
           @click="updateSelected({ align: 'center' })"><i class="fa-solid fa-align-center"></i></button>
-        <button class="cv-btn" :class="{ active: selected.align === 'right' }" title="Allinea a destra"
+        <button class="cv-btn" :class="{ active: selected.align === 'right' }" v-tooltip="'Allinea a destra'"
           @click="updateSelected({ align: 'right' })"><i class="fa-solid fa-align-right"></i></button>
 
         <span class="w-px h-6 bg-neutral-200 mx-1"></span>
 
         <input type="color" class="w-8 h-8 p-0 border border-neutral-200 rounded cursor-pointer bg-white"
-          title="Colore" :value="selected.color" @input="updateSelected({ color: val($event) })" />
+          v-tooltip="'Colore'" :value="selected.color" @input="updateSelected({ color: val($event) })" />
 
-        <button class="cv-btn" title="Elimina testo" @click="removeText(selected.id)">
+        <button class="cv-btn" v-tooltip="'Elimina testo'" @click="removeText(selected.id)">
           <i class="fa-solid fa-trash"></i>
         </button>
       </div>
@@ -121,6 +121,7 @@ import {
   COVER_FONTS, MM_TO_PX, coverTextStyle, coverImageStyle, createCoverText,
   type BookCover, type CoverTextElement, type CoverFontKey, type CoverImage
 } from '../../utils/cover'
+import { vTooltip } from '../../directives/tooltip'
 
 const props = defineProps<{
   imageUrl: string | null

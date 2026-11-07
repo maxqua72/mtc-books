@@ -7,7 +7,7 @@
         {{ SHORT_TITLES[g.id] }}
       </span>
       <div class="flex flex-wrap gap-0.5 min-w-0">
-        <button v-for="n in g.items" :key="n.code" @click="emit('toggle', n.code)" :title="n.label"
+        <button v-for="n in g.items" :key="n.code" @click="emit('toggle', n.code)" v-tooltip="n.label"
           :aria-pressed="activeNags.includes(n.code)"
           class="min-w-[26px] h-6 px-1 rounded border text-[11px] font-bold transition"
           :class="activeNags.includes(n.code)
@@ -22,6 +22,7 @@
 
 <script setup lang="ts">
 import { NAG_GROUPS, type NagGroup } from '../../utils/nags'
+import { vTooltip } from '../../directives/tooltip'
 
 defineProps<{ activeNags: number[] }>()
 const emit = defineEmits<{ (e: 'toggle', code: number): void }>()

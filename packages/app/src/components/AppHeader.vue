@@ -19,7 +19,7 @@
         <i class="fa-solid fa-file-lines"></i> {{ currentFile.name }} · {{ fileLabel }}
       </span>
       <span v-else-if="platform.capabilities.nativeFiles && store.isBookLoaded" class="text-xs text-amber-600 font-medium truncate max-w-[260px]"
-        title="Questo libro è solo nella copia interna: scegli un file con «Salva Lavoro» per attivare il salvataggio automatico">
+        v-tooltip.desc="'Questo libro è solo nella copia interna: scegli un file con «Salva Lavoro» per attivare il salvataggio automatico'">
         <i class="fa-solid fa-triangle-exclamation"></i> Nessun file associato
       </span>
     </div>
@@ -41,13 +41,13 @@
       <div class="flex items-center gap-0.5">
         <button @click="isSettingsOpen = true"
           class="w-8 h-8 flex items-center justify-center text-base text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer"
-          title="Impostazioni: aspetto dell'applicazione">
+          v-tooltip="'Impostazioni: aspetto dell\'applicazione'">
           <i class="fa-solid fa-gear"></i>
         </button>
 
         <button @click="openManual"
           class="w-8 h-8 flex items-center justify-center text-base text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer"
-          title="Manuale utente" aria-label="Manuale utente">
+          v-tooltip="'Manuale utente'">
           <i class="fa-solid fa-circle-question"></i>
         </button>
       </div>
@@ -55,7 +55,7 @@
       <!-- Interruttore sola lettura / modifica -->
       <button v-if="store.isBookLoaded" @click="store.setLocked(!store.isLocked)" role="switch"
         :aria-checked="!store.isLocked"
-        :title="store.isLocked ? 'Documento in sola lettura: clic per abilitare le modifiche' : 'Modifiche abilitate: clic per bloccare il documento'"
+        v-tooltip.desc="store.isLocked ? 'Documento in sola lettura: clic per abilitare le modifiche' : 'Modifiche abilitate: clic per bloccare il documento'"
         class="flex items-center gap-2 px-3 py-1.5 rounded border text-xs font-semibold transition cursor-pointer select-none"
         :class="store.isLocked
           ? 'border-neutral-300 text-neutral-600 hover:bg-neutral-50'
@@ -90,6 +90,7 @@ import SaveStatusIndicator from './SaveStatusIndicator.vue'
 import ExportSplitButton from './ExportSplitButton.vue'
 import SaveSplitButton from './SaveSplitButton.vue'
 import PdfDesktopNotice from './PdfDesktopNotice.vue'
+import { vTooltip } from '../directives/tooltip'
 
 const appVersion = __APP_VERSION__
 const store = useChessBookStore()

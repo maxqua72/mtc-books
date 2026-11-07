@@ -8,10 +8,10 @@
       <div class="flex items-center gap-3">
         <button @click="emit('clearShapes')"
           class="text-xs font-semibold text-neutral-500 hover:text-neutral-900 transition underline underline-offset-4"
-          title="Frecce e cerchi: tasto destro sulla scacchiera (nero nel libro); con Maiusc o Ctrl (grigio nel libro)">
+          v-tooltip.desc="'Frecce e cerchi: tasto destro sulla scacchiera (nero nel libro); con Maiusc o Ctrl (grigio nel libro)'">
           Cancella frecce
         </button>
-        <button v-if="showReset" @click="emit('reset')"
+        <button v-if="showReset" @click="emit('reset')" v-tooltip.desc="resetTitle"
           class="text-xs font-semibold text-neutral-500 hover:text-neutral-900 transition underline underline-offset-4">
           Resetta Posizione
         </button>
@@ -58,28 +58,28 @@
     </div>
 
     <div class="flex flex-wrap gap-2 pt-2">
-      <button @click="emit('insertDiagram')" :disabled="!inChapter || locked"
+      <button @click="emit('insertDiagram')" :disabled="!inChapter || locked" v-tooltip.desc="diagramTitle"
         class="flex-1 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded text-xs tracking-wide transition uppercase font-bold shadow-sm border border-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed">
         Inserisci Diagramma
       </button>
 
       <button v-if="tree && treeStore.activeNodeId && !locked" @click="emit('deleteBranch')"
         class="py-2 px-3 bg-red-50 hover:bg-red-100 text-red-600 rounded text-xs transition uppercase font-bold border border-red-200"
-        title="Elimina la mossa selezionata e tutto ciò che la segue">
+        v-tooltip.desc="'Elimina la mossa selezionata e tutto ciò che la segue'">
         Elimina Variante
       </button>
 
       <!-- Riordino delle varianti: agisce sulla linea che contiene la mossa selezionata -->
       <div v-if="showReorder" class="w-full flex gap-2">
-        <button @click="emit('promoteVariation')" :disabled="!canPromote" :title="promoteTitle" class="reorder-btn"><i
+        <button @click="emit('promoteVariation')" :disabled="!canPromote" v-tooltip.desc="promoteTitle" class="reorder-btn"><i
             class="fa-solid fa-arrow-up"></i> Promuovi</button>
-        <button @click="emit('makeMainLine')" :disabled="!canPromote" :title="mainTitle" class="reorder-btn"><i
+        <button @click="emit('makeMainLine')" :disabled="!canPromote" v-tooltip.desc="mainTitle" class="reorder-btn"><i
             class="fa-solid fa-angles-up"></i> Rendi principale</button>
-        <button @click="emit('demoteVariation')" :disabled="!canDemote" :title="demoteTitle" class="reorder-btn"><i
+        <button @click="emit('demoteVariation')" :disabled="!canDemote" v-tooltip.desc="demoteTitle" class="reorder-btn"><i
             class="fa-solid fa-arrow-down"></i> Abbassa</button>
       </div>
 
-      <button v-if="!tree || fenLocked" @click="emit('newTree')" :disabled="!inChapter || locked"
+      <button v-if="!tree || fenLocked" @click="emit('newTree')" :disabled="!inChapter || locked" v-tooltip.desc="newTreeTitle"
         class="w-full py-2 bg-white hover:bg-neutral-50 text-neutral-700 rounded text-xs transition font-semibold border border-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed">
         + Nuovo albero da questa posizione
       </button>
@@ -96,6 +96,8 @@ import NagPalette from './NagPalette.vue'
 import FenPanel from './FenPanel.vue'
 import PgnImportPanel from './PgnImportPanel.vue'
 import { capabilities } from '../../platform'
+import { vTooltip } from '../../directives/tooltip'
+import { canSplitAt } from '../../utils/treeOps'
 
 defineProps<{
   currentFen: string
@@ -129,6 +131,31 @@ const showReset = computed(() => !tree.value || treeStore.isCurrentTreeEmpty)
 const inChapter = computed(() => bookStore.activeSectionInfo?.type === 'chapter')
 // Sola lettura: l'albero del documento non si modifica; la posizione libera e la navigazione restano attive
 const locked = computed(() => bookStore.isLocked)
+
+// Tooltip dei comandi: dove finisce ciò che si inserisce, oppure perché il comando è disattivato
+const blockedReason = computed(() =>
+  !inChapter.value ? 'Apri un capitolo: diagrammi e alberi stanno nei capitoli'
+    : locked.value ? 'Documento in sola lettura: abilita le modifiche dall’intestazione'
+      : null)
+
+// Stesse regole dell'inserimento (useBlockInsertion)
+const diagramTitle = computed(() => {
+  if (blockedReason.value) return blockedReason.value
+  const t = tree.value
+  const node = treeStore.currentNode
+  const where = !t ? 'dopo il paragrafo del cursore'
+    : t.rootNodes.length > 0 && !node ? 'prima del blocco attivo'
+      : node && canSplitAt(t, node.id) ? 'dopo la mossa selezionata: il blocco viene diviso, dopo conferma'
+        : 'dopo il blocco attivo'
+  return `Inserisce un diagramma della posizione sulla scacchiera, ${where}`
+})
+
+const newTreeTitle = computed(() => blockedReason.value ??
+  `Crea un nuovo albero di mosse che parte da questa posizione, ${tree.value ? 'subito dopo il blocco attivo' : 'dopo il paragrafo del cursore'}`)
+
+const resetTitle = computed(() => tree.value
+  ? 'Riporta questo albero vuoto alla posizione iniziale standard'
+  : 'Torna alla posizione iniziale standard e cancella le mosse di prova')
 
 // Riordino varianti: la riga compare solo se la mossa attiva ha qualcosa da spostare;
 // se l'albero è diviso in blocchi i pulsanti restano visibili ma disabilitati, con il motivo nel tooltip

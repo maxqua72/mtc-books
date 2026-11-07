@@ -6,7 +6,7 @@
     <div class="bg-white rounded-lg shadow-xl border border-neutral-200 p-3">
       <div class="text-xs font-semibold text-neutral-600 mb-2 text-center">Promuovi a…</div>
       <div class="flex gap-2">
-        <button v-for="o in OPTIONS" :key="o.piece" type="button" :title="`${o.label} (${o.key})`"
+        <button v-for="o in OPTIONS" :key="o.piece" type="button" v-tooltip.desc="`${o.label} (${o.key})`"
           :aria-label="o.label" @click="emit('choose', o.piece)"
           class="w-16 h-[72px] flex flex-col items-center justify-center rounded-md border border-neutral-300
                  hover:bg-neutral-100 hover:border-neutral-900 transition active:scale-95
@@ -28,6 +28,8 @@
 </template>
 
 <script setup lang="ts">
+import { vTooltip } from '../../directives/tooltip'
+
 defineProps<{ color: 'white' | 'black' }>()
 
 const emit = defineEmits<{

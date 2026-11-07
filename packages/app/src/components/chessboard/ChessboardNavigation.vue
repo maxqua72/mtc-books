@@ -2,14 +2,14 @@
   <div class="w-[402px]">
     <div class="flex gap-2">
       <button v-for="b in leftButtons" :key="b.icon"
-        @click="b.action" :disabled="b.disabled" :title="b.title" :aria-label="b.title"
+        @click="b.action" :disabled="b.disabled" v-tooltip="b.title"
         :class="navBtn">
         <i :class="['fa-solid', b.icon]"></i>
       </button>
 
       <!-- Inverti scacchiera: quadrato, al centro -->
       <button @click="treeStore.toggleBoardFlip()"
-        :title="treeStore.boardFlipped ? 'Scacchiera invertita: clic per riportare il Bianco in basso' : 'Inverti la scacchiera'"
+        v-tooltip.desc="treeStore.boardFlipped ? 'Scacchiera invertita: clic per riportare il Bianco in basso' : 'Inverti la scacchiera'"
         aria-label="Inverti la scacchiera" :aria-pressed="treeStore.boardFlipped"
         class="shrink-0 w-8 h-8 flex items-center justify-center rounded-md border text-base transition active:scale-95
                focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
@@ -20,7 +20,7 @@
       </button>
 
       <button v-for="b in rightButtons" :key="b.icon"
-        @click="b.action" :disabled="b.disabled" :title="b.title" :aria-label="b.title"
+        @click="b.action" :disabled="b.disabled" v-tooltip="b.title"
         :class="navBtn">
         <i :class="['fa-solid', b.icon]"></i>
       </button>
@@ -31,6 +31,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useChessTreeStore } from '../../stores/chessTreeStore'
+import { vTooltip } from '../../directives/tooltip'
 
 const treeStore = useChessTreeStore()
 

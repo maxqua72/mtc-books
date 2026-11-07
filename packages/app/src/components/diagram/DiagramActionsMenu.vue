@@ -3,7 +3,7 @@
   <div class="diagram-actions-menu">
     <template v-for="(group, gi) in groups" :key="gi">
       <div v-if="gi > 0" class="action-divider"></div>
-      <button v-for="b in group" :key="b.id" :title="b.title" @click="b.run"
+      <button v-for="b in group" :key="b.id" v-tooltip="b.title" @click="b.run"
         class="action-btn" :class="{ active: b.active, 'delete-btn-icon': b.danger }">
         <svg v-if="b.icon.kind === 'svg'" xmlns="http://www.w3.org/2000/svg" :width="b.icon.size" :height="b.icon.size"
           viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -18,6 +18,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { DiagramSizeLevel } from '../../utils/diagramSizes'
+import { vTooltip } from '../../directives/tooltip'
 
 type Align = 'left' | 'center' | 'right'
 

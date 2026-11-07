@@ -14,7 +14,7 @@
 
             <button @click="isPropsOpen = true"
                 class="w-8 h-8 flex items-center justify-center text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition shrink-0"
-                title="Proprietà Libro">
+                v-tooltip="'Proprietà Libro'">
                 <i class="fa-solid fa-gear"></i>
             </button>
         </div>
@@ -63,6 +63,7 @@ import { useSectionDragDrop } from '../composables/useSectionDragDrop'
 import BookPropertiesModal from './BookPropertiesModal.vue'
 import SectionListItem from './SectionListItem.vue'
 import ChapterOptionsModal from './ChapterOptionsModal.vue'
+import { vTooltip } from '../directives/tooltip'
 const optionsSectionId = ref<string | null>(null)
 
 const store = useChessBookStore()

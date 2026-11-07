@@ -17,7 +17,7 @@
         :selected-count="selectedGames.length" :after-active-available="afterActiveAvailable"
         :placement-label="placementLabel" :into-active-reason="intoActiveReason" :into-active-text="intoActiveText" />
 
-      <button @click="doImport" :disabled="!canImport"
+      <button @click="doImport" :disabled="!canImport" v-tooltip.desc="importTitle"
         class="w-full py-1.5 bg-neutral-900 hover:bg-neutral-800 text-white disabled:bg-neutral-200 disabled:text-neutral-400 font-medium rounded text-xs transition">
         Importa nel documento
       </button>
@@ -29,10 +29,12 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { usePgnImportForm } from '../../composables/usePgnImportForm'
 import PgnSourceInput from './pgn/PgnSourceInput.vue'
 import PgnGameList from './pgn/PgnGameList.vue'
 import PgnDestinationPicker from './pgn/PgnDestinationPicker.vue'
+import { vTooltip } from '../../directives/tooltip'
 
 const {
   pgn, locked, canUse,
@@ -41,4 +43,9 @@ const {
   afterActiveAvailable, placementLabel, intoActiveReason, intoActiveText,
   canImport, doImport,
 } = usePgnImportForm()
+
+// Solo quando il pulsante è disattivato: con le scelte fatte, cosa succede è già scritto sopra
+const importTitle = computed(() => canImport.value ? null
+  : !selectedGames.value.length ? 'Incolla un PGN o carica un file, poi seleziona almeno una partita'
+    : intoActiveReason.value)
 </script>
