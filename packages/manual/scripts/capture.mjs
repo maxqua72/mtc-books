@@ -233,7 +233,8 @@ try {
   })
 
   await step('indice', async () => {
-    await left().getByRole('button', { name: 'Indice' }).click()
+    // Il nome comprende il glifo dell'icona; «Rinomina voce indice» è minuscolo e resta escluso
+    await left().getByRole('button', { name: /Indice$/ }).click()
     await settle()
     await shot('indice', page.locator('main'))
   })
