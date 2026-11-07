@@ -6,7 +6,7 @@ Un albero di mosse contiene una partita o una linea con le sue varianti. Nel tes
 
 ## Creare un albero
 
-- **Inserisci blocco mosse** nella barra degli strumenti crea in fondo al capitolo un albero che parte dalla posizione della scacchiera.
+- **Inserisci blocco mosse** nella barra degli strumenti crea dopo il paragrafo del cursore un albero che parte dalla posizione della scacchiera.
 - **+ Nuovo albero da questa posizione** nella console lo crea dopo l'albero attivo o dopo il punto del cursore.
 - [L'importazione PGN](./import-pgn) crea alberi da partite esistenti.
 

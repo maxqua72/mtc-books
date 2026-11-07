@@ -24,7 +24,7 @@ Clicca sul foglio e scrivi. Dalla barra degli strumenti scegli **Stili del parag
 
 ## Registrare alcune mosse
 
-1. Clicca **Inserisci blocco mosse** nella barra degli strumenti: il blocco compare in fondo al capitolo.
+1. Clicca **Inserisci blocco mosse** nella barra degli strumenti: il blocco compare dopo il paragrafo del cursore.
 2. Muovi i pezzi sulla scacchiera: le mosse compaiono nel blocco.
 
 ## Inserire un diagramma

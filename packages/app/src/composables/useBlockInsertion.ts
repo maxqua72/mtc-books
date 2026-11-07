@@ -30,11 +30,11 @@ export function useBlockInsertion(editor: EditorRef) {
   const treeStore = useChessTreeStore()
   const pgnStore = usePgnImportStore()
 
-  // Toolbar: nuovo albero in fondo al capitolo, che parte dalla posizione corrente della scacchiera
+  // Toolbar: nuovo albero dopo il paragrafo del cursore, che parte dalla posizione corrente della scacchiera
   const insertNewChessTreeBlock = () => {
     if (!editor.value || store.activeSectionInfo?.type !== 'chapter') return
     const tree = treeStore.buildTree(`Albero #${treeStore.trees.length + 1}`)
-    pgnStore.addTrees([tree], 'end')
+    pgnStore.addTrees([tree], 'cursor')
   }
 
   /**
