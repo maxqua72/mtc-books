@@ -31,3 +31,17 @@ Le versioni precedenti dell'app riducevano il contenuto per farlo stare nel fogl
 :::
 
 Il tema dell'interfaccia non cambia il PDF: il foglio è sempre stampato su fondo bianco.
+
+## Numeri di pagina
+
+Il libro intero si numera come i libri stampati:
+
+| Pagine | Numero |
+|---|---|
+| Copertina | Nessuno |
+| Indice e [sezioni senza numero](./struttura-libro#sezioni-senza-numero) prima dei capitoli | Numeri romani: i, ii, iii… |
+| Dal primo capitolo alla fine | Numeri arabi da 1 |
+
+L'indice riporta gli stessi numeri stampati sulle pagine. Un capitolo esportato da solo si numera da 1.
+
+Il numero sta in basso al centro. Con la [rilegatura](./struttura-libro#rilegatura) **Fronte/retro** sta sul lato esterno: a destra nelle pagine dispari, a sinistra nelle pari. In questo caso il primo capitolo comincia sempre su una pagina di destra: se serve, prima c'è una pagina bianca senza numero.

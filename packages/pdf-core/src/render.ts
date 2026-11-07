@@ -1,6 +1,6 @@
 import { buildFullDocumentHtml } from './documentHtml.js'
 import { pdfPageOptions } from './pageFormats.js'
-import { fillTocPages, findHeadingPages, prepareToc } from './toc.js'
+import { fillTocPages, findHeadingPages, pageLabeler, prepareToc } from './toc.js'
 import type { PdfOptions, PdfRenderer } from './types.js'
 
 export type PdfStage = 'loading' | 'toc' | 'final'
@@ -13,6 +13,8 @@ export interface RenderRequest {
   debugName: string
   /** Libro intero: prima passata per scoprire in che pagina cade ogni titolo, poi si scrivono i numeri nell'indice */
   withToc?: boolean
+  /** Fronte/retro: numeri di pagina sul lato esterno */
+  outerPageNumbers?: boolean
 }
 
 export interface RenderHooks {
@@ -23,7 +25,7 @@ export interface RenderHooks {
 
 /** Unico percorso di rendering, usato dal capitolo singolo e dal libro intero */
 export async function renderPdf(renderer: PdfRenderer, req: RenderRequest, hooks: RenderHooks = {}): Promise<Uint8Array> {
-  const fullHtml = buildFullDocumentHtml(req.sectionsHtml, req.customCss, req.fontCss)
+  const fullHtml = buildFullDocumentHtml(req.sectionsHtml, req.customCss, req.fontCss, { outer: req.outerPageNumbers })
   await hooks.onDebugHtml?.(req.debugName, fullHtml)
 
   return renderer.withPage(async (page) => {
@@ -45,17 +47,32 @@ export async function renderPdf(renderer: PdfRenderer, req: RenderRequest, hooks
 
     if (req.withToc) {
       const tocEntries = await prepareToc(page)
-      if (tocEntries > 0) {
+      if (tocEntries > 0 || req.outerPageNumbers) {
+        // Prima passata: in che pagina cadono i titoli e dove comincia il corpo del libro
         hooks.onProgress?.('toc')
-        const firstPass = await page.pdf(pdfOptions)
-        const pages = findHeadingPages(await renderer.extractPageTexts(firstPass))
-        if (pages.size === 0) console.warn('[PDF ENGINE] Nessun marcatore trovato nel PDF: indice senza numeri.')
-        else console.log(`[PDF ENGINE] Indice: trovate ${pages.size} pagine di titoli.`)
-        await fillTocPages(page, pages)
-      } else {
-        // Senza voci non c'è fillTocPages: i marcatori vanno tolti qui per non finire nel PDF
-        await page.evaluate(() => document.querySelectorAll('.toc-marker').forEach(m => m.remove()))
+        const texts = await renderer.extractPageTexts(await page.pdf(pdfOptions))
+        if (tocEntries > 0) {
+          const pages = findHeadingPages(texts)
+          if (pages.size === 0) console.warn('[PDF ENGINE] Nessun marcatore trovato nel PDF: indice senza numeri.')
+          else console.log(`[PDF ENGINE] Indice: trovate ${pages.size} pagine di titoli.`)
+          // Nell'indice va il numero stampato sulla pagina (romano o arabo), non la posizione nel PDF.
+          // La pagina bianca aggiunta qui sotto non cambia i numeri: il corpo si conta dal suo inizio.
+          const label = pageLabeler(texts)
+          await fillTocPages(page, new Map([...pages].map(([n, p]) => [n, label(p)])))
+        }
+        // Fronte/retro: il corpo comincia su una pagina di destra (dispari); se cade a sinistra, prima una pagina bianca
+        const bodyStart = texts.findIndex((t) => t.replace(/\s+/g, '').includes('[[BODY]]')) + 1
+        if (req.outerPageNumbers && bodyStart > 0 && bodyStart % 2 === 0) {
+          await page.evaluate(() => {
+            const start = document.querySelector('section.body-start')
+            const blank = document.createElement('div')
+            blank.className = 'blank-page'
+            start?.before(blank)
+          })
+        }
       }
+      // I marcatori servivano solo alla prima passata: via dal DOM, così non finiscono nel PDF finale
+      await page.evaluate(() => document.querySelectorAll('.toc-marker').forEach(m => m.remove()))
     }
 
     hooks.onProgress?.('final')

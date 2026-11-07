@@ -61,6 +61,9 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
 
   }
 
+  // Fronte/retro: il numero di pagina va sul lato esterno, lontano dalla rilegatura
+  const outerPageNumbers = () => layout.binding.value === 'duplex'
+
   /**
    * HTML reale del DOM dell'editor (con i componenti Vue già espansi), ripulito dall'interfaccia di lavoro.
    * Il numero di capitolo non si imposta qui: lo applica pdf-core con `--chapter-index` sulla sezione.
@@ -143,7 +146,8 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
         customCss: buildCss(chapterNumber),
         title: store.activeSectionInfo?.title || 'capitolo',
         chapterNumber,
-        pageSize
+        pageSize,
+        outerPageNumbers: outerPageNumbers()
       })
     } catch {
       alert("Si è verificato un errore durante l'esportazione del capitolo.")
@@ -213,7 +217,8 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
         sections,
         customCss: buildCss(1),
         bookTitle: store.metadata.title || 'libro',
-        pageSize: store.metadata.pageFormat || 'a4'
+        pageSize: store.metadata.pageFormat || 'a4',
+        outerPageNumbers: outerPageNumbers()
       })
     } catch (err) {
       console.error('Errore esportazione libro:', err)

@@ -54,7 +54,7 @@
                     </button>
                     <template v-if="moreOpen">
                         <div class="fixed inset-0 z-[60]" @click="moreOpen = false"></div>
-                        <div role="menu" @keydown.esc="moreOpen = false"
+                        <div role="menu"
                             class="absolute bottom-full right-0 mb-1 w-60 bg-white border border-neutral-200 rounded-lg shadow-lg py-1 z-[61]">
                             <button v-for="item in moreItems" :key="item.label" role="menuitem" type="button"
                                 @click="moreOpen = false; item.run()"
@@ -80,7 +80,7 @@
 
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useChessBookStore, type SectionType, type SectionIndexItem } from '../stores/chessBookStore'
 import { useSectionDragDrop } from '../composables/useSectionDragDrop'
 import { isContentSection } from '../utils/sectionOrder'
@@ -120,8 +120,14 @@ const addSection = (type: SectionType, place: 'front' | 'back' = 'front') => {
     handleSectionClick(id)
 }
 
-// Menu «Altro»
+// Menu «Altro»: Esc lo chiude anche se il fuoco è altrove
 const moreOpen = ref(false)
+watch(moreOpen, (open, _old, onCleanup) => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') moreOpen.value = false }
+    window.addEventListener('keydown', onKey)
+    onCleanup(() => window.removeEventListener('keydown', onKey))
+})
 const moreItems = [
     { label: 'Sezione prima dei capitoli', hint: 'Senza numero: prefazione, introduzione…', icon: 'fa-solid fa-file-pen', run: () => addSection('text', 'front') },
     { label: 'Sezione dopo i capitoli', hint: 'Senza numero: conclusioni, bibliografia…', icon: 'fa-solid fa-file-pen', run: () => addSection('text', 'back') },

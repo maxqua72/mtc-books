@@ -39,7 +39,8 @@ export const webPdf: PdfPlatform = {
       htmlContent: req.htmlContent,
       customCss: req.customCss,
       chapterNumber: req.chapterNumber || 1,
-      pageSize: req.pageSize || 'A4'
+      pageSize: req.pageSize || 'A4',
+      outerPageNumbers: req.outerPageNumbers === true
     }, CHAPTER_TIMEOUT_MS, 'Errore nella generazione del capitolo PDF.')
     downloadBlob(blob, `${fileName(req.title)}.pdf`)
   },
@@ -49,7 +50,8 @@ export const webPdf: PdfPlatform = {
       sections: req.sections,
       customCss: req.customCss,
       bookTitle: req.bookTitle,
-      pageSize: req.pageSize || 'A4'
+      pageSize: req.pageSize || 'A4',
+      outerPageNumbers: req.outerPageNumbers === true
     }, BOOK_TIMEOUT_MS, 'Errore nella generazione del libro completo.')
     downloadBlob(blob, `${fileName(req.bookTitle)}_completo.pdf`)
   }

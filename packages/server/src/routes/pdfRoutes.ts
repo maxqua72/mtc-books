@@ -34,7 +34,7 @@ function attachmentHeader(filename: string): string {
 
 pdfRouter.post('/pdf/generate',async (req: Request, res: Response) => {
   try {
-    const { htmlContent, customCss, chapterNumber, pageSize } = req.body;
+    const { htmlContent, customCss, chapterNumber, pageSize, outerPageNumbers } = req.body;
 
     if (!htmlContent) {
       return res.status(400).json({ error: 'Il campo htmlContent è obbligatorio.' });
@@ -46,7 +46,8 @@ pdfRouter.post('/pdf/generate',async (req: Request, res: Response) => {
       htmlContent,
       customCss: customCss || '',
       chapterNumber: typeof chapterNumber === 'number' ? chapterNumber : 1,
-      pageSize: pageSize || 'A4'
+      pageSize: pageSize || 'A4',
+      outerPageNumbers: outerPageNumbers === true
     });
 
     res.setHeader('Content-Type', 'application/pdf');
@@ -60,7 +61,7 @@ pdfRouter.post('/pdf/generate',async (req: Request, res: Response) => {
 
 pdfRouter.post('/pdf/generate-book',async (req: Request, res: Response) => {
   try {
-    const { sections, customCss, bookTitle, pageSize } = req.body;
+    const { sections, customCss, bookTitle, pageSize, outerPageNumbers } = req.body;
 
     if (!sections || !Array.isArray(sections) || sections.length === 0) {
       return res.status(400).json({ error: 'L\'array delle sezioni è obbligatorio e non può essere vuoto.' });
@@ -70,7 +71,8 @@ pdfRouter.post('/pdf/generate-book',async (req: Request, res: Response) => {
       sections,
       customCss: customCss || '',
       bookTitle,
-      pageSize: pageSize || 'A4'
+      pageSize: pageSize || 'A4',
+      outerPageNumbers: outerPageNumbers === true
     });
 
     const filename = bookTitle ? `${String(bookTitle).toLowerCase().replace(/\s+/g, '_')}_completo.pdf` : 'libro_completo.pdf';

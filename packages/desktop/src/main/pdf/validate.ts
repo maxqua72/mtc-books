@@ -9,7 +9,7 @@ const size = (x: unknown) => (isStr(x) ? x : 'a4')
 
 export function parseChapter(x: unknown): ChapterPdfRequest | null {
   if (!isObj(x) || !isStr(x.htmlContent) || !isStr(x.customCss) || !isStr(x.title)) return null
-  return { htmlContent: x.htmlContent, customCss: x.customCss, title: x.title, chapterNumber: num(x.chapterNumber), pageSize: size(x.pageSize) }
+  return { htmlContent: x.htmlContent, customCss: x.customCss, title: x.title, chapterNumber: num(x.chapterNumber), pageSize: size(x.pageSize), outerPageNumbers: x.outerPageNumbers === true }
 }
 
 export function parseBook(x: unknown): BookPdfRequest | null {
@@ -21,5 +21,5 @@ export function parseBook(x: unknown): BookPdfRequest | null {
     if (!isStr(s.title) || !isStr(s.html)) return null
     sections.push({ id: s.id, title: s.title, type: s.type, html: s.html, chapterNumber: num(s.chapterNumber) })
   }
-  return { sections, customCss: x.customCss, bookTitle: x.bookTitle, pageSize: size(x.pageSize) }
+  return { sections, customCss: x.customCss, bookTitle: x.bookTitle, pageSize: size(x.pageSize), outerPageNumbers: x.outerPageNumbers === true }
 }

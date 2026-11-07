@@ -82,7 +82,7 @@ Se rileghi il libro stampato, con una spirale, degli anelli o dei punti metallic
 |---|---|
 | **Nessuna** | Margini normali su tutte le pagine |
 | **A sinistra (solo fronte)** | 10 mm in più sul margine sinistro di ogni pagina. Per stampare su una sola facciata |
-| **Fronte/retro** | 10 mm in più sul margine interno: a sinistra nelle pagine dispari, a destra nelle pari. Per stampare su entrambe le facciate |
+| **Fronte/retro** | 10 mm in più sul margine interno: a sinistra nelle pagine dispari, a destra nelle pari. Per stampare su entrambe le facciate. Il numero di pagina va sul lato esterno: vedi [Numeri di pagina](./esportazione-pdf#numeri-di-pagina) |
 
 Il testo diventa più stretto di 10 mm, quindi il libro può avere qualche pagina in più. Con il [layout a due colonne](#layout-a-due-colonne) ogni colonna si restringe di 5 mm e i diagrammi si adattano.
 

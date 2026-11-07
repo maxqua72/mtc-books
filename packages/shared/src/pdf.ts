@@ -12,6 +12,8 @@ export interface ChapterPdfRequest {
   title: string
   chapterNumber?: number
   pageSize?: string
+  /** Fronte/retro: numeri di pagina sul lato esterno */
+  outerPageNumbers?: boolean
 }
 
 export interface BookPdfRequest {
@@ -19,4 +21,6 @@ export interface BookPdfRequest {
   customCss: string
   bookTitle: string
   pageSize?: string
+  /** Fronte/retro: numeri di pagina sul lato esterno */
+  outerPageNumbers?: boolean
 }

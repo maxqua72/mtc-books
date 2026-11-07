@@ -1,4 +1,6 @@
-export { createPdfEngine } from './api.js'
+export { createPdfEngine, matterClass } from './api.js'
+export { findHeadingPages, pageLabeler, toRoman } from './toc.js'
+export { pageNumberCss } from './documentHtml.js'
 export type { ChapterRequest, BookRequest, SectionItem, PdfEngineDeps } from './api.js'
 export type { PdfPage, PdfRenderer, PdfOptions } from './types.js'
 export type { PdfStage } from './render.js'
