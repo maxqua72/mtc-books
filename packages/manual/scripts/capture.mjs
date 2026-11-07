@@ -83,6 +83,10 @@ try {
     await page.getByPlaceholder('Nome Cognome').fill('Autore di esempio')
     await button('Inizia a scrivere').click()
     await page.locator('.ProseMirror').first().waitFor()
+    // Primo libro: parte il tour di benvenuto, che coprirebbe le altre schermate
+    await page.locator('.driver-popover').waitFor({ timeout: 5000 })
+    await page.keyboard.press('Escape')
+    await page.locator('.driver-popover').waitFor({ state: 'detached' })
     await settle()
   })
 

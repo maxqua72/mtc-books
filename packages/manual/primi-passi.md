@@ -12,6 +12,12 @@ In pochi minuti puoi creare un libro con un testo, una variante e un diagramma.
 
 Un libro nuovo è subito modificabile.
 
+## Tour di benvenuto
+
+Quando crei il primo libro, un breve tour mostra i comandi principali, uno alla volta, con il resto della finestra oscurato. Usa **Avanti** e **Indietro** per spostarti, **Salta** o `Esc` per chiuderlo. Durante il tour i comandi indicati non si possono usare: il libro non cambia.
+
+Il tour parte da solo una volta sola. Per rivederlo apri **Impostazioni** e scegli **Rivedi il tour**: vedi [Impostazioni](./impostazioni#tour-di-benvenuto).
+
 Se hai già un libro, trascina il file `.mtcbook` nella schermata iniziale oppure clicca l'area per cercarlo.
 
 ::: tip Un libro aperto da file parte in sola lettura

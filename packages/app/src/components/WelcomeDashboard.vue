@@ -84,6 +84,7 @@ import { ref, reactive } from 'vue'
 import { useChessBookStore } from '../stores/chessBookStore'
 import logo from '../assets/mtcbooks-logo.svg'
 import { openManualPage } from '../utils/manualPage'
+import { startTourIfNew } from '../composables/useOnboardingTour'
 
 const store = useChessBookStore()
 const showCreateModal = ref(false)
@@ -125,6 +126,7 @@ const handleCreateBook = async () => {
   if (!form.title.trim()) return alert('Inserisci un titolo')
   await store.startNewBook(form.title.trim(), form.author.trim() || 'Autore')
   showCreateModal.value = false
+  void startTourIfNew()   // primo libro su questo dispositivo: tour dei comandi principali
 }
 
 </script>

@@ -39,7 +39,7 @@
       </div>
 
       <div class="flex items-center gap-0.5">
-        <button @click="isSettingsOpen = true"
+        <button @click="isSettingsOpen = true" data-tour="settings"
           class="w-8 h-8 flex items-center justify-center text-base text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer"
           v-tooltip="'Impostazioni: aspetto dell\'applicazione'">
           <i class="fa-solid fa-gear"></i>
@@ -53,7 +53,7 @@
       </div>
 
       <!-- Interruttore sola lettura / modifica -->
-      <button v-if="store.isBookLoaded" @click="store.setLocked(!store.isLocked)" role="switch"
+      <button v-if="store.isBookLoaded" @click="store.setLocked(!store.isLocked)" role="switch" data-tour="lock"
         :aria-checked="!store.isLocked"
         v-tooltip.desc="store.isLocked ? 'Documento in sola lettura: clic per abilitare le modifiche' : 'Modifiche abilitate: clic per bloccare il documento'"
         class="flex items-center gap-2 px-3 py-1.5 rounded border text-xs font-semibold transition cursor-pointer select-none"
@@ -68,9 +68,11 @@
         {{ store.isLocked ? 'Sola lettura' : 'Modifica attiva' }}
       </button>
 
-      <ExportSplitButton />
+      <div data-tour="file-actions" class="flex items-center gap-2">
+        <ExportSplitButton />
 
-      <SaveSplitButton />
+        <SaveSplitButton />
+      </div>
     </div>
 
     <SettingsModal :is-open="isSettingsOpen" @close="isSettingsOpen = false" />

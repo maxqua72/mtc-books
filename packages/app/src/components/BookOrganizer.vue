@@ -1,5 +1,5 @@
 <template>
-    <aside class="th-left w-64 bg-white border-r border-neutral-200 flex flex-col shrink-0 h-full select-none no-print">
+    <aside data-tour="sections" class="th-left w-64 bg-white border-r border-neutral-200 flex flex-col shrink-0 h-full select-none no-print">
         <!-- Intestazione Informazioni Libro -->
         <div class="p-4 border-b border-neutral-100 flex items-center justify-between gap-2">
             <div class="space-y-1 min-w-0 flex-1">
@@ -12,7 +12,7 @@
                 </div>
             </div>
 
-            <button @click="isPropsOpen = true"
+            <button @click="isPropsOpen = true" data-tour="properties"
                 class="w-8 h-8 flex items-center justify-center text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition shrink-0"
                 v-tooltip="'Proprietà Libro'">
                 <i class="fa-solid fa-gear"></i>

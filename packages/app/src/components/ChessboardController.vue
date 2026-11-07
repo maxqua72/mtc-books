@@ -3,7 +3,7 @@
     @mouseleave="isPointerOver = false">
 
     <!-- Scacchiera con i comandi di navigazione subito sotto -->
-    <div class="flex flex-col items-center gap-3">
+    <div data-tour="board" class="flex flex-col items-center gap-3">
       <div class="relative">
         <ChessboardView ref="chessboardRef" :fen="treeStore.activeFen" :turn-color="currentTurnColor"
           :dests="playableDests" :linked="!!treeStore.currentTree"

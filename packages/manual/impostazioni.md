@@ -18,3 +18,7 @@ La casella **Attivo** accende il controllo.
 **App desktop**: scegli una o più lingue tra italiano, inglese, spagnolo, francese e tedesco. Alla prima attivazione viene scaricato il dizionario di ogni lingua; il testo del libro non lascia il computer.
 
 **Versione web**: il controllo usa lingue e dizionari del browser. Se le parole errate non vengono sottolineate, attiva il controllo e la lingua del libro nelle impostazioni del browser.
+
+## Tour di benvenuto
+
+**Rivedi il tour** chiude la finestra e mostra di nuovo i comandi principali, uno alla volta. Il pulsante è disponibile con un libro aperto. Vedi [Tour di benvenuto](./primi-passi#tour-di-benvenuto).

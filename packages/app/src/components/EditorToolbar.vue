@@ -70,7 +70,7 @@
             <!-- 3. Paragrafo: stile, elenchi, allineamento, rientro -->
             <div class="tb-group">
                 <!-- Stili: titoli e testo -->
-                <ToolbarMenu title="Stili del paragrafo" :active="editor.isActive('heading')">
+                <ToolbarMenu title="Stili del paragrafo" :active="editor.isActive('heading')" data-tour="styles">
                     <template #button><i class="fa-solid fa-heading"></i></template>
                     <template #default="{ close }">
                         <button role="menuitem" :class="item" @mousedown.prevent
@@ -144,7 +144,7 @@
 
             <!-- 4. Scacchi: blocchi di mosse e riferimenti -->
             <div class="tb-group">
-                <button @click="emit('insertTreeBlock')" :class="[btn, off]" v-tooltip="'Inserisci blocco mosse (partita o varianti)'">
+                <button @click="emit('insertTreeBlock')" :class="[btn, off]" data-tour="tree-block" v-tooltip="'Inserisci blocco mosse (partita o varianti)'">
                     <i class="fa-solid fa-chess-knight"></i>
                 </button>
 
@@ -187,7 +187,7 @@
 
         <!-- Destra: pulsante «altro» (solo se qualcosa non entra) e zoom -->
         <div class="flex items-center gap-1 ml-auto shrink-0 h-7">
-            <button v-if="!locked && hasOverflow" @mousedown.prevent @click="expanded = !expanded"
+            <button v-if="!locked && hasOverflow" @mousedown.prevent @click="expanded = !expanded" data-tour="more-tools"
                 :class="[btn, expanded ? on : off]" v-tooltip="expanded ? 'Mostra meno strumenti' : 'Altri strumenti'"
                 :aria-expanded="expanded">
                 <i class="fa-solid fa-ellipsis-vertical"></i>

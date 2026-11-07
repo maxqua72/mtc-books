@@ -58,7 +58,7 @@
     </div>
 
     <div class="flex flex-wrap gap-2 pt-2">
-      <button @click="emit('insertDiagram')" :disabled="!inChapter || locked" v-tooltip.desc="diagramTitle"
+      <button @click="emit('insertDiagram')" :disabled="!inChapter || locked" v-tooltip.desc="diagramTitle" data-tour="insert-diagram"
         class="flex-1 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded text-xs tracking-wide transition uppercase font-bold shadow-sm border border-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed">
         Inserisci Diagramma
       </button>

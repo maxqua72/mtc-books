@@ -63,6 +63,19 @@
           <p v-if="spellcheck.message" class="text-[11px] text-neutral-700 font-medium" aria-live="polite">{{ spellcheck.message }}</p>
         </section>
 
+        <section class="border-t border-neutral-200 px-6 py-4 flex items-center justify-between gap-3" aria-labelledby="tour-title">
+          <div>
+            <h4 id="tour-title" class="text-sm font-semibold text-neutral-900">Tour di benvenuto</h4>
+            <p class="text-[11px] text-neutral-500 leading-snug">
+              {{ bookStore.isBookLoaded ? 'Mostra di nuovo i comandi principali, uno alla volta.' : 'Apri o crea un libro per vedere il tour.' }}
+            </p>
+          </div>
+          <button type="button" @click="onTour" :disabled="!bookStore.isBookLoaded"
+            class="shrink-0 px-3 py-1.5 text-xs font-semibold border border-neutral-300 rounded-lg hover:bg-neutral-50 transition disabled:opacity-40 disabled:cursor-not-allowed">
+            Rivedi il tour
+          </button>
+        </section>
+
         <div class="border-t border-neutral-200 px-6 py-3 flex items-center gap-3">
           <p class="flex-1 text-[11px] text-neutral-500 leading-snug">
             Queste scelte restano su questo dispositivo: non finiscono nel file .mtcbook e non cambiano il PDF.
@@ -83,12 +96,22 @@ import { useSpellcheckStore } from '../stores/spellcheckStore'
 import { capabilities } from '../platform'
 import BaseModal from './BaseModal.vue'
 import { openManualPage } from '../utils/manualPage'
+import { useChessBookStore } from '../stores/chessBookStore'
+import { startTour } from '../composables/useOnboardingTour'
 
 defineProps<{ isOpen: boolean }>()
 const emit = defineEmits<{ (e: 'close'): void }>()
 
 const store = useThemeStore()
 const spellcheck = useSpellcheckStore()
+const bookStore = useChessBookStore()
+
+// Prima si chiude la finestra: il tour deve vedere i comandi, non coperti dalle impostazioni
+async function onTour() {
+  emit('close')
+  await new Promise((r) => setTimeout(r, 150))
+  await startTour()
+}
 
 // La casella mostra sempre lo stato salvato: se il salvataggio fallisce torna com'era
 async function onEnabled(event: Event) {
