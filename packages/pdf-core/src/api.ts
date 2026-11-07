@@ -29,11 +29,11 @@ export interface PdfEngineDeps extends RenderHooks {
 }
 
 /**
- * Gruppo di pagine di una sezione: la copertina non ha numero; indice e sezioni prima del primo capitolo
- * sono pagine iniziali (numeri romani); dal primo capitolo in poi è il corpo del libro (numeri arabi da 1).
+ * Gruppo di pagine di una sezione: copertina e quarta di copertina non hanno numero; indice e sezioni prima del
+ * primo capitolo sono pagine iniziali (numeri romani); dal primo capitolo in poi è il corpo del libro (arabi da 1).
  */
 export const matterClass = (sections: Pick<SectionItem, 'type'>[], index: number): string => {
-  if (sections[index].type === 'cover') return ''
+  if (sections[index].type === 'cover' || sections[index].type === 'backcover') return ''
   const firstChapter = sections.findIndex((s) => s.type === 'chapter')
   if (firstChapter === -1 || index < firstChapter) return 'front-matter'
   return index === firstChapter ? 'body-matter body-start' : 'body-matter'

@@ -5,7 +5,7 @@ import { createEmptyCover, normalizeCover } from '../utils/cover'
 import { extractTreeIds } from '../utils/html'
 import { randomToken } from '../utils/ids'
 import { sanitizeTrees, sanitizeSectionIndex } from '../utils/sanitize'
-import { isContentSection, isGeneratedSection, orderSections, withNewSection } from '../utils/sectionOrder'
+import { isContentSection, isCoverSection, isGeneratedSection, orderSections, withNewSection } from '../utils/sectionOrder'
 import type { BoardShape } from '../utils/shapes'
 import { useChessTreeStore, type ChessTree } from './chessTreeStore'
 import { defaultMetadata, savedMetadata, type BookMetadata, type SaveStatus, type SectionIndexItem, type SectionType } from './book/types'
@@ -101,8 +101,8 @@ export const useChessBookStore = defineStore('chessBook', () => {
         // Indice e sezioni generate: contenuto calcolato, non entra mai nella cache
         if (activeSectionInfo.value?.type === 'index' || isGeneratedSection(activeSectionInfo.value?.type)) return
 
-        // La copertina non ha HTML né partite: si salva il suo modello
-        if (activeSectionInfo.value?.type === 'cover') {
+        // Copertina e quarta di copertina non hanno HTML né partite: si salva il loro modello
+        if (isCoverSection(activeSectionInfo.value?.type)) {
             if (cover.coverModel.value) {
                 zippedSectionsCache.value[id] = JSON.stringify({
                     id, html: '', trees: [], cover: cover.coverModel.value
@@ -156,13 +156,14 @@ export const useChessBookStore = defineStore('chessBook', () => {
         }
 
         // Prima partite e copertina negli store, poi la sezione attiva (che fa ripartire l'editor)
-        chessTreeStore.setChapterTrees(nextType === 'cover' ? [] : nextTrees)
-        cover.coverModel.value = nextType === 'cover' ? normalizeCover(nextCover) : null
+        const isCover = isCoverSection(nextType)
+        chessTreeStore.setChapterTrees(isCover ? [] : nextTrees)
+        cover.coverModel.value = isCover ? normalizeCover(nextCover) : null
 
         activeSectionId.value = nextSectionId
         activeSectionHtml.value = nextHtml
 
-        if (nextType === 'cover') void cover.refreshCoverImageUrl()
+        if (isCover) void cover.refreshCoverImageUrl()
         else cover.clearCoverImageUrl()
     }
 
@@ -172,7 +173,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
         const id = `sec-${randomToken()}`
         sectionIndex.value = withNewSection(sectionIndex.value, { id, type, title }, place)
         zippedSectionsCache.value[id] = JSON.stringify(
-            type === 'cover'
+            isCoverSection(type)
                 ? { id, html: '', trees: [], cover: createEmptyCover() }
                 : { id, html: '' }
         )

@@ -23,7 +23,7 @@ import { treeIdsInDoc } from '../utils/editorDoc'
 import { pasteTreeFromClipboard } from './useBlockInsertion'
 import { resetHistory } from '../utils/editorHistory'
 import { goToDiagram } from './useGoToDiagram'
-import { isContentSection, isGeneratedSection } from '../utils/sectionOrder'
+import { isContentSection, isCoverSection, isGeneratedSection } from '../utils/sectionOrder'
 
 
 
@@ -134,7 +134,7 @@ export function useBookEditor() {
     }
 
     // La copertina è gestita da CoverEditor: l'editor di testo non va toccato
-    if (section?.type === 'cover') return
+    if (isCoverSection(section?.type)) return
 
     // Capitoli: editor modificabile (se il documento non è bloccato)
     editor.value.setOptions({ editable: !store.isLocked })

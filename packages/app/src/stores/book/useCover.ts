@@ -6,6 +6,7 @@ import {
   COVER_EXT_BY_MIME, MAX_COVER_IMAGE_BYTES
 } from '../../utils/cover'
 import { getPageSizeMm } from '../../utils/pageFormats'
+import { isCoverSection } from '../../utils/sectionOrder'
 import type { BookMetadata, SectionIndexItem } from './types'
 
 interface CoverDeps {
@@ -75,11 +76,11 @@ export function useCover({ sectionIndex, activeSectionId, zippedSectionsCache, m
     // il file in IndexedDB viene eliminato al prossimo salvataggio
   }
 
-  /** Identificativi delle immagini usate dalle copertine del libro */
+  /** Identificativi delle immagini usate dalla copertina e dalla quarta di copertina */
   function collectAssetIds(): string[] {
     const ids = new Set<string>()
     for (const item of sectionIndex.value) {
-      if (item.type !== 'cover') continue
+      if (!isCoverSection(item.type)) continue
       const cover = item.id === activeSectionId.value ? coverModel.value : cachedCover(item.id)
       if (cover?.image) ids.add(cover.image.assetId)
     }

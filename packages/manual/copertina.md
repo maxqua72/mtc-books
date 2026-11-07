@@ -25,3 +25,9 @@ Clicca **Aggiungi testo** e poi:
 Con un testo selezionato puoi scegliere il carattere (Lora, EB Garamond o Sans), la dimensione in punti, grassetto, corsivo, allineamento e colore.
 
 La copertina si può esportare da sola o con il libro: vedi [Esportare in PDF](./esportazione-pdf).
+
+## Quarta di copertina
+
+La quarta di copertina è il retro del libro: di solito contiene una presentazione e qualche riga sull'autore. Aggiungila con **Altro** → **Quarta di copertina**. Si modifica come la copertina, con immagine di sfondo e testi, e sta sempre in fondo al libro, a pagina piena e senza numero.
+
+Con la [rilegatura](./struttura-libro#rilegatura) **Fronte/retro** la quarta di copertina finisce su una pagina di sinistra, come il retro di un libro stampato: se serve, prima c'è una pagina bianca senza numero.

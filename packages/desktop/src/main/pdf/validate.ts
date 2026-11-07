@@ -1,7 +1,7 @@
 import type { BookPdfRequest, ChapterPdfRequest, ExportSection } from '@mtc/shared'
 
 const SAFE_ID = /^[\w.-]{1,80}$/
-const TYPES = new Set(['cover', 'index', 'chapter', 'text', 'symbols', 'games', 'players'])
+const TYPES = new Set(['cover', 'index', 'chapter', 'text', 'symbols', 'games', 'players', 'backcover'])
 const isObj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object'
 const isStr = (x: unknown): x is string => typeof x === 'string'
 const num = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? x : 1)

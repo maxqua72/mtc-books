@@ -79,6 +79,19 @@ test('sezioni senza numero: passano dalla testa al fondo e viceversa', () => {
   assert.equal(dragBook('b2', 'ind'), 'cop ind b2 p1 p2 c1 c2 b1')
 })
 
+test('quarta di copertina: sempre in fondo, non si sposta', () => {
+  assert.equal(ids(orderSections([sec('q', 'backcover'), ...book()])), 'cop ind p1 p2 c1 c2 b1 b2 q')
+  assert.equal(ids(withNewSection(book(), sec('q', 'backcover'))), 'cop ind p1 p2 c1 c2 b1 b2 q')
+  // Con la quarta, una nuova sezione finale va prima di lei
+  assert.equal(ids(withNewSection([...book(), sec('q', 'backcover')], sec('n', 'text'), 'back')), 'cop ind p1 p2 c1 c2 b1 b2 n q')
+  const list = ref([...book(), sec('q', 'backcover')])
+  const dnd = useSectionDragDrop(list, ref(false))
+  dnd.onDragStart(8); dnd.onDrop(2)                     // la quarta non si trascina
+  assert.equal(ids(list.value), 'cop ind p1 p2 c1 c2 b1 b2 q')
+  dnd.onDragStart(2); dnd.onDrop(8)                     // una sezione lasciata sulla quarta diventa l'ultima prima di lei
+  assert.equal(ids(list.value), 'cop ind p2 c1 c2 b1 b2 p1 q')
+})
+
 test('sezioni senza numero e capitoli non si mescolano', () => {
   assert.equal(dragBook('p1', 'c1'), 'cop ind p1 p2 c1 c2 b1 b2')     // scendendo sul primo capitolo: resta
   assert.equal(dragBook('c1', 'p1'), 'cop ind p1 p2 c1 c2 b1 b2')

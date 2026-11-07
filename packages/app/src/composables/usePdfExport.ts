@@ -13,7 +13,7 @@ import { capabilities } from '../platform'
 import { showPdfDesktopNotice } from '../platform/pdfNotice'
 import { COLUMN_GAP_MM } from '../utils/twoColumns'
 import { bindingPageCss } from '../utils/binding'
-import { isGeneratedSection } from '../utils/sectionOrder'
+import { isCoverSection, isGeneratedSection } from '../utils/sectionOrder'
 
 type EditorRef = ShallowRef<Editor | undefined>
 
@@ -81,6 +81,12 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
     clone.querySelectorAll('.move-comment-box').forEach(el => {
       if (!el.textContent?.trim()) el.remove()
     })
+    // Paragrafi vuoti in fondo alla sezione (es. quello dopo un diagramma): se non stanno nella pagina
+    // ne aprono una nuova, bianca ma numerata
+    while (clone.lastElementChild?.tagName === 'P' && !clone.lastElementChild.textContent?.trim()
+      && !clone.lastElementChild.querySelector('img, span[data-type]')) {
+      clone.lastElementChild.remove()
+    }
     // Qui passano capitoli e sezioni senza numero: copertina e indice hanno un HTML proprio e restano a colonna unica.
     // Una sezione senza numero esportata da sola non ha la classe della sezione del libro: la porta con sé.
     if (store.activeSectionInfo?.type === 'text') return `<div class="is-structural-page">${clone.innerHTML}</div>`
@@ -134,14 +140,14 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
       return
     }
 
-    if (store.activeSectionInfo?.type === 'cover') {
+    if (isCoverSection(store.activeSectionInfo?.type)) {
       try {
         store.syncActiveSectionToCache()
         
         await pdfStore.exportCurrentChapter({
           htmlContent: await store.buildCoverHtml(store.activeSectionId!),
           customCss: buildCss(1),
-          title: store.activeSectionInfo.title || 'copertina',
+          title: store.activeSectionInfo?.title || 'copertina',
           chapterNumber: 1,
           pageSize
         })
@@ -220,7 +226,7 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
           html = figurinizeHtml(store.generatedTocHtml)
         } else if (isGeneratedSection(section.type)) {
           html = figurinizeHtml(store.generatedHtml(section))
-        } else if (section.type === 'cover') {
+        } else if (isCoverSection(section.type)) {
           html = await store.buildCoverHtml(section.id)
         } else {
           if (store.activeSectionId !== section.id) await store.changeActiveSection(section.id)

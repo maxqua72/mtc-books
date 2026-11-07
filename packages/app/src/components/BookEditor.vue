@@ -55,7 +55,7 @@ import CoverEditor from './cover/CoverEditor.vue'
 import PdfLoadingOverlay from './PdfLoadingOverlay.vue'
 import { platform } from '../platform'
 import { vTooltip } from '../directives/tooltip'
-import { isGeneratedSection } from '../utils/sectionOrder'
+import { isCoverSection, isGeneratedSection } from '../utils/sectionOrder'
 import '../assets/styles/book-typography.css'
 
 const store = useChessBookStore()
@@ -90,7 +90,7 @@ const overlay = computed(() => {
 })
 
 // --- Copertina ---
-const isCoverActive = computed(() => store.activeSectionInfo?.type === 'cover')
+const isCoverActive = computed(() => isCoverSection(store.activeSectionInfo?.type))
 const coverPageMm = computed(() => getPageSizeMm(store.metadata.pageFormat))
 const coverProxy = computed<BookCover>({
     get: () => store.coverModel as BookCover,

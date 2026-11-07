@@ -1,6 +1,6 @@
 # Struttura e proprietà del libro
 
-Un libro è un elenco di sezioni, visibile nella colonna sinistra. Le sezioni sono di quattro tipi: **copertina**, **indice**, **capitolo** e **sezione senza numero**.
+Un libro è un elenco di sezioni, visibile nella colonna sinistra: **copertina**, **indice**, **capitoli**, **sezioni senza numero** (scritte da te o [generate](#sezioni-generate) dall'app) e [**quarta di copertina**](./copertina#quarta-di-copertina).
 
 ![La colonna sinistra con copertina, capitoli e indice](/screenshots/sezioni.png)
 
@@ -13,11 +13,12 @@ Un libro è un elenco di sezioni, visibile nella colonna sinistra. Le sezioni so
 | Aggiungere copertina o indice | **Copertina** o **Indice** |
 | Aggiungere una sezione senza numero | **Altro** → **Sezione prima dei capitoli** o **Sezione dopo i capitoli** |
 | Aggiungere una sezione generata | **Altro** → per esempio **Legenda dei simboli**: vedi [Sezioni generate](#sezioni-generate) |
+| Aggiungere la quarta di copertina | **Altro** → **Quarta di copertina** |
 | Riordinare capitoli e sezioni senza numero | Trascina la voce |
 | Rinominare | Passa sulla voce e clicca la matita |
 | Eliminare | Passa sulla voce e clicca il cestino |
 
-Il libro può avere una sola copertina e un solo indice. L'ordine segue quello dei libri di scacchi: copertina, indice, sezioni senza numero iniziali, capitoli, sezioni senza numero finali. Copertina e indice non si spostano. Un capitolo lasciato sulla copertina o sull'indice diventa il primo capitolo.
+Il libro può avere una sola copertina, un solo indice e una sola quarta di copertina. L'ordine segue quello dei libri di scacchi: copertina, indice, sezioni senza numero iniziali, capitoli, sezioni senza numero finali, quarta di copertina. Copertina, indice e quarta di copertina non si spostano. Un capitolo lasciato sulla copertina o sull'indice diventa il primo capitolo.
 
 Un libro salvato con una versione precedente dell'app, che metteva l'indice in fondo, si apre con l'indice dopo la copertina.
 

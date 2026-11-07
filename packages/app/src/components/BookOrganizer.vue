@@ -111,6 +111,7 @@ const addSection = (type: SectionType, place: 'front' | 'back' = 'front') => {
         symbols: 'Legenda dei simboli',
         games: 'Indice delle partite',
         players: 'Indice dei giocatori',
+        backcover: 'Quarta di copertina',
     }
 
     const existing = store.sectionIndex.find(s => s.type === type)
@@ -138,6 +139,7 @@ const moreItems = [
     { label: 'Legenda dei simboli', hint: 'Generata: i simboli usati nelle mosse', icon: 'fa-solid fa-circle-info', run: () => addSection('symbols', 'front') },
     { label: 'Indice delle partite', hint: 'Generato: le partite con le pagine', icon: 'fa-solid fa-chess-board', run: () => addSection('games', 'back') },
     { label: 'Indice dei giocatori', hint: 'Generato: i giocatori con le pagine', icon: 'fa-solid fa-users', run: () => addSection('players', 'back') },
+    { label: 'Quarta di copertina', hint: 'Il retro del libro: immagine e testi', icon: 'fa-solid fa-book', run: () => addSection('backcover') },
 ]
 
 const promptRename = (section: SectionIndexItem) => {

@@ -8,9 +8,9 @@ test('numeri romani minuscoli', () => {
 })
 
 test('gruppi: copertina senza numero, pagine iniziali fino al primo capitolo, poi il corpo', () => {
-  const book = ['cover', 'index', 'text', 'chapter', 'chapter', 'text'].map((type) => ({ type }))
+  const book = ['cover', 'index', 'text', 'chapter', 'chapter', 'text', 'backcover'].map((type) => ({ type }))
   assert.deepEqual(book.map((_, i) => matterClass(book, i)),
-    ['', 'front-matter', 'front-matter', 'body-matter body-start', 'body-matter', 'body-matter'])
+    ['', 'front-matter', 'front-matter', 'body-matter body-start', 'body-matter', 'body-matter', ''])
   // Senza capitoli tutto è pagina iniziale
   const noChapters = ['index', 'text'].map((type) => ({ type }))
   assert.deepEqual(noChapters.map((_, i) => matterClass(noChapters, i)), ['front-matter', 'front-matter'])

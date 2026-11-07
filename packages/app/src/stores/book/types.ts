@@ -2,8 +2,9 @@ import { newUuid } from '../../utils/ids'
 import { normalizeBinding, type Binding } from '../../utils/binding'
 // Tipi e valori predefiniti del libro
 // text: sezione senza numero (prefazione, introduzione, bibliografia...), prima o dopo i capitoli.
-// symbols, games, players: sezioni senza numero generate dall'app (legenda, indice delle partite, dei giocatori)
-export type SectionType = 'cover' | 'index' | 'chapter' | 'text' | 'symbols' | 'games' | 'players'
+// symbols, games, players: sezioni senza numero generate dall'app (legenda, indice delle partite, dei giocatori).
+// backcover: quarta di copertina, sempre in fondo, con lo stesso editor della copertina
+export type SectionType = 'cover' | 'index' | 'chapter' | 'text' | 'symbols' | 'games' | 'players' | 'backcover'
 export type PageFormat = 'a4' | 'crown-quarto' | 'b-format'
 export type SaveStatus = 'saved' | 'saving' | 'unsaved'
 

@@ -64,15 +64,22 @@ export async function renderPdf(renderer: PdfRenderer, req: RenderRequest, hooks
           const refPages = findRefPages(texts)
           await fillPageRefs(page, Object.fromEntries([...refPages].map(([k, p]) => [refs[k], { page: p, label: label(p) }])))
         }
-        // Fronte/retro: il corpo comincia su una pagina di destra (dispari); se cade a sinistra, prima una pagina bianca
-        const bodyStart = texts.findIndex((t) => t.replace(/\s+/g, '').includes('[[BODY]]')) + 1
-        if (req.outerPageNumbers && bodyStart > 0 && bodyStart % 2 === 0) {
-          await page.evaluate(() => {
-            const start = document.querySelector('section.body-start')
+        // Fronte/retro: il corpo comincia su una pagina di destra (dispari) e la quarta di copertina, ultima pagina,
+        // sta a sinistra (pari). Dove serve si aggiunge prima una pagina bianca senza numero.
+        if (req.outerPageNumbers) {
+          const blankBefore = (selector: string) => page.evaluate((sel: string) => {
             const blank = document.createElement('div')
             blank.className = 'blank-page'
-            start?.before(blank)
-          })
+            document.querySelector(sel)?.before(blank)
+          }, selector)
+          let total = texts.length
+          const bodyStart = texts.findIndex((t) => t.replace(/\s+/g, '').includes('[[BODY]]')) + 1
+          if (bodyStart > 0 && bodyStart % 2 === 0) {
+            await blankBefore('section.body-start')
+            total++
+          }
+          const hasBackCover = await page.evaluate(() => !!document.querySelector('section[data-section-type="backcover"]'))
+          if (hasBackCover && total % 2 === 1) await blankBefore('section[data-section-type="backcover"]')
         }
       }
       // I marcatori servivano solo alla prima passata: via dal DOM, così non finiscono nel PDF finale

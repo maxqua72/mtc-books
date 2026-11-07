@@ -1,6 +1,9 @@
 // Tipi e ordine delle sezioni del libro, come nei libri di scacchi:
-// copertina, indice, sezioni senza numero iniziali, capitoli, sezioni senza numero finali
+// copertina, indice, sezioni senza numero iniziali, capitoli, sezioni senza numero finali, quarta di copertina
 import type { SectionIndexItem, SectionType } from '../stores/book/types'
+
+/** Pagina a pieno foglio con immagine e testi liberi: copertina e quarta di copertina */
+export const isCoverSection = (type: SectionType | undefined): boolean => type === 'cover' || type === 'backcover'
 
 /** Si scrive nell'editor di testo: capitoli e sezioni senza numero */
 export const isContentSection = (type: SectionType | undefined): boolean => type === 'chapter' || type === 'text'
@@ -13,7 +16,7 @@ export const isGeneratedSection = (type: SectionType | undefined): boolean =>
 export const isFreeSection = (type: SectionType | undefined): boolean => type === 'text' || isGeneratedSection(type)
 
 /** Il libro ne può avere una sola */
-export const isSingleSection = (type: SectionType): boolean => type === 'cover' || type === 'index' || isGeneratedSection(type)
+export const isSingleSection = (type: SectionType): boolean => isCoverSection(type) || type === 'index' || isGeneratedSection(type)
 
 /** Una sezione senza numero sta in fondo se viene dopo il primo capitolo; senza capitoli sta in testa */
 const isBack = (list: SectionIndexItem[], index: number): boolean => {
@@ -26,6 +29,7 @@ const rank = (list: SectionIndexItem[], index: number): number => {
   if (type === 'cover') return 0
   if (type === 'index') return 1
   if (type === 'chapter') return 3
+  if (type === 'backcover') return 5
   return isBack(list, index) ? 4 : 2
 }
 
@@ -50,7 +54,9 @@ export const withNewSection = (sections: SectionIndexItem[], item: SectionIndexI
  * Dove finisce una sezione trascinata su un'altra; null se lì non può andare.
  * - Capitoli: tra i capitoli; su copertina o indice diventano il primo capitolo.
  * - Sezioni senza numero: tra le altre sezioni senza numero, in testa o in fondo; su copertina o indice vanno
- *   prime in testa; sul primo capitolo (salendo) vanno ultime in testa, sull'ultimo (scendendo) prime in fondo.
+ *   prime in testa; sul primo capitolo (salendo) vanno ultime in testa, sull'ultimo (scendendo) prime in fondo;
+ *   sulla quarta di copertina vanno ultime in fondo.
+ * - Copertina, indice e quarta di copertina non si spostano.
  * Il valore è la posizione nell'elenco dopo aver tolto la sezione trascinata.
  */
 export const dropTarget = (list: SectionIndexItem[], from: number, to: number): number | null => {
@@ -69,6 +75,7 @@ export const dropTarget = (list: SectionIndexItem[], from: number, to: number): 
   if (!isFreeSection(dragged)) return null
   if (isFreeSection(target)) return to
   if (target === 'cover' || target === 'index') return afterHead
+  if (target === 'backcover') return to          // ultima delle sezioni finali: l'ordine rimette la quarta in fondo
   if (target === 'chapter') {
     if (down && to === chapters[chapters.length - 1]) return to        // tolta la sezione, l'ultimo capitolo scala di uno
     if (!down && to === chapters[0]) return to

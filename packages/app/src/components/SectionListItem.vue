@@ -88,6 +88,7 @@ const iconClass = computed(() => {
   // 1. Determina il tipo di icona
   let baseIcon = 'fa-solid fa-file-lines'
   if (props.section.type === 'cover') baseIcon = 'fa-solid fa-book-open'
+  if (props.section.type === 'backcover') baseIcon = 'fa-solid fa-book'
   if (props.section.type === 'index') baseIcon = 'fa-solid fa-list-ol'
   if (props.section.type === 'text') baseIcon = 'fa-solid fa-file-pen'
   if (props.section.type === 'symbols') baseIcon = 'fa-solid fa-circle-info'

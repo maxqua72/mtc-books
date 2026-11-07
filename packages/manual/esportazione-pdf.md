@@ -38,7 +38,7 @@ Il libro intero si numera come i libri stampati:
 
 | Pagine | Numero |
 |---|---|
-| Copertina | Nessuno |
+| Copertina e quarta di copertina | Nessuno |
 | Indice e [sezioni senza numero](./struttura-libro#sezioni-senza-numero) prima dei capitoli | Numeri romani: i, ii, iii… |
 | Dal primo capitolo alla fine | Numeri arabi da 1 |
 

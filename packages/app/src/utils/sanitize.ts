@@ -7,7 +7,7 @@ import { cleanShapes } from './shapes'
 import { newId } from './ids'
 
 const SAFE_ID = /^[\w.-]{1,80}$/
-const SECTION_TYPES = new Set(['cover', 'index', 'chapter', 'text', 'symbols', 'games', 'players'])
+const SECTION_TYPES = new Set(['cover', 'index', 'chapter', 'text', 'symbols', 'games', 'players', 'backcover'])
 const SAN_RE = /^[KQRBNOa-h1-8x=+#-]{2,9}$/
 const MAX_TREES = 500
 const MAX_NODES = 50000
