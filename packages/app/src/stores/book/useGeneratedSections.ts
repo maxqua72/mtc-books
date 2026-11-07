@@ -5,7 +5,7 @@ import type { ChessTree } from '../chessTreeStore'
 import type { SectionIndexItem } from './types'
 import { scanChapter, type ScanSources } from './sectionScan'
 import { isContentSection } from '../../utils/sectionOrder'
-import { collectSymbols, symbolsLegendHtml } from '../../utils/generatedSections'
+import { collectGames, collectSymbols, gamesIndexHtml, playersIndexHtml, symbolsLegendHtml } from '../../utils/generatedSections'
 
 export function useGeneratedSections(sectionIndex: Ref<SectionIndexItem[]>, src: ScanSources) {
   /** Alberi del libro nell'ordine di lettura, con la sezione in cui stanno */
@@ -19,10 +19,13 @@ export function useGeneratedSections(sectionIndex: Ref<SectionIndexItem[]>, src:
   })
 
   const usedSymbols = computed(() => collectSymbols(bookTrees.value.map((t) => t.tree)))
+  const games = computed(() => collectGames(bookTrees.value.map((t) => t.tree)))
 
   /** HTML della sezione generata (stringa vuota per gli altri tipi) */
   const generatedHtml = (section: SectionIndexItem): string => {
     if (section.type === 'symbols') return symbolsLegendHtml(section.title, usedSymbols.value)
+    if (section.type === 'games') return gamesIndexHtml(section.title, games.value)
+    if (section.type === 'players') return playersIndexHtml(section.title, games.value)
     return ''
   }
 

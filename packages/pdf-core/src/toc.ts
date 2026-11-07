@@ -8,7 +8,7 @@ import type { PdfPage } from './types.js'
  * Due marcatori in più segnano l'inizio delle pagine iniziali ([[FRONT]]) e del corpo del libro ([[BODY]]):
  * servono a tradurre la posizione di una pagina nel numero stampato.
  */
-export async function prepareToc(page: PdfPage): Promise<number> {
+export async function prepareToc(page: PdfPage): Promise<{ entries: number; refs: string[] }> {
   return page.evaluate(() => {
     // Marcatore invisibile (bianco, minuscolo, largo zero): serve solo a trovare la pagina nel PDF.
     // Sta in linea, dentro un blocco che ha già del testo: da solo aggiungerebbe una riga e sposterebbe le pagine.
@@ -33,7 +33,7 @@ export async function prepareToc(page: PdfPage): Promise<number> {
 
     for (const [cls, text] of [['front-matter', '[[FRONT]]'], ['body-matter', '[[BODY]]']]) {
       const first = document.querySelector(`section.${cls}`)
-        ?.querySelector<HTMLElement>('h1, h2, h3, h4, p, li, .tph-main, .chess-move-item, .diagram-caption');
+        ?.querySelector<HTMLElement>('h1, h2, h3, h4, p, li, .tph-players, .chess-move-item, .diagram-caption');
       first?.prepend(marker(text));
     }
 
@@ -50,8 +50,42 @@ export async function prepareToc(page: PdfPage): Promise<number> {
       while (li.firstChild) a.appendChild(li.firstChild);
       li.appendChild(a);
     });
-    return entries.length;
+
+    // Indici delle partite e dei giocatori: le voci citano blocchi (data-page-refs), che hanno un'ancora (data-page-anchor).
+    // Il marcatore va nella prima riga di testo del blocco: intestazione della partita o prima mossa.
+    const refs = [...new Set(Array.from(document.querySelectorAll<HTMLElement>('[data-page-refs]'))
+      .flatMap(el => (el.dataset.pageRefs ?? '').split(/\s+/).filter(Boolean)))];
+    refs.forEach((ref, k) => {
+      const anchor = Array.from(document.querySelectorAll<HTMLElement>('[data-page-anchor]')).find(a => a.dataset.pageAnchor === ref);
+      // Dentro .tph-players, non in .tph-main: lì un elemento in più cambierebbe la disposizione flex della riga
+      const line = anchor?.querySelector<HTMLElement>('.tph-players, .chess-move-item, p') ?? anchor;
+      line?.prepend(marker(`[[REF${k}]]`));
+    });
+    return { entries: entries.length, refs };
   })
+}
+
+/** Da testo per pagina a "riferimento k → pagina" (1 = prima) */
+export function findRefPages(pageTexts: string[]): Map<number, number> {
+  const result = new Map<number, number>()
+  pageTexts.forEach((raw, i) => {
+    for (const m of compact(raw).matchAll(/\[\[REF(\d+)\]\]/g)) {
+      const k = Number(m[1])
+      if (!result.has(k)) result.set(k, i + 1)
+    }
+  })
+  return result
+}
+
+/** Scrive nelle voci degli indici le pagine dei blocchi citati: in ordine di lettura, senza ripetizioni */
+export async function fillPageRefs(page: PdfPage, pages: Record<string, { page: number; label: string }>) {
+  await page.evaluate((map: Record<string, { page: number; label: string }>) => {
+    document.querySelectorAll<HTMLElement>('[data-page-refs]').forEach(el => {
+      const found = (el.dataset.pageRefs ?? '').split(/\s+/).map(r => map[r]).filter(Boolean)
+        .sort((a, b) => a.page - b.page);
+      el.textContent = [...new Set(found.map(f => f.label))].join(', ');
+    });
+  }, pages)
 }
 
 const compact = (raw: string) => raw.replace(/\s+/g, '')

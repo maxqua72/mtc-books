@@ -136,6 +136,8 @@ const moreItems = [
     { label: 'Sezione prima dei capitoli', hint: 'Senza numero: prefazione, introduzione…', icon: 'fa-solid fa-file-pen', run: () => addSection('text', 'front') },
     { label: 'Sezione dopo i capitoli', hint: 'Senza numero: conclusioni, bibliografia…', icon: 'fa-solid fa-file-pen', run: () => addSection('text', 'back') },
     { label: 'Legenda dei simboli', hint: 'Generata: i simboli usati nelle mosse', icon: 'fa-solid fa-circle-info', run: () => addSection('symbols', 'front') },
+    { label: 'Indice delle partite', hint: 'Generato: le partite con le pagine', icon: 'fa-solid fa-chess-board', run: () => addSection('games', 'back') },
+    { label: 'Indice dei giocatori', hint: 'Generato: i giocatori con le pagine', icon: 'fa-solid fa-users', run: () => addSection('players', 'back') },
 ]
 
 const promptRename = (section: SectionIndexItem) => {

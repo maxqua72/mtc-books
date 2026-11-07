@@ -1,7 +1,7 @@
 // Numerazione delle pagine del PDF (pdf-core): gruppi di pagine, etichette e lato del numero
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { findHeadingPages, matterClass, pageLabeler, pageNumberCss, toRoman } from '@mtc/pdf-core'
+import { findHeadingPages, findRefPages, matterClass, pageLabeler, pageNumberCss, toRoman } from '@mtc/pdf-core'
 
 test('numeri romani minuscoli', () => {
   assert.deepEqual([1, 2, 3, 4, 9, 14, 40, 1999].map(toRoman), ['i', 'ii', 'iii', 'iv', 'ix', 'xiv', 'xl', 'mcmxcix'])
@@ -22,6 +22,8 @@ test('etichette: romani dalla prima pagina iniziale, arabi da 1 dal corpo', () =
   const label = pageLabeler(texts)
   assert.deepEqual([2, 3, 4, 5, 6, 7].map(label), ['i', 'ii', 'iii', '1', '2', '3'])
   assert.deepEqual([...findHeadingPages(texts)], [[0, 2], [1, 5], [2, 7]])
+  // Partite citate negli indici: il marcatore può essere spezzato tra le righe del testo estratto
+  assert.deepEqual([...findRefPages(['', '[[REF1]]', '[[RE\nF0]] [[REF1]]'])], [[1, 2], [0, 3]])
   // Capitolo esportato da solo: solo il corpo
   assert.deepEqual([1, 2].map(pageLabeler(['[[BODY]]', ''])), ['1', '2'])
 })

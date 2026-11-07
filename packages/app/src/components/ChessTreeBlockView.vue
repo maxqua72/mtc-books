@@ -1,5 +1,6 @@
 <template>
-  <node-view-wrapper class="chess-tree-block-container"
+  <!-- data-page-anchor: nel PDF gli indici delle partite e dei giocatori trovano qui la pagina della partita -->
+  <node-view-wrapper class="chess-tree-block-container" :data-page-anchor="`tree-${props.node.attrs.treeId}`"
     :class="{ 'is-active-tree': isActive, 'is-pgn-target': !!pgnBadge }" @mousedown="onMouseDown" @click="activateTree">
     <div v-if="pgnBadge" class="pgn-target-badge" contenteditable="false">{{ pgnBadge }}</div>
     <!-- Header comandi stile Gmail: compare in posizione assoluta solo all'hover del blocco -->

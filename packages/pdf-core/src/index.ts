@@ -1,5 +1,5 @@
 export { createPdfEngine, matterClass } from './api.js'
-export { findHeadingPages, pageLabeler, toRoman } from './toc.js'
+export { findHeadingPages, findRefPages, pageLabeler, toRoman } from './toc.js'
 export { pageNumberCss } from './documentHtml.js'
 export type { ChapterRequest, BookRequest, SectionItem, PdfEngineDeps } from './api.js'
 export type { PdfPage, PdfRenderer, PdfOptions } from './types.js'

@@ -1,6 +1,6 @@
 import { buildFullDocumentHtml } from './documentHtml.js'
 import { pdfPageOptions } from './pageFormats.js'
-import { fillTocPages, findHeadingPages, pageLabeler, prepareToc } from './toc.js'
+import { fillPageRefs, fillTocPages, findHeadingPages, findRefPages, pageLabeler, prepareToc } from './toc.js'
 import type { PdfOptions, PdfRenderer } from './types.js'
 
 export type PdfStage = 'loading' | 'toc' | 'final'
@@ -46,19 +46,23 @@ export async function renderPdf(renderer: PdfRenderer, req: RenderRequest, hooks
     }
 
     if (req.withToc) {
-      const tocEntries = await prepareToc(page)
-      if (tocEntries > 0 || req.outerPageNumbers) {
-        // Prima passata: in che pagina cadono i titoli e dove comincia il corpo del libro
+      const { entries: tocEntries, refs } = await prepareToc(page)
+      if (tocEntries > 0 || refs.length > 0 || req.outerPageNumbers) {
+        // Prima passata: in che pagina cadono titoli e partite citate, e dove comincia il corpo del libro
         hooks.onProgress?.('toc')
         const texts = await renderer.extractPageTexts(await page.pdf(pdfOptions))
+        // Negli indici va il numero stampato sulla pagina (romano o arabo), non la posizione nel PDF.
+        // La pagina bianca aggiunta qui sotto non cambia i numeri: il corpo si conta dal suo inizio.
+        const label = pageLabeler(texts)
         if (tocEntries > 0) {
           const pages = findHeadingPages(texts)
           if (pages.size === 0) console.warn('[PDF ENGINE] Nessun marcatore trovato nel PDF: indice senza numeri.')
           else console.log(`[PDF ENGINE] Indice: trovate ${pages.size} pagine di titoli.`)
-          // Nell'indice va il numero stampato sulla pagina (romano o arabo), non la posizione nel PDF.
-          // La pagina bianca aggiunta qui sotto non cambia i numeri: il corpo si conta dal suo inizio.
-          const label = pageLabeler(texts)
           await fillTocPages(page, new Map([...pages].map(([n, p]) => [n, label(p)])))
+        }
+        if (refs.length > 0) {
+          const refPages = findRefPages(texts)
+          await fillPageRefs(page, Object.fromEntries([...refPages].map(([k, p]) => [refs[k], { page: p, label: label(p) }])))
         }
         // Fronte/retro: il corpo comincia su una pagina di destra (dispari); se cade a sinistra, prima una pagina bianca
         const bodyStart = texts.findIndex((t) => t.replace(/\s+/g, '').includes('[[BODY]]')) + 1

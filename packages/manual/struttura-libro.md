@@ -46,8 +46,12 @@ Dal menu **Altro** puoi aggiungere sezioni che l'app scrive da sola, ricavandole
 | Voce di **Altro** | Contenuto | Dove nasce |
 |---|---|---|
 | **Legenda dei simboli** | I simboli usati nelle mosse del libro, con il significato: scacco e matto, qualità della mossa, valutazione della posizione, altri simboli | Prima dei capitoli |
+| **Indice delle partite** | Le partite in ordine alfabetico del Bianco, con evento, anno e pagine | Dopo i capitoli |
+| **Indice dei giocatori** | I giocatori in ordine alfabetico, con le pagine delle loro partite, con il Bianco e con il Nero | Dopo i capitoli |
 
 Ogni sezione generata può comparire una sola volta nel libro.
+
+Negli indici delle partite e dei giocatori una partita è un albero di mosse importato da PGN con almeno un giocatore nell'intestazione (tag `White` e `Black`): linee d'apertura ed esempi senza giocatori non compaiono. Se la stessa partita compare più volte con la stessa intestazione, la voce riporta tutte le pagine. I numeri di pagina si calcolano durante l'esportazione del libro intero: nell'editor al loro posto vedi «…».
 
 ::: warning Eliminare una sezione
 Dopo la conferma il testo della sezione va perduto.
