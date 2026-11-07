@@ -8,6 +8,7 @@ export interface SectionScan {
   diagrams: { id: string | null; caption: string }[]
   refTargets: string[]
   headings: { level: string; text: string }[]
+  trees: ChessTree[]   // alberi presenti nel testo, nell'ordine in cui compaiono (per legenda e indici delle partite)
 }
 
 /** Sorgenti reattive da cui si legge il contenuto di un capitolo */
@@ -55,8 +56,11 @@ const scanSection = (sectionId: string, source: string, isJson: boolean): Sectio
   }
 
   const doc = new DOMParser().parseFromString(html, 'text/html')
-  
+  const treeIds = extractTreeIds(html)
+  const byId = new Map((Array.isArray(trees) ? trees : []).filter((t: any) => t?.id).map((t: any) => [t.id, t as ChessTree]))
+
   const scan: SectionScan = {
+    trees: treeIds.map(id => byId.get(id)).filter((t): t is ChessTree => !!t),
     diagrams: Array.from(doc.querySelectorAll('[data-type="chess-diagram"]')).map(el => ({
       id: el.getAttribute('data-id'),
       caption: el.querySelector('.diagram-caption')?.textContent?.trim() ?? ''
@@ -65,7 +69,7 @@ const scanSection = (sectionId: string, source: string, isJson: boolean): Sectio
       ...Array.from(doc.querySelectorAll('[data-type="diagram-ref"]'))
         .map(el => el.getAttribute('data-target-id') || '')
         .filter(Boolean),
-      ...collectCommentRefs(trees, new Set(extractTreeIds(html))),
+      ...collectCommentRefs(trees, new Set(treeIds)),
     ],
     headings: Array.from(doc.querySelectorAll('[data-toc-level]'))
       .map(el => ({
@@ -85,6 +89,10 @@ export function scanChapter(sectionId: string, src: ScanSources): SectionScan {
   }
   const html = src.activeSectionHtml.value
   const scan = scanSection(sectionId, html, false)
-  const extra = collectCommentRefs(src.activeTrees?.value, new Set(extractTreeIds(html)))
-  return extra.length ? { ...scan, refTargets: [...scan.refTargets, ...extra] } : scan
+  // Capitolo aperto: gli alberi stanno nello store, non nell'HTML
+  const ids = extractTreeIds(html)
+  const active = src.activeTrees?.value ?? []
+  const trees = ids.map(id => active.find(t => t.id === id)).filter((t): t is ChessTree => !!t)
+  const extra = collectCommentRefs(active, new Set(ids))
+  return { ...scan, trees, refTargets: extra.length ? [...scan.refTargets, ...extra] : scan.refTargets }
 }

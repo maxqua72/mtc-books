@@ -2,7 +2,7 @@
 import { computed, type Ref } from 'vue'
 import { escapeHtml } from '../../utils/html'
 import { scanChapter, type ScanSources } from './sectionScan'
-import { isContentSection } from '../../utils/sectionOrder'
+import { isContentSection, isGeneratedSection } from '../../utils/sectionOrder'
 import type { BookMetadata, SectionIndexItem } from './types'
 
 const FONT = 'font-family: Lora, Georgia, serif;'
@@ -13,8 +13,9 @@ export function useGeneratedToc(
     metadata: Ref<BookMetadata>) {
   return computed(() => {
     const numbered = metadata.value.showNumbering
-    // Nell'ordine del libro: capitoli con tutti i titoli, sezioni senza numero con il solo Titolo 1
-    const sections = sectionIndex.value.filter(s => isContentSection(s.type))
+    // Nell'ordine del libro: capitoli con tutti i titoli, sezioni senza numero con il solo Titolo 1.
+    // Le sezioni generate hanno un solo Titolo 1, con il nome della sezione (vedi utils/generatedSections).
+    const sections = sectionIndex.value.filter(s => isContentSection(s.type) || isGeneratedSection(s.type))
 
     if (sections.length === 0) {
       return `
@@ -38,7 +39,8 @@ export function useGeneratedToc(
       let subCounter = 0
       let subSubCounter = 0
 
-      for (const h of scanChapter(sec.id, src).headings) {
+      const headings = isGeneratedSection(sec.type) ? [{ level: '1', text: sec.title }] : scanChapter(sec.id, src).headings
+      for (const h of headings) {
         if (!isChapter && h.level !== '1') continue
         const text = escapeHtml(h.text || 'Titolo senza testo')
         let numbering: string

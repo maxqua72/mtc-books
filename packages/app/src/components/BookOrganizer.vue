@@ -48,7 +48,7 @@
                 <!-- Altre sezioni: il menu si apre verso l'alto, sopra i pulsanti -->
                 <div class="relative flex-1 flex">
                     <button @click="moreOpen = !moreOpen" :disabled="locked" aria-haspopup="menu" :aria-expanded="moreOpen"
-                        v-tooltip.desc="'Sezioni senza numero, prima o dopo i capitoli'"
+                        v-tooltip.desc="'Sezioni senza numero, prima o dopo i capitoli: testi, legenda, indici'"
                         class="flex-1 py-1.5 border border-neutral-200 text-[10px] font-bold text-neutral-600 rounded hover:bg-neutral-50 flex items-center justify-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed">
                         <i class="fa-solid fa-plus text-[10px] text-neutral-500"></i> Altro
                     </button>
@@ -83,7 +83,7 @@
 import { ref, computed, watch } from 'vue'
 import { useChessBookStore, type SectionType, type SectionIndexItem } from '../stores/chessBookStore'
 import { useSectionDragDrop } from '../composables/useSectionDragDrop'
-import { isContentSection } from '../utils/sectionOrder'
+import { isContentSection, isSingleSection } from '../utils/sectionOrder'
 import BookPropertiesModal from './BookPropertiesModal.vue'
 import SectionListItem from './SectionListItem.vue'
 import ChapterOptionsModal from './ChapterOptionsModal.vue'
@@ -103,16 +103,20 @@ const handleSectionClick = async (id: string) => {
 
 const addSection = (type: SectionType, place: 'front' | 'back' = 'front') => {
     if (locked.value) return
-    if ((type === 'cover' || type === 'index') && store.sectionIndex.some(s => s.type === type)) {
-        alert(`Il libro contiene già una sezione di tipo: ${type === 'cover' ? 'Copertina' : 'Indice'}`)
-        return
-    }
-
     const titles: Record<SectionType, string> = {
         cover: 'Copertina',
         index: 'Indice Generale',
         chapter: `Capitolo ${store.sectionIndex.filter(s => s.type === 'chapter').length + 1}`,
         text: 'Nuova sezione',
+        symbols: 'Legenda dei simboli',
+        games: 'Indice delle partite',
+        players: 'Indice dei giocatori',
+    }
+
+    const existing = store.sectionIndex.find(s => s.type === type)
+    if (existing && isSingleSection(type)) {
+        alert(`Il libro contiene già la sezione «${existing.title}».`)
+        return
     }
 
     // La sezione nasce già al suo posto: copertina, indice, sezioni iniziali, capitoli, sezioni finali
@@ -131,6 +135,7 @@ watch(moreOpen, (open, _old, onCleanup) => {
 const moreItems = [
     { label: 'Sezione prima dei capitoli', hint: 'Senza numero: prefazione, introduzione…', icon: 'fa-solid fa-file-pen', run: () => addSection('text', 'front') },
     { label: 'Sezione dopo i capitoli', hint: 'Senza numero: conclusioni, bibliografia…', icon: 'fa-solid fa-file-pen', run: () => addSection('text', 'back') },
+    { label: 'Legenda dei simboli', hint: 'Generata: i simboli usati nelle mosse', icon: 'fa-solid fa-circle-info', run: () => addSection('symbols', 'front') },
 ]
 
 const promptRename = (section: SectionIndexItem) => {

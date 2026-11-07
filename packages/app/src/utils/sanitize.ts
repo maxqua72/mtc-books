@@ -7,6 +7,7 @@ import { cleanShapes } from './shapes'
 import { newId } from './ids'
 
 const SAFE_ID = /^[\w.-]{1,80}$/
+const SECTION_TYPES = new Set(['cover', 'index', 'chapter', 'text', 'symbols', 'games', 'players'])
 const SAN_RE = /^[KQRBNOa-h1-8x=+#-]{2,9}$/
 const MAX_TREES = 500
 const MAX_NODES = 50000
@@ -212,10 +213,10 @@ export function sanitizeSectionIndex(raw: unknown): SectionIndexItem[] {
     if (!item || typeof item !== 'object') continue
     const { id, type, title, syncTitle } = item as Record<string, unknown>
     if (typeof id !== 'string' || !SAFE_ID.test(id) || seen.has(id)) continue
-    if (type !== 'cover' && type !== 'index' && type !== 'chapter' && type !== 'text') continue
+    if (!SECTION_TYPES.has(type as string)) continue
     seen.add(id)
     out.push({
-      id, type,
+      id, type: type as SectionIndexItem['type'],
       title: (typeof title === 'string' ? title : '').slice(0, 200) || 'Senza titolo',
       ...((type === 'chapter' || type === 'text') && syncTitle === false ? { syncTitle: false } : {}),
     })

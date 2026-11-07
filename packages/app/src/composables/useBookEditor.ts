@@ -23,7 +23,7 @@ import { treeIdsInDoc } from '../utils/editorDoc'
 import { pasteTreeFromClipboard } from './useBlockInsertion'
 import { resetHistory } from '../utils/editorHistory'
 import { goToDiagram } from './useGoToDiagram'
-import { isContentSection } from '../utils/sectionOrder'
+import { isContentSection, isGeneratedSection } from '../utils/sectionOrder'
 
 
 
@@ -126,9 +126,9 @@ export function useBookEditor() {
 
     const section = store.sectionIndex.find(s => s.id === sectionId)
 
-    // Indice: contenuto generato, editor di sola lettura (si autogestisce)
-    if (section?.type === 'index') {
-      replaceContent(editor.value, store.generatedTocHtml)
+    // Indice e sezioni generate (legenda, indici delle partite e dei giocatori): editor di sola lettura
+    if (section && (section.type === 'index' || isGeneratedSection(section.type))) {
+      replaceContent(editor.value, section.type === 'index' ? store.generatedTocHtml : store.generatedHtml(section))
       editor.value.setOptions({ editable: false })
       return
     }
@@ -170,19 +170,23 @@ export function useBookEditor() {
     if (ed) loadSectionIntoEditor(store.activeSectionId)
   }, { immediate: true })
 
-  // Indice aperto e capitoli modificati: si aggiorna lo schermo
+  // Indice o sezione generata aperta e capitoli modificati (o sezione rinominata): si aggiorna lo schermo
   watch(
-    () => store.activeSectionInfo?.type === 'index' ? store.generatedTocHtml : null,
-    (toc) => {
-      if (toc && editor.value) replaceContent(editor.value, toc, { emitUpdate: false })
+    () => {
+      const section = store.activeSectionInfo
+      if (section?.type === 'index') return store.generatedTocHtml
+      return section && isGeneratedSection(section.type) ? store.generatedHtml(section) : null
+    },
+    (html) => {
+      if (html && editor.value) replaceContent(editor.value, html, { emitUpdate: false })
     }
   )
 
   // Editor -> store, prima del salvataggio su file o dell'esportazione.
-  // Con la copertina attiva l'editor di testo contiene un vecchio capitolo: non va sincronizzato.
+  // Con copertina, indice o sezione generata attivi l'editor non contiene testo dell'autore: non va sincronizzato.
   const syncEditorContent = () => {
     const type = store.activeSectionInfo?.type
-    if (editor.value && type !== 'cover' && type !== 'index') {
+    if (editor.value && isContentSection(type)) {
       store.activeSectionHtml = editor.value.getHTML()
     }
   }

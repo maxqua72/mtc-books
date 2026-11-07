@@ -5,7 +5,7 @@ import { createEmptyCover, normalizeCover } from '../utils/cover'
 import { extractTreeIds } from '../utils/html'
 import { randomToken } from '../utils/ids'
 import { sanitizeTrees, sanitizeSectionIndex } from '../utils/sanitize'
-import { isContentSection, orderSections, withNewSection } from '../utils/sectionOrder'
+import { isContentSection, isGeneratedSection, orderSections, withNewSection } from '../utils/sectionOrder'
 import type { BoardShape } from '../utils/shapes'
 import { useChessTreeStore, type ChessTree } from './chessTreeStore'
 import { defaultMetadata, savedMetadata, type BookMetadata, type SaveStatus, type SectionIndexItem, type SectionType } from './book/types'
@@ -13,6 +13,7 @@ import { useCover } from './book/useCover'
 import { useFileState } from './book/useFileState'
 import { useDiagramIndex } from './book/useDiagramIndex'
 import { useGeneratedToc } from './book/useGeneratedToc'
+import { useGeneratedSections } from './book/useGeneratedSections'
 import { parseMtcBook, buildMtcBook, type BookAsset, peekMtcBook } from './book/mtcbookIO'
 import { scanChapter } from './book/sectionScan'
 import { platform } from '../platform'
@@ -58,6 +59,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
     }
     const { diagramLabels, diagramList, unresolvedDiagramRefs } = useDiagramIndex(sectionIndex, scanSources)
     const generatedTocHtml = useGeneratedToc(sectionIndex, scanSources, metadata)
+    const { bookTrees, generatedHtml } = useGeneratedSections(sectionIndex, scanSources)
 
     // --- Getter ---
     const activeSectionInfo = computed(() =>
@@ -96,8 +98,8 @@ export const useChessBookStore = defineStore('chessBook', () => {
         const id = activeSectionId.value
         if (!id) return
 
-        // L'indice è contenuto generato: non entra mai nella cache
-        if (activeSectionInfo.value?.type === 'index') return
+        // Indice e sezioni generate: contenuto calcolato, non entra mai nella cache
+        if (activeSectionInfo.value?.type === 'index' || isGeneratedSection(activeSectionInfo.value?.type)) return
 
         // La copertina non ha HTML né partite: si salva il suo modello
         if (activeSectionInfo.value?.type === 'cover') {
@@ -333,7 +335,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
 
         // Struttura del libro
         isBookLoaded, metadata, sectionIndex, activeSectionId, activeSectionHtml, zippedSectionsCache,
-        activeSectionInfo, currentChapterNumber, generatedTocHtml, diagramIdsOutsideActive,
+        activeSectionInfo, currentChapterNumber, generatedTocHtml, generatedHtml, bookTrees, diagramIdsOutsideActive,
         diagramLabels, diagramList, unresolvedDiagramRefs,
 
         // Operazioni

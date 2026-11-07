@@ -90,6 +90,9 @@ const iconClass = computed(() => {
   if (props.section.type === 'cover') baseIcon = 'fa-solid fa-book-open'
   if (props.section.type === 'index') baseIcon = 'fa-solid fa-list-ol'
   if (props.section.type === 'text') baseIcon = 'fa-solid fa-file-pen'
+  if (props.section.type === 'symbols') baseIcon = 'fa-solid fa-circle-info'
+  if (props.section.type === 'games') baseIcon = 'fa-solid fa-chess-board'
+  if (props.section.type === 'players') baseIcon = 'fa-solid fa-users'
 
   // 2. Determina la classe di colore
   let colorClass = 'text-neutral-700 group-hover:text-neutral-900' // Sbloccato (Scuro/Nero)

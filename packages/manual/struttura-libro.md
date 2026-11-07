@@ -12,6 +12,7 @@ Un libro è un elenco di sezioni, visibile nella colonna sinistra. Le sezioni so
 | Aggiungere un capitolo | **Nuovo Capitolo** |
 | Aggiungere copertina o indice | **Copertina** o **Indice** |
 | Aggiungere una sezione senza numero | **Altro** → **Sezione prima dei capitoli** o **Sezione dopo i capitoli** |
+| Aggiungere una sezione generata | **Altro** → per esempio **Legenda dei simboli**: vedi [Sezioni generate](#sezioni-generate) |
 | Riordinare capitoli e sezioni senza numero | Trascina la voce |
 | Rinominare | Passa sulla voce e clicca la matita |
 | Eliminare | Passa sulla voce e clicca il cestino |
@@ -37,6 +38,16 @@ Trascinando una sezione senza numero puoi:
 - portarla prima di tutte le sezioni iniziali, lasciandola sull'indice.
 
 Una sezione senza numero non va mai tra due capitoli.
+
+## Sezioni generate
+
+Dal menu **Altro** puoi aggiungere sezioni che l'app scrive da sola, ricavandole dalle partite e dalle mosse del libro. Sono sezioni senza numero: si spostano come le altre, compaiono nell'indice e nell'editor si leggono ma non si modificano. Si aggiornano da sole quando cambi il libro. Puoi rinominarle con la matita: il nome diventa il titolo della sezione.
+
+| Voce di **Altro** | Contenuto | Dove nasce |
+|---|---|---|
+| **Legenda dei simboli** | I simboli usati nelle mosse del libro, con il significato: scacco e matto, qualità della mossa, valutazione della posizione, altri simboli | Prima dei capitoli |
+
+Ogni sezione generata può comparire una sola volta nel libro.
 
 ::: warning Eliminare una sezione
 Dopo la conferma il testo della sezione va perduto.

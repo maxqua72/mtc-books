@@ -5,8 +5,15 @@ import type { SectionIndexItem, SectionType } from '../stores/book/types'
 /** Si scrive nell'editor di testo: capitoli e sezioni senza numero */
 export const isContentSection = (type: SectionType | undefined): boolean => type === 'chapter' || type === 'text'
 
+/** Generata dall'app e non modificabile nell'editor: legenda dei simboli, indici delle partite e dei giocatori */
+export const isGeneratedSection = (type: SectionType | undefined): boolean =>
+  type === 'symbols' || type === 'games' || type === 'players'
+
 /** Senza numero e spostabile prima o dopo i capitoli */
-export const isFreeSection = (type: SectionType | undefined): boolean => type === 'text'
+export const isFreeSection = (type: SectionType | undefined): boolean => type === 'text' || isGeneratedSection(type)
+
+/** Il libro ne può avere una sola */
+export const isSingleSection = (type: SectionType): boolean => type === 'cover' || type === 'index' || isGeneratedSection(type)
 
 /** Una sezione senza numero sta in fondo se viene dopo il primo capitolo; senza capitoli sta in testa */
 const isBack = (list: SectionIndexItem[], index: number): boolean => {

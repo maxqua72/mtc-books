@@ -55,6 +55,7 @@ import CoverEditor from './cover/CoverEditor.vue'
 import PdfLoadingOverlay from './PdfLoadingOverlay.vue'
 import { platform } from '../platform'
 import { vTooltip } from '../directives/tooltip'
+import { isGeneratedSection } from '../utils/sectionOrder'
 import '../assets/styles/book-typography.css'
 
 const store = useChessBookStore()
@@ -110,7 +111,7 @@ const pageClasses = computed(() => ({
     'is-two-columns': layout.twoColumns.value,
     // Solo i capitoli numerano i titoli
     'is-structural-page': store.activeSectionInfo?.type !== 'chapter',
-    'is-index-page': store.activeSectionInfo?.type === 'index'
+    'is-generated-page': store.activeSectionInfo?.type === 'index' || isGeneratedSection(store.activeSectionInfo?.type)
 }))
 
 const bindingTooltip = computed(() => layout.binding.value === 'duplex'
@@ -220,8 +221,8 @@ const handleCanvasClick = (event: MouseEvent) => {
     position: relative;
 }
 
-/* Indice: l'editor perde gli stili in linea delle voci, quindi qui niente pallini degli elenchi del testo */
-.is-index-page .tiptap ul {
+/* Indice e sezioni generate: l'editor perde gli stili in linea delle voci, quindi qui niente pallini degli elenchi del testo */
+.is-generated-page .tiptap ul {
     list-style: none !important;
     padding-left: 0 !important;
 }

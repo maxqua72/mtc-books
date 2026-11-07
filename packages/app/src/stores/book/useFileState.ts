@@ -2,6 +2,7 @@
 import { ref, type Ref } from 'vue'
 import { setDirtyVsFile } from '../../db'
 import { extractTreeIds } from '../../utils/html'
+import { isGeneratedSection } from '../../utils/sectionOrder'
 import type { BookMetadata, SectionIndexItem } from './types'
 
 interface FileStateDeps {
@@ -34,7 +35,7 @@ export function useFileState({ metadata, sectionIndex, zippedSectionsCache }: Fi
 
     const sections = sectionIndex.value.map(item => {
       let body: unknown = null
-      if (item.type === 'index') return [item.id, item.type, item.title, null]
+      if (item.type === 'index' || isGeneratedSection(item.type)) return [item.id, item.type, item.title, null]
       try {
         const p = JSON.parse(zippedSectionsCache.value[item.id] || '{}')
         const html: string = typeof p.html === 'string' ? p.html : ''

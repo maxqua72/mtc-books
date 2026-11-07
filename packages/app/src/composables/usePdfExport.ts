@@ -13,6 +13,7 @@ import { capabilities } from '../platform'
 import { showPdfDesktopNotice } from '../platform/pdfNotice'
 import { COLUMN_GAP_MM } from '../utils/twoColumns'
 import { bindingPageCss } from '../utils/binding'
+import { isGeneratedSection } from '../utils/sectionOrder'
 
 type EditorRef = ShallowRef<Editor | undefined>
 
@@ -109,11 +110,29 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
   const exportChapter = async () => {
     if (!capabilities.localPdf && !capabilities.cloudPdf) { showPdfDesktopNotice(); return }
 
-    if (store.activeSectionInfo?.type === 'index') {
-      alert("L'indice si esporta solo con il libro intero: i numeri di pagina si calcolano lì.")
+    const active = store.activeSectionInfo
+    if (active?.type === 'index' || active?.type === 'games' || active?.type === 'players') {
+      alert("Gli indici si esportano solo con il libro intero: i numeri di pagina si calcolano lì.")
       return
     }
     const pageSize = store.metadata.pageFormat || 'a4'
+
+    // Legenda dei simboli: HTML generato, senza numero come le altre sezioni senza numero
+    if (active && isGeneratedSection(active.type)) {
+      try {
+        await pdfStore.exportCurrentChapter({
+          htmlContent: `<div class="is-structural-page">${figurinizeHtml(store.generatedHtml(active))}</div>`,
+          customCss: buildCss(1),
+          title: active.title,
+          chapterNumber: 1,
+          pageSize,
+          outerPageNumbers: outerPageNumbers()
+        })
+      } catch {
+        alert("Si è verificato un errore durante l'esportazione della sezione.")
+      }
+      return
+    }
 
     if (store.activeSectionInfo?.type === 'cover') {
       try {
@@ -199,6 +218,8 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
         let html = ''
         if (section.type === 'index') {
           html = figurinizeHtml(store.generatedTocHtml)
+        } else if (isGeneratedSection(section.type)) {
+          html = figurinizeHtml(store.generatedHtml(section))
         } else if (section.type === 'cover') {
           html = await store.buildCoverHtml(section.id)
         } else {
