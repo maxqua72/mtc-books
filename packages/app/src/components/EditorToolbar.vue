@@ -11,14 +11,14 @@
 
             <!-- 1. Formattazione del carattere -->
             <div class="tb-group">
-                <button :class="[btn, editor.isActive('bold') ? on : off]" title="Grassetto (Ctrl+B)"
+                <button :class="[btn, editor.isActive('bold') ? on : off]" v-tooltip="'Grassetto (Ctrl+B)'"
                     @click="editor.chain().focus().toggleBold().run()"><i class="fa-solid fa-bold"></i></button>
-                <button :class="[btn, editor.isActive('italic') ? on : off]" title="Corsivo (Ctrl+I)"
+                <button :class="[btn, editor.isActive('italic') ? on : off]" v-tooltip="'Corsivo (Ctrl+I)'"
                     @click="editor.chain().focus().toggleItalic().run()"><i class="fa-solid fa-italic"></i></button>
-                <button :class="[btn, editor.isActive('underline') ? on : off]" title="Sottolineato (Ctrl+U)"
+                <button :class="[btn, editor.isActive('underline') ? on : off]" v-tooltip="'Sottolineato (Ctrl+U)'"
                     @click="editor.chain().focus().toggleUnderline().run()"><i
                         class="fa-solid fa-underline"></i></button>
-                <button :class="[btn, editor.isActive('highlight') ? on : off]" title="Evidenzia"
+                <button :class="[btn, editor.isActive('highlight') ? on : off]" v-tooltip="'Evidenzia'"
                     @click="editor.chain().focus().toggleHighlight().run()"><i
                         class="fa-solid fa-highlighter"></i></button>
 
@@ -26,17 +26,17 @@
                 <div class="flex items-center">
                     <label
                         class="relative p-1.5 rounded text-xs font-bold transition min-w-[28px] text-center cursor-pointer text-neutral-600 hover:bg-neutral-200"
-                        title="Colore del testo">
+                        v-tooltip="'Colore del testo'">
                         <span class="block leading-none">A</span>
                         <span class="block h-[3px] mt-0.5 rounded-sm"
                             :style="{ backgroundColor: currentTextColor }"></span>
-                        <input type="color" :value="currentTextColor"
+                        <input type="color" :value="currentTextColor" aria-label="Colore del testo"
                             @input="setTextColor(($event.target as HTMLInputElement).value)"
                             class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                     </label>
                     <button v-if="hasTextColor" @mousedown.prevent @click="editor.chain().focus().unsetColor().run()"
                         class="p-1 rounded text-[10px] text-neutral-400 hover:bg-neutral-200 hover:text-neutral-700"
-                        title="Ripristina il colore predefinito">✕</button>
+                        v-tooltip="'Ripristina il colore predefinito'">✕</button>
                 </div>
             </div>
 
@@ -119,7 +119,7 @@
                 <!-- Allineamento: quattro pulsanti se c'è spazio, un solo menu se la finestra si restringe -->
                 <template v-if="!compact">
                     <button v-for="a in ALIGNS" :key="a.value"
-                        :class="[btn, editor.isActive({ textAlign: a.value }) ? on : off]" :title="a.label"
+                        :class="[btn, editor.isActive({ textAlign: a.value }) ? on : off]" v-tooltip="a.label"
                         @click="editor.chain().focus().setTextAlign(a.value).run()">
                         <i :class="['fa-solid', a.icon]"></i>
                     </button>
@@ -136,20 +136,20 @@
                 </ToolbarMenu>
 
                 <!-- Rientro -->
-                <button :class="[btn, off]" title="Riduci rientro (Ctrl+[)" :disabled="!editor.can().outdent()"
+                <button :class="[btn, off]" v-tooltip="'Riduci rientro (Ctrl+[)'" :disabled="!editor.can().outdent()"
                     @click="editor.chain().focus().outdent().run()"><i class="fa-solid fa-outdent"></i></button>
-                <button :class="[btn, off]" title="Aumenta rientro (Ctrl+])" :disabled="!editor.can().indent()"
+                <button :class="[btn, off]" v-tooltip="'Aumenta rientro (Ctrl+])'" :disabled="!editor.can().indent()"
                     @click="editor.chain().focus().indent().run()"><i class="fa-solid fa-indent"></i></button>
             </div>
 
             <!-- 4. Scacchi: blocchi di mosse e riferimenti -->
             <div class="tb-group">
-                <button @click="emit('insertTreeBlock')" :class="[btn, off]" title="Inserisci blocco mosse (partita o varianti)">
+                <button @click="emit('insertTreeBlock')" :class="[btn, off]" v-tooltip="'Inserisci blocco mosse (partita o varianti)'">
                     <i class="fa-solid fa-chess-knight"></i>
                 </button>
 
                 <button @click="emit('splitTreeBlock')" :disabled="!canSplitBlock" :class="[btn, off]"
-                    :title="!canSplitBlock
+                    v-tooltip="!canSplitBlock
                         ? 'Seleziona una mossa con qualcosa da stampare dopo di essa per dividere il blocco'
                         : splitInVariation
                             ? 'Dividi blocco in questa mossa della variante: la sua continuazione e il ritorno alla linea madre vanno in nuovi blocchi (non annullabile)'
@@ -158,14 +158,14 @@
                 </button>
 
                 <button @click="emit('mergeTreeBlock')" :disabled="!mergeTarget" :class="[btn, off]"
-                    :title="mergeTarget
+                    v-tooltip="mergeTarget
                         ? `Unisci il blocco «${mergeTarget.title}» a questo (non annullabile)`
                         : 'Seleziona un blocco seguito da un blocco che lo continua (derivato da una divisione, oppure che parte dalla posizione in cui finisce la linea principale)'">
                     <i class="fa-solid fa-object-group"></i>
                 </button>
 
                 <button @mousedown.prevent @click="emit('pasteTreeBlock')" :disabled="!treeStore.clipboard" :class="[btn, off]"
-                    :title="treeStore.clipboard ? `Incolla l'albero «${treeStore.clipboard.tree.title}» nel punto del cursore` : 'Copia o taglia prima un albero di mosse'">
+                    v-tooltip="treeStore.clipboard ? `Incolla l'albero «${treeStore.clipboard.tree.title}» nel punto del cursore` : 'Copia o taglia prima un albero di mosse'">
                     <i class="fa-solid fa-paste"></i>
                 </button>
 
@@ -188,7 +188,7 @@
         <!-- Destra: pulsante «altro» (solo se qualcosa non entra) e zoom -->
         <div class="flex items-center gap-1 ml-auto shrink-0 h-7">
             <button v-if="!locked && hasOverflow" @mousedown.prevent @click="expanded = !expanded"
-                :class="[btn, expanded ? on : off]" :title="expanded ? 'Mostra meno strumenti' : 'Altri strumenti'"
+                :class="[btn, expanded ? on : off]" v-tooltip="expanded ? 'Mostra meno strumenti' : 'Altri strumenti'"
                 :aria-expanded="expanded">
                 <i class="fa-solid fa-ellipsis-vertical"></i>
             </button>
@@ -217,6 +217,7 @@ import type { Editor } from '@tiptap/vue-3'
 import { useChessTreeStore } from '../stores/chessTreeStore'
 import { useChessBookStore } from '../stores/chessBookStore'
 import ToolbarMenu from './toolbar/ToolbarMenu.vue'
+import { vTooltip } from '../directives/tooltip'
 import { TOC_LEVELS } from '../extensions/CustomHeading'
 import { canSplitAt, findMergeableChild } from '../utils/treeOps'
 import { insertDiagramRefInComment } from '../utils/diagramRefs'

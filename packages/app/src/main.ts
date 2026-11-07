@@ -5,6 +5,7 @@ import '@fortawesome/fontawesome-free/css/solid.min.css'
 
 import './style.css'
 import './assets/styles/theme.css'
+import './assets/styles/tooltip.css'
 import App from './App.vue'
 import { useThemeStore } from './stores/themeStore'
 

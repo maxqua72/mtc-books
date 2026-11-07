@@ -1,6 +1,6 @@
 <template>
   <div class="inline-flex">
-    <button ref="btn" type="button" @mousedown.prevent @click="toggle" :title="title" :aria-label="title"
+    <button ref="btn" type="button" @mousedown.prevent @click="toggle" v-tooltip="title"
       aria-haspopup="menu" :aria-expanded="open" :disabled="disabled"
       class="h-7 px-1.5 rounded text-xs transition flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
       :class="active || open ? 'bg-black text-white' : 'text-neutral-600 hover:bg-neutral-200 disabled:hover:bg-transparent'">
@@ -24,6 +24,7 @@
 
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
+import { vTooltip } from '../../directives/tooltip'
 
 withDefaults(defineProps<{
   title: string

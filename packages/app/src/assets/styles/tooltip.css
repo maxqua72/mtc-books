@@ -1,0 +1,23 @@
+/* Tooltip dell'interfaccia (directives/tooltip.ts): usa i colori dei pulsanti scuri del tema */
+.app-tooltip {
+  position: fixed;
+  z-index: 70;
+  max-width: 18rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  background: var(--t-btn-bg, #171717);
+  color: var(--t-btn-fg, #ffffff);
+  font: 500 0.6875rem/1.35 ui-sans-serif, system-ui, sans-serif;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+.app-tooltip[hidden] {
+  display: none;
+}
+
+.app-tooltip kbd {
+  margin-left: 0.5rem;
+  font: inherit;
+  opacity: 0.7;
+}
