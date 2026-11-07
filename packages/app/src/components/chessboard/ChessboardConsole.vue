@@ -66,7 +66,7 @@
       <button v-if="tree && treeStore.activeNodeId && !locked" @click="emit('deleteBranch')"
         class="py-2 px-3 bg-red-50 hover:bg-red-100 text-red-600 rounded text-xs transition uppercase font-bold border border-red-200"
         v-tooltip.desc="'Elimina la mossa selezionata e tutto ciò che la segue'">
-        Elimina Variante
+        Elimina da qui
       </button>
 
       <!-- Riordino delle varianti: agisce sulla linea che contiene la mossa selezionata -->

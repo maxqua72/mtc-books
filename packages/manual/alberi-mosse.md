@@ -41,7 +41,7 @@ I comandi nella console agiscono sulla linea della mossa selezionata.
 | **Promuovi** | Alza la mossa di un posto tra le alternative: la prima diventa linea principale |
 | **Rendi principale** | Rende principale la linea, a ogni livello di annidamento |
 | **Abbassa** | La fa scendere di un posto: se era la principale, diventa variante |
-| **Elimina Variante** | Elimina la mossa selezionata e tutto ciò che la segue |
+| **Elimina da qui** | Elimina la mossa selezionata e tutto ciò che la segue, anche nella linea principale |
 
 Il riordino non è disponibile su un albero diviso in più blocchi.
 
