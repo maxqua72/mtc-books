@@ -77,6 +77,10 @@ Una **casa** è sempre colonna + traversa, come due parole consecutive: «Empoli
 **RR-6. Scacco e matto.** In coda a una qualsiasi mossa → `Bb5+`, `Qh7#`.
 
 **RR-7. Arrocchi.** Devono essere tolleranti agli errori di trascrizione osservati e simili: «a Rocco corto», «a rocco cotto», «arroco corto», «arrocco corta», «arrocco lungo», «a rocco lunga».
+- Vanno riconosciute anche le forme con le parole fuse dalla dettatura: «roccolgo», «a roccolgo», «arroccolungo», «arrocolungo», «a rocco lungo» → `O-O-O`; «roccocorto», «a roccocorto», «arroccocorto», «roccocotto» → `O-O`.
+- «Longo» e «longa» valgono come «lungo».
+- «Rocco» senza «a» davanti vale come «a rocco», ma solo se lo segue un lato: «Rocco corto» → `O-O`, mentre «Rocco gioca bene» resta invariato.
+- «EA» davanti a «Rocco» + lato è la fusione di «e a»: la congiunzione resta e il resto diventa l'arrocco, «poi EA Rocco lungo» → «poi e O-O-O». La «e» è maiuscola solo a inizio frase.
 - Corto → `O-O`, lungo → `O-O-O`.
 - Si può combinare con scacco o matto.
 - La tolleranza va implementata con un elenco esplicito di varianti e regole precise, non con una distanza di edit generica, per non convertire frasi normali.
@@ -93,6 +97,7 @@ Una **casa** è sempre colonna + traversa, come due parole consecutive: «Empoli
 - Le maiuscole non contano mai.
 - La punteggiatura **dentro** una sequenza (per esempio «cavallo, Firenze tre») è tollerata e scompare.
 - La punteggiatura **dopo** la mossa resta: «… arrocco corto.» → «… O-O.».
+- La dettatura scrive talvolta il punto staccato. Se una mossa convertita è seguita da spazio e poi da uno tra `.` `,` `;` `:`, lo spazio si toglie: «Uno Empoli 4 Empoli 5 .» → «1. e4 e5.». Non vale per `!` e `?`, che negli scacchi sono segni di valutazione, né per la punteggiatura che non segue una mossa convertita.
 
 **RR-11. Lettera semplice dopo un pezzo (tolleranza aggiuntiva).** Dopo il nome di un pezzo si accetta come colonna anche una singola lettera a–h, perché la dettatura la scrive spesso correttamente: «cavallo F tre» → `Nf3`. Questa forma vale **solo** dopo il nome di un pezzo, mai da sola, perché «e», «a» e simili sono parole comuni.
 
@@ -137,6 +142,18 @@ I test automatici vanno in `packages/app/tests/dictatedMoves.test.ts` e usano lo
 **T-4.** Idempotenza: convertire il risultato di T-1 non produce sostituzioni.
 
 **T-5.** Punteggiatura e maiuscole come da RR-10.
+
+**T-6. Arrocchi con parole fuse (RR-7):**
+- Ingresso: `Alla mossa 12 a Roccolgo e alla 13 re Bologna uno`
+- Uscita: `Alla mossa 12. O-O-O e alla 13. Kb1`
+- Ogni forma fusa elencata in RR-7, con maiuscole indifferenti.
+- Ingresso: `A Rocco corto a Rocco lungo a Rocco corto EA Rocco lungo dove a Rocco arrocco Longo oppure Rocco corto`
+- Uscita: `O-O O-O-O O-O e O-O-O dove a Rocco O-O-O oppure O-O`
+- Restano invariati «Rocco gioca bene», «EA Sports», «ea rocco».
+
+**T-7. Re:** «re Bologna uno» → `Kb1`, «13 re Bologna uno» → `13. Kb1`, «re prende Genova due scacco» → `Kxg2+`; «il re è al sicuro» e «re e donna» restano invariati.
+
+**T-8. Punto staccato (RR-10):** «Uno Empoli 4 Empoli 5 .» → `1. e4 e5.`; lo stesso con `,` `;` `:`; con `!` e `?` lo spazio resta; la punteggiatura che non segue una mossa convertita resta invariata.
 
 ## 6. Manuale utente
 
