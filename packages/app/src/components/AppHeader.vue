@@ -36,6 +36,12 @@
           class="px-2 py-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer">
           Apri...
         </button>
+
+        <button @click="isNotesOpen = true"
+          v-tooltip.desc="'Appunti scritti con il Taccuino sul telefono: importali e inseriscili nel libro'"
+          class="px-2 py-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer">
+          Appunti
+        </button>
       </div>
 
       <div class="flex items-center gap-0.5">
@@ -76,6 +82,7 @@
     </div>
 
     <SettingsModal :is-open="isSettingsOpen" @close="isSettingsOpen = false" />
+    <NotesModal :is-open="isNotesOpen" @close="isNotesOpen = false" />
     <PdfDesktopNotice />
   </header>
 </template>
@@ -88,6 +95,7 @@ import { useChessBookStore } from '../stores/chessBookStore'
 import logo from '../assets/mtcbooks-logo.svg'
 import { openManualPage } from '../utils/manualPage'
 import SettingsModal from './SettingsModal.vue'
+import NotesModal from './NotesModal.vue'
 import SaveStatusIndicator from './SaveStatusIndicator.vue'
 import ExportSplitButton from './ExportSplitButton.vue'
 import SaveSplitButton from './SaveSplitButton.vue'
@@ -97,6 +105,7 @@ import { vTooltip } from '../directives/tooltip'
 const appVersion = __APP_VERSION__
 const store = useChessBookStore()
 const isSettingsOpen = ref(false)
+const isNotesOpen = ref(false)
 
 const openManual = () => openManualPage()
 const { handleNewBook, handleOpenFile } = useBookFileActions()

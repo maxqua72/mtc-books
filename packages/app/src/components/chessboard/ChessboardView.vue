@@ -1,5 +1,5 @@
 <template>
-  <div class="chessboard-outer flex items-center justify-center rounded-sm"
+  <div class="chessboard-outer flex items-center justify-center rounded-sm" :style="sizeStyle"
     :class="{ linked, painting: editable && !!tool }">
     <!-- Div bersaglio di Chessground centrato al pixel -->
     <div 
@@ -10,7 +10,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { Chessground } from 'chessground'
 import type { Api } from 'chessground/api'
 import type { Color, Key, MouchEvent, Role } from 'chessground/types'
@@ -28,6 +28,7 @@ const props = defineProps<{
   autoShapes?: { orig: string; dest?: string; brush?: string }[]   // frecce temporanee, non disegnabili dall'utente
   editable?: boolean   // editor scacchiera: pezzi liberi, niente mosse né frecce
   tool?: EditorTool    // strumento dell'editor: pezzo da posare o cestino
+  size?: number        // lato in pixel (predefinito 402): il Taccuino lo adatta allo schermo
 }>()
 
 const emit = defineEmits<{
@@ -35,6 +36,8 @@ const emit = defineEmits<{
   (e: 'shapes', shapes: BoardShape[]): void   // l'utente ha disegnato o tolto una freccia/un cerchio
   (e: 'boardChange', placement: string): void  // editor scacchiera: i pezzi sono cambiati
 }>()
+
+const sizeStyle = computed(() => (props.size ? { width: `${props.size}px`, height: `${props.size}px` } : undefined))
 
 const boardElement = ref<HTMLElement | null>(null)
 let cgApi: Api | null = null

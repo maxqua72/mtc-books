@@ -25,6 +25,7 @@ export default defineConfig({
           { text: 'Struttura e proprietà', link: '/struttura-libro' },
           { text: 'Scrivere il testo', link: '/scrittura' },
           { text: 'Copertina', link: '/copertina' },
+          { text: 'Appunti dal telefono', link: '/taccuino' },
         ],
       },
       {

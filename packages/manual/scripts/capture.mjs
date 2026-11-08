@@ -57,6 +57,28 @@ const clip = async (name, box) => page.screenshot({ path: path.join(outDir, `${n
 const moves = () => page.locator('.chess-tree-block-container').first().locator('.chess-move-item')
 const QB3 = 12, BXB5 = 21
 
+// Taccuino: finestra grande come un telefono (la finestra normale ha una misura minima)
+const phoneWindow = async (on) => {
+  await app.evaluate(({ BrowserWindow }, phone) => {
+    const win = BrowserWindow.getAllWindows()[0]
+    if (phone) { win.setMinimumSize(320, 500); win.setContentSize(390, 844) }
+    else { win.setContentSize(1440, 900); win.setMinimumSize(1100, 700) }
+  }, on)
+  await page.waitForTimeout(500)
+}
+const openHash = async (hash) => {
+  await page.evaluate((h) => { location.hash = h; location.reload() }, hash)
+  await page.waitForLoadState('domcontentloaded')
+  await page.waitForTimeout(1200)
+}
+// Casa della scacchiera del Taccuino (Bianco in basso), per esempio 'e2'
+const clickSquare = async (square) => {
+  const box = await page.locator('.sheet cg-board').boundingBox()
+  const file = square.charCodeAt(0) - 97
+  const rank = Number(square[1])
+  await page.mouse.click(box.x + (file + 0.5) * box.width / 8, box.y + (8 - rank + 0.5) * box.height / 8)
+}
+
 const app = await electron.launch({
   executablePath: createRequire(path.join(desktopDir, 'package.json'))('electron'),
   args: ['.', '--dist', '--no-sandbox', '--force-device-scale-factor=2', `--user-data-dir=${userData}`],
@@ -301,6 +323,62 @@ try {
     await resize(1700)
     await shot('motore', right())
     await resize(900)
+  })
+
+  // Taccuino: la stessa app a misura di telefono. Nel desktop si apre solo con #/taccuino.
+  await step('taccuino', async () => {
+    await phoneWindow(true)
+    await openHash('#/taccuino')
+    await page.getByRole('button', { name: 'Nuovo appunto' }).click()
+    await page.getByPlaceholder('Titolo dell\'appunto').fill('Idea contro la Siciliana')
+    await page.locator('.ProseMirror').click()
+    await page.keyboard.type('Dopo uno Empoli quattro Como cinque due cavallo Firenze tre il nero può giocare Domodossola sei')
+    await button('Converti mosse').click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Applica', exact: true }).click()
+    await settle()
+
+    await button('Scacchiera').click()
+    await settle()
+    await shot('taccuino-diagramma')
+    await page.getByRole('tab', { name: 'Mosse' }).click()
+    await settle()
+    for (const [from, to] of [['e2', 'e4'], ['c7', 'c5'], ['g1', 'f3'], ['d7', 'd6'], ['d2', 'd4'], ['c5', 'd4'], ['f3', 'd4'], ['g8', 'f6']]) {
+      await clickSquare(from)
+      await clickSquare(to)
+      await page.waitForTimeout(150)
+    }
+    // Variante 2... Cc6 3. d4: indietro fino a 2. Cf3 e altra mossa
+    for (let i = 0; i < 5; i++) await page.getByRole('button', { name: 'Indietro', exact: true }).click()
+    for (const [from, to] of [['b8', 'c6'], ['d2', 'd4']]) {
+      await clickSquare(from)
+      await clickSquare(to)
+      await page.waitForTimeout(150)
+    }
+    await settle()
+    await shot('taccuino-mosse')
+    await button('Inserisci linea').click()
+    await page.keyboard.type('Da rivedere a casa con il motore.')
+    await page.locator('.ProseMirror').blur()
+    await settle()
+    await shot('taccuino-appunto')
+    await page.getByRole('button', { name: 'Torna agli appunti' }).click()
+    await settle()
+    await shot('taccuino-elenco')
+  })
+
+  await step('appunti', async () => {
+    await phoneWindow(false)
+    await openHash('#/editor')
+    await page.locator('.ProseMirror').first().waitFor()
+    await page.locator('header [role=switch]').click()   // dopo il ricaricamento il libro è in sola lettura
+    await settle()
+    await page.getByRole('button', { name: 'Appunti', exact: true }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.waitFor()
+    await settle()
+    await shot('appunti', dialog)
+    await page.keyboard.press('Escape')
+    await settle()
   })
 
   // Prova del manuale nella finestra vera, con la CSP vera

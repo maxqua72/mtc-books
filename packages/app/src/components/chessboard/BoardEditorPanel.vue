@@ -1,5 +1,5 @@
 <template>
-  <div class="w-[400px] bg-white border border-neutral-200 rounded-lg p-4 shadow-sm space-y-3">
+  <div class="w-full max-w-[400px] bg-white border border-neutral-200 rounded-lg p-4 shadow-sm space-y-3">
     <div class="flex items-center justify-between border-b border-neutral-100 pb-2">
       <span class="text-xs font-bold text-neutral-400 uppercase tracking-wider">Editor scacchiera</span>
       <button type="button" @click="emit('flip')" v-tooltip.desc="'Inverti la scacchiera'"
@@ -65,7 +65,7 @@
       <input type="text" readonly :value="fen" aria-label="FEN della posizione"
         class="w-full font-mono text-[11px] bg-neutral-900 text-neutral-300 p-2 rounded border border-neutral-800 focus:outline-none" />
       <p class="min-h-4 text-[11px]" :class="error ? 'text-red-600 font-medium' : 'text-neutral-500'" aria-live="polite">
-        {{ error ?? (hasTree ? 'Diventerà la posizione iniziale di questo albero.' : 'Posizione valida.') }}
+        {{ error ?? validHint ?? (hasTree ? 'Diventerà la posizione iniziale di questo albero.' : 'Posizione valida.') }}
       </p>
     </div>
 
@@ -73,7 +73,7 @@
       <button type="button" :disabled="!!error" @click="emit('apply', fen)"
         v-tooltip.desc="error ? error : hasTree ? 'Diventa la posizione iniziale di questo albero' : 'Porta la scacchiera su questa posizione'"
         class="flex-1 py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded text-xs font-bold uppercase tracking-wide transition disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed">
-        Applica
+        {{ applyLabel ?? 'Applica' }}
       </button>
       <button type="button" @click="emit('cancel')"
         class="flex-1 py-2 bg-white hover:bg-neutral-50 text-neutral-700 rounded text-xs font-bold uppercase tracking-wide transition border border-neutral-300"
@@ -99,6 +99,8 @@ const props = defineProps<{
   placement: string          // pezzi attualmente sulla scacchiera
   tool: EditorTool
   hasTree: boolean
+  applyLabel?: string        // Taccuino: «Inserisci diagramma»
+  validHint?: string         // testo sotto il FEN quando la posizione è valida
 }>()
 
 const emit = defineEmits<{
@@ -128,6 +130,9 @@ const options = reactive(parseEditorOptions(props.startFen))
 const available = computed(() => availableCastling(props.placement))
 const fen = computed(() => composeFen(props.placement, options))
 const error = computed(() => positionError(fen.value))
+
+// Il Taccuino legge la posizione composta per far partire la linea di mosse
+defineExpose({ fen, error })
 
 const isTool = (color: Color, role: Role) =>
   typeof props.tool === 'object' && props.tool?.color === color && props.tool.role === role

@@ -1,6 +1,6 @@
 # Privacy
 
-Ultimo aggiornamento: 5 novembre 2026.
+Ultimo aggiornamento: 8 novembre 2026.
 
 MTC Books non richiede un account e non raccoglie il contenuto dei tuoi libri.
 
@@ -18,7 +18,7 @@ Puoi cancellare la copia conservata dal browser eliminando i dati del sito nelle
 
 MTC Books non usa cookie di profilazione, strumenti di statistica o di tracciamento e non carica risorse da servizi esterni.
 
-La memoria del browser serve solo a far funzionare il servizio che hai richiesto: conserva il libro di lavoro, il tema, lo zoom e le altre preferenze. Per questo non viene chiesto il consenso.
+La memoria del browser serve solo a far funzionare il servizio che hai richiesto: conserva il libro di lavoro, gli appunti del [Taccuino](./taccuino), il tema, lo zoom e le altre preferenze, oltre a una copia dell'app per aprire il Taccuino senza connessione. Per questo non viene chiesto il consenso.
 
 ## Dati di navigazione
 

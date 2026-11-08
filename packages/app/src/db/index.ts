@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie'
 import type { BookMetadata, SectionIndexItem } from '../stores/chessBookStore'
+import type { Note } from '../notebook/notesModel'
 
 export interface LocalBookState {
   id: string // Sempre 'current_book'
@@ -43,6 +44,7 @@ export class MtcDatabase extends Dexie {
   sections!: Table<LocalSection>
   assets!: Table<LocalAsset>
   settings!: Table<LocalSetting>
+  notes!: Table<Note>
 
   constructor() {
     super('MtcBookDatabase')
@@ -60,6 +62,15 @@ export class MtcDatabase extends Dexie {
       sections: 'id',
       assets: 'id',
       settings: 'id'
+    })
+
+    // Versione 4: appunti del Taccuino, indipendenti dal libro di lavoro
+    this.version(4).stores({
+      bookState: 'id',
+      sections: 'id',
+      assets: 'id',
+      settings: 'id',
+      notes: 'id, updatedAt'
     })
   }
 }
@@ -122,3 +133,15 @@ export async function clearIndexedDB() {
   await db.sections.clear()
   await db.assets.clear()
 }
+// ---------------------------------------------------------------------------
+// Appunti del Taccuino: archivio a parte, mai toccato dal libro né da clearIndexedDB
+// ---------------------------------------------------------------------------
+
+/** Copia senza proxy di Vue: IndexedDB accetta solo oggetti semplici */
+const plain = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
+
+/** Dal più recente al più vecchio */
+export const listNotes = (): Promise<Note[]> => db.notes.orderBy('updatedAt').reverse().toArray()
+export const putNote = (note: Note) => db.notes.put(plain(note))
+export const putNotes = (notes: Note[]) => db.notes.bulkPut(plain(notes))
+export const deleteNotes = (ids: string[]) => db.notes.bulkDelete(ids)

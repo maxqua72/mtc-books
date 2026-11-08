@@ -24,6 +24,8 @@ import { pasteTreeFromClipboard } from './useBlockInsertion'
 import { resetHistory } from '../utils/editorHistory'
 import { goToDiagram } from './useGoToDiagram'
 import { isContentSection, isCoverSection, isGeneratedSection } from '../utils/sectionOrder'
+import { NodeSelection } from '@tiptap/pm/state'
+import { INSERT_NOTE_EVENT, type InsertNoteDetail } from '../notebook/notesIO'
 
 
 
@@ -219,11 +221,23 @@ export function useBookEditor() {
     if (id && editor.value) void goToDiagram(editor.value, id)
   }
 
+  // Appunto del Taccuino (finestra Appunti): alberi nello store, contenuto dopo il blocco del cursore
+  const onInsertNote = (e: Event) => {
+    const detail = (e as CustomEvent<InsertNoteDetail>).detail
+    const ed = editor.value
+    if (!detail || !ed || store.isLocked || !isContentSection(store.activeSectionInfo?.type)) return
+    treeStore.trees.push(...detail.trees)
+    const { selection } = ed.state
+    const pos = selection instanceof NodeSelection || selection.$to.depth === 0 ? selection.to : selection.$to.after(1)
+    ed.chain().focus().insertContentAt(pos, detail.html).run()
+  }
+
   onMounted(() => {
     window.addEventListener('request-editor-sync', syncEditorContent)
     window.addEventListener('keydown', blockStrayUndo, true)
     window.addEventListener('beforeinput', blockTreeHistoryInput, true)
     window.addEventListener('go-to-diagram', onGoToDiagram)
+    window.addEventListener(INSERT_NOTE_EVENT, onInsertNote)
 
     // Libro senza sezioni all'avvio: se ne crea una di default
     if (store.sectionIndex.length === 0) {
@@ -237,6 +251,7 @@ export function useBookEditor() {
     window.removeEventListener('keydown', blockStrayUndo, true)
     window.removeEventListener('beforeinput', blockTreeHistoryInput, true)
     window.removeEventListener('go-to-diagram', onGoToDiagram)
+    window.removeEventListener(INSERT_NOTE_EVENT, onInsertNote)
   })
 
   return { editor, syncEditorContent }

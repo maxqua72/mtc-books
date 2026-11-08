@@ -39,4 +39,7 @@ const images = await Promise.all(sizes.map(async (size) => ({ size, data: await 
 
 await writeFile(path.join(build, 'icon.png'), await png(1024))
 await writeFile(path.join(build, 'icon.ico'), buildIco(images))
-console.log('Scritti build/icon.png e build/icon.ico')
+// Icone del Taccuino installato sul telefono (manifest della web app)
+const appPublic = path.resolve(build, '..', '..', 'app', 'public')
+for (const size of [192, 512]) await writeFile(path.join(appPublic, `icon-${size}.png`), await png(size))
+console.log('Scritti build/icon.png, build/icon.ico e app/public/icon-192.png, icon-512.png')
