@@ -7,6 +7,8 @@
     <template v-for="(s, i) in items" :key="i">
       <circle v-if="s.kind === 'circle'" :cx="s.cx" :cy="s.cy" r="0.42" fill="none" :stroke="s.color"
         stroke-width="0.09" opacity="0.9" />
+      <path v-else-if="s.kind === 'x'" :d="s.d" fill="none" :stroke="s.color" stroke-width="0.09"
+        stroke-linecap="round" opacity="0.9" />
       <polygon v-else :points="s.points" :fill="s.color" stroke="#ffffff" stroke-width="0.03"
         stroke-linejoin="round" opacity="0.85" />
     </template>

@@ -8,7 +8,7 @@
       <div class="flex items-center gap-3">
         <button @click="emit('clearShapes')"
           class="text-xs font-semibold text-neutral-500 hover:text-neutral-900 transition underline underline-offset-4"
-          v-tooltip.desc="'Frecce e cerchi: tasto destro sulla scacchiera (nero nel libro); con Maiusc o Ctrl (grigio nel libro)'">
+          v-tooltip.desc="'Frecce, cerchi e X: tasto destro sulla scacchiera (nero nel libro); con Maiusc o Ctrl (grigio nel libro). Un secondo clic destro sulla casa trasforma il cerchio in X, un terzo la toglie'">
           Cancella frecce
         </button>
         <button v-if="showReset" @click="emit('reset')" v-tooltip.desc="resetTitle"

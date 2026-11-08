@@ -24,6 +24,8 @@
 | `Fine` | Fine della linea |
 | `Q` `R` `B` `N` | Scelta del pezzo in promozione |
 | `Esc` | Annulla la promozione |
+| Clic destro sulla scacchiera | Freccia (trascinando), cerchio, X al secondo clic sulla stessa casa: vedi [Frecce, cerchi e X](./scacchiera#frecce-cerchi-e-x) |
+| `Maiusc` o `Ctrl` + clic destro | Come sopra, in grigio nel libro |
 | `Ctrl+V` | Incolla l'albero copiato o tagliato |
 
 ## Diagrammi e copertina

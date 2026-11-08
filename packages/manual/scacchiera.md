@@ -30,9 +30,20 @@ I tasti funzionano con un albero attivo o con il mouse sopra scacchiera e consol
 
 Scegli il pezzo con il mouse, oppure premi `Q`, `R`, `B` o `N`. `Esc` annulla la mossa.
 
-## Frecce e cerchi
+## Frecce, cerchi e X
 
 Disegnali sulla scacchiera con il tasto destro: nel libro risultano neri. Con `Maiusc` o `Ctrl` premuti risultano grigi. **Cancella frecce** li rimuove dalla posizione.
+
+| Gesto | Risultato |
+|---|---|
+| Trascinare con il tasto destro da una casa all'altra | Freccia |
+| Clic destro su una casa | Cerchio |
+| Secondo clic destro sulla stessa casa, con lo stesso colore | Il cerchio diventa una X dello stesso colore |
+| Terzo clic destro sulla stessa casa | La casa torna vuota |
+
+Un clic con l'altro colore cambia il colore del cerchio. Per una X di un altro colore, ripeti il ciclo con quel colore.
+
+Frecce, cerchi e X restano nella mossa dell'albero e passano ai diagrammi che inserisci, nell'editor e nel PDF. I marcatori di un PGN importato (`[%csl …]`) arrivano come cerchi: il formato PGN non prevede la X.
 
 ## Schede della console
 

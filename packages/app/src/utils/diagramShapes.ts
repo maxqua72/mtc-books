@@ -6,7 +6,15 @@ import { MERIDA_ADVANCE_EM } from './diagramSizes'
 
 export type ShapeItem =
   | { kind: 'circle'; color: string; cx: number; cy: number }
+  | { kind: 'x'; color: string; d: string }
   | { kind: 'arrow'; color: string; points: string }
+
+/** X sulla casa: due diagonali, larghe quanto il diametro del cerchio meno un margine */
+export const xPath = (c: Point): string => {
+  const h = 0.3
+  const f = (n: number) => n.toFixed(3)
+  return `M${f(c.x - h)},${f(c.y - h)} L${f(c.x + h)},${f(c.y + h)} M${f(c.x + h)},${f(c.y - h)} L${f(c.x - h)},${f(c.y + h)}`
+}
 
 interface Point { x: number; y: number }
 
@@ -41,6 +49,7 @@ export const buildShapeItems = (raw: unknown, flipped: boolean): ShapeItem[] =>
   cleanShapes(raw).map((s): ShapeItem => {
     const color = SHAPE_INK[s.brush]
     const from = cellCenter(s.orig, flipped)
+    if (!s.dest && s.mark === 'x') return { kind: 'x', color, d: xPath(from) }
     if (!s.dest) return { kind: 'circle', color, cx: from.x, cy: from.y }
     return { kind: 'arrow', color, points: arrowPoints(from, cellCenter(s.dest, flipped)) }
   })

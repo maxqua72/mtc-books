@@ -15,7 +15,7 @@ import { Chessground } from 'chessground'
 import type { Api } from 'chessground/api'
 import type { Color, Key, MouchEvent, Role } from 'chessground/types'
 import type { DrawShape } from 'chessground/draw'
-import { cleanShapes, type BoardShape } from '../../utils/shapes'
+import { boardXSvg, cleanShapes, cycleMarkers, type BoardShape } from '../../utils/shapes'
 import type { EditorTool } from '../../utils/boardEditor'
 
 const props = defineProps<{
@@ -46,8 +46,27 @@ const boardConfig = () => ({
   movable: { color: props.turnColor, dests: props.dests }
 })
 
+// Una X per Chessground è un disegno sulla casa senza pennello (così non compare il cerchio);
+// mark e xBrush viaggiano con la forma e cleanShapes li rilegge
 const toDrawShapes = (shapes?: BoardShape[]): DrawShape[] =>
-  (shapes ?? []).map(s => ({ orig: s.orig as Key, ...(s.dest ? { dest: s.dest as Key } : {}), brush: s.brush }))
+  (shapes ?? []).map(s => s.mark === 'x'
+    ? { orig: s.orig as Key, customSvg: { html: boardXSvg(s.brush) }, mark: 'x', xBrush: s.brush } as DrawShape
+    : { orig: s.orig as Key, ...(s.dest ? { dest: s.dest as Key } : {}), brush: s.brush })
+
+// Forme sulla scacchiera prima dell'ultimo gesto: servono a riconoscere il clic ripetuto su una casa.
+// Ogni volta che l'app mette forme sulla scacchiera passa da qui.
+let lastShapes: BoardShape[] = []
+const boardShapes = (shapes?: BoardShape[]): DrawShape[] => {
+  lastShapes = cleanShapes(shapes ?? [])
+  return toDrawShapes(lastShapes)
+}
+const onShapesChange = (shapes: DrawShape[]) => {
+  const next = cleanShapes(shapes)
+  const result = cycleMarkers(lastShapes, next)
+  lastShapes = result
+  if (result !== next) cgApi?.setShapes(toDrawShapes(result))
+  emit('shapes', result)
+}
 
 const updateBoard = () => {
   if (!cgApi || props.editable) return
@@ -56,7 +75,7 @@ const updateBoard = () => {
   // Chessground azzera le forme quando riceve un FEN: si passano nella stessa chiamata.
   cgApi.set(samePieces
     ? boardConfig()
-    : { fen: props.fen, ...boardConfig(), drawable: { shapes: toDrawShapes(props.shapes) } })
+    : { fen: props.fen, ...boardConfig(), drawable: { shapes: boardShapes(props.shapes) } })
 }
 
 // Stessa posizione, solo ridisegnata: le frecce attualmente sulla scacchiera restano
@@ -65,7 +84,7 @@ const resync = () => {
   cgApi.set({ fen: props.fen, ...boardConfig(), drawable: { shapes: [...cgApi.state.drawable.shapes] } })
 }
 
-const syncShapes = () => { if (!props.editable) cgApi?.setShapes(toDrawShapes(props.shapes)) }
+const syncShapes = () => { if (!props.editable) cgApi?.setShapes(boardShapes(props.shapes)) }
 
 const syncAuto = () => {
   if (props.editable) return
@@ -76,7 +95,7 @@ const syncAuto = () => {
 
 /** Forme attualmente sulla scacchiera, normalizzate (servono anche quando la posizione non ha un nodo) */
 const getShapes = (): BoardShape[] => (cgApi ? cleanShapes(cgApi.state.drawable.shapes) : [])
-const clearShapes = () => cgApi?.setShapes([])
+const clearShapes = () => cgApi?.setShapes(boardShapes([]))
 
 // --- Editor scacchiera ---
 const notifyBoard = () => { if (cgApi && props.editable) emit('boardChange', cgApi.getFen()) }
@@ -110,7 +129,7 @@ function leaveEditMode() {
     highlight: { lastMove: true },
     movable: { free: false, color: props.turnColor, dests: props.dests, showDests: true },
     draggable: { deleteOnDropOff: false },
-    drawable: { enabled: true, shapes: toDrawShapes(props.shapes) },
+    drawable: { enabled: true, shapes: boardShapes(props.shapes) },
   })
   syncAuto()
 }
@@ -182,10 +201,10 @@ onMounted(() => {
       change: notifyBoard
     },
     drawable: {
-      shapes: toDrawShapes(props.shapes),
+      shapes: boardShapes(props.shapes),
       // un clic normale (selezionare un pezzo) non deve cancellare le frecce salvate: c'è il pulsante "Cancella frecce"
       eraseOnClick: false,
-      onChange: (shapes: DrawShape[]) => emit('shapes', cleanShapes(shapes))
+      onChange: onShapesChange
     }
   })
 
