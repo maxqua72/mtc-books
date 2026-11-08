@@ -78,6 +78,20 @@ test('RR-7: arrocchi con le parole fuse dalla dettatura', () => {
   assert.equal(convert('Alla mossa 12 a Roccolgo e alla 13 re Bologna uno'), 'Alla mossa 12. O-O-O e alla 13. Kb1')
 })
 
+test('RR-7: «Longo», «Rocco» senza «a» ed «EA» per «e a»', () => {
+  for (const s of ['arrocco Longo', 'a rocco longa']) assert.equal(convert(s), 'O-O-O', s)
+  assert.equal(convert('Rocco corto'), 'O-O')
+  assert.equal(convert('Rocco lungo'), 'O-O-O')
+  assert.equal(convert('poi EA Rocco lungo'), 'poi e O-O-O')
+  assert.equal(convert('EA Rocco lungo'), 'E O-O-O')
+  assert.equal(convert('Fine. Ea rocco corto'), 'Fine. E O-O')
+  assert.equal(
+    convert('A Rocco corto a Rocco lungo a Rocco corto EA Rocco lungo dove a Rocco arrocco Longo oppure Rocco corto'),
+    'O-O O-O-O O-O e O-O-O dove a Rocco O-O-O oppure O-O')
+  // «Rocco» resta un nome se non lo segue un lato; «EA» da solo non cambia
+  for (const s of ['Rocco gioca bene', 'EA Sports', 'ea rocco']) assert.equal(convert(s), s)
+})
+
 test('RR-2: il re', () => {
   assert.equal(convert('re Bologna uno'), 'Kb1')
   assert.equal(convert('13 re Bologna uno'), '13. Kb1')

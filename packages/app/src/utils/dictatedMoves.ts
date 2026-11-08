@@ -44,12 +44,17 @@ export const PROMOTION_WORDS: string[][] = [
  * per non convertire frasi normali). Una parola di arrocco + un lato.
  */
 export const CASTLE_WORDS: string[][] = [
-  ['arrocco'], ['arroco'], ['arocco'], ['a', 'rocco'], ['a', 'roco'],
+  ['arrocco'], ['arroco'], ['arocco'], ['a', 'rocco'], ['a', 'roco'], ['rocco'],
 ]
 export const CASTLE_SIDES: Record<string, string> = {
   corto: 'O-O', corta: 'O-O', cotto: 'O-O', cotta: 'O-O',
-  lungo: 'O-O-O', lunga: 'O-O-O',
+  lungo: 'O-O-O', lunga: 'O-O-O', longo: 'O-O-O', longa: 'O-O-O',
 }
+/**
+ * Parole che la dettatura fonde con la «a» di «a rocco»: «e a rocco lungo» → «EA Rocco lungo».
+ * Valgono solo davanti a «rocco» + lato; la parola iniziale («e») resta nel testo.
+ */
+export const CASTLE_LEADS: Record<string, string> = { ea: 'e' }
 /** Arrocchi con le parole fuse dalla dettatura («a Roccolgo»): sequenze complete */
 export const CASTLE_FUSED: [string[], string][] = [
   [['roccolgo'], 'O-O-O'], [['a', 'roccolgo'], 'O-O-O'], [['arroccolungo'], 'O-O-O'], [['arrocolungo'], 'O-O-O'],
@@ -97,7 +102,11 @@ interface Token {
   end: number            // fine del nucleo nel testo
 }
 
-interface Hit { next: number; san: string }
+interface Hit {
+  next: number
+  san: string
+  lead?: string   // parola che resta davanti alla mossa («e» di «EA Rocco lungo»)
+}
 
 // ---------------------------------------------------------------------------
 // Tokenizzazione
@@ -198,7 +207,17 @@ function parser(toks: Token[]) {
       const k = seq(i, [words])
       return k !== null ? { next: k, san: s } : null
     })
-    return longest([split, ...fused])
+    return longest([split, ...fused, castleWithLead(i)])
+  }
+
+  // «EA Rocco lungo»: la «e» resta, «a Rocco lungo» diventa l'arrocco
+  const castleWithLead = (i: number): Hit | null => {
+    const w = word(i)
+    const lead = w !== null ? CASTLE_LEADS[w] : undefined
+    if (!lead || word(i + 1) !== 'rocco') return null
+    const side = word(i + 2)
+    const san = side !== null ? CASTLE_SIDES[side] : undefined
+    return san ? { next: i + 3, san, lead } : null
   }
 
   const move = (i: number): Hit | null => {
@@ -217,7 +236,7 @@ function parser(toks: Token[]) {
     const n = w !== null ? MOVE_NUMBERS[w] : undefined
     if (n !== undefined) {
       const m = move(i + 1)
-      if (m) return { next: m.next, san: `${n}. ${m.san}` }
+      if (m && !m.lead) return { next: m.next, san: `${n}. ${m.san}` }
     }
     return move(i)
   }
@@ -241,6 +260,12 @@ export function findDictatedMoves(text: string): DictatedReplacement[] {
     const start = toks[i].start
     let end = toks[hit.next - 1].end
     let replacement = hit.san
+    if (hit.lead) {
+      // Maiuscola solo a inizio frase, come l'ha scritta la dettatura; altrimenti la congiunzione è minuscola
+      const sentenceStart = /(^|[.!?]\s*)$/.test(text.slice(0, start))
+      const lead = sentenceStart && text[start] === text[start].toUpperCase() ? hit.lead.toUpperCase() : hit.lead
+      replacement = `${lead} ${replacement}`
+    }
     const punct = DETACHED_PUNCT.exec(text.slice(end))
     if (punct) { end += punct[0].length; replacement += punct[1] }
     out.push({ start, end, original: text.slice(start, end), replacement })
