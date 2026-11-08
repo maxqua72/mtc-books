@@ -232,6 +232,12 @@ body {
   break-inside: avoid !important;
 }
 
+/* Il paragrafo che introduce un albero non resta da solo in fondo alla pagina: va con l'albero */
+.book-text-engine p:has(+ .chess-tree-block-container) {
+  page-break-after: avoid !important;
+  break-after: avoid !important;
+}
+
 .block-header .delete-btn {
   display: none !important;
 }
