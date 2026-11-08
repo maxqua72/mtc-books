@@ -2,12 +2,13 @@
     "name": "mtc-books",
     "private": true,
     "version": "1.0.0",
-    "version:set": "node scripts/set-version.mjs",
     "packageManager": "pnpm@10.34.9",
     "engines": {
         "node": ">=22.12"
     },
     "scripts": {
+        "release": "node scripts/release.mjs",
+        "version:set": "node scripts/set-version.mjs",
         "dev:app": "pnpm --parallel --filter @mtc/app --filter @mtc/manual run dev",
         "dev:server": "pnpm --filter @mtc/server dev",
         "dev:manual": "pnpm --filter @mtc/manual dev",

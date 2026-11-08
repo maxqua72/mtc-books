@@ -123,17 +123,34 @@ L'app installata e `start` condividono i dati in `%APPDATA%\MTC Books`.
 
 ## Rilascio di una versione
 
-```powershell
-node scripts/set-version.mjs 1.1.0   # aggiorna la versione nei due package.json
-git add -A
-git commit -m "Versione 1.1.0"
-git tag v1.1.0
-git push origin main --tags
-```
+Web app e app desktop si rilasciano insieme, con lo stesso numero di versione e dallo stesso commit. Dal terminale di VS Code, sul ramo `main` senza modifiche in sospeso:
 
-Il tag avvia `release.yml`, che esegue le verifiche e crea una **bozza** in `mtc-books-releases`. Serve il segreto `RELEASES_TOKEN`.
+| Comando | Quando | Esempio |
+|---|---|---|
+| `pnpm release` | Correzioni | 1.0.1 → 1.0.2 |
+| `pnpm release minor` | Nuove funzioni | 1.0.2 → 1.1.0 |
+| `pnpm release major` | Cambiamenti importanti | 1.1.0 → 2.0.0 |
 
-Per renderla disponibile, apri la bozza su GitHub e pubblicala: solo da quel momento gli utenti ricevono l'aggiornamento.
+Con `--dry-run` mostra la nuova versione senza toccare nulla; con `--yes` non chiede conferma.
+
+Lo script (`scripts/release.mjs`):
+
+1. controlla di essere su `main`, senza modifiche in sospeso e allineato con GitHub;
+2. calcola la nuova versione e chiede conferma;
+3. esegue `check:boundaries`, `typecheck` e `test`;
+4. aggiorna la versione nei due `package.json`;
+5. esegue la build della web app in `packages/app/dist` (se fallisce, riporta la versione com'era e si ferma);
+6. fa il commit «Versione x.y.z», crea il tag `vx.y.z` e fa il push di entrambi.
+
+Dopo lo script restano tre passi manuali:
+
+| Passo | Come |
+|---|---|
+| Pubblicare la web app | Con WinSCP carica il **contenuto** di `packages\app\dist` in `$HOME/mtc-books` sul server (modalità Binaria), poi sul server `sudo ~/deploy-books.sh x.y.z` |
+| Attendere l'installer | Il tag avvia `release.yml` (**Actions → Release**), che esegue le verifiche e crea una **bozza** in `mtc-books-releases`. Serve il segreto `RELEASES_TOKEN` |
+| Pubblicare l'app desktop | Apri la bozza in <https://github.com/maxqua72/mtc-books-releases/releases> e pubblicala: solo da quel momento gli utenti ricevono l'aggiornamento |
+
+Lo script del server tiene le ultime tre versioni: `sudo ~/deploy-books.sh --list` le elenca, `sudo ~/deploy-books.sh --rollback` torna alla precedente.
 
 ## Installazione per l'utente finale
 
