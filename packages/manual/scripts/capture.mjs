@@ -114,6 +114,26 @@ try {
     await settle()
   })
 
+  await step('converti-mosse', async () => {
+    const text = 'Dopo uno Empoli quattro Empoli 5 2 cavallo Firenze tre il nero gioca cavallo Como sei poi alfiere Bologna 5 e infine a Rocco corto'
+    await page.keyboard.type(text)
+    // Finestra stretta: il pulsante può stare fra gli «Altri strumenti»
+    const more = page.getByRole('button', { name: 'Altri strumenti', exact: true })
+    if (await more.isVisible()) await more.click()
+    await button('Converti in notazione le mosse dettate (selezione o paragrafo)').click()
+    const dialog = page.getByRole('dialog')
+    await dialog.waitFor()
+    await settle()
+    await shot('converti-mosse', dialog)
+    await dialog.getByRole('button', { name: 'Annulla', exact: true }).click()
+    const less = page.getByRole('button', { name: 'Mostra meno strumenti', exact: true })
+    if (await less.isVisible()) await less.click()
+    // Toglie la frase: il paragrafo resta vuoto, con il cursore, come prima di questo passo
+    await page.locator('.ProseMirror p').filter({ hasText: 'Rocco corto' }).click({ clickCount: 3 })
+    await page.keyboard.press('Backspace')
+    await settle()
+  })
+
   await step('import-pgn', async () => {
     await tab('Importa PGN')
     await right().locator('textarea').fill(PGN)

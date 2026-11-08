@@ -7,7 +7,10 @@
         <EditorToolbar v-if="editor" v-show="!isCoverActive" :editor="editor" :zoom="zoomOption" @update:zoom="setZoom"
             @insert-tree-block="insertNewChessTreeBlock" @split-tree-block="handleSplitTreeBlock"
             @paste-tree-block="pasteTreeFromClipboard"
-            @merge-tree-block="handleMergeTreeBlock" />
+            @merge-tree-block="handleMergeTreeBlock" @convert-dictated-moves="dictated.open" />
+
+        <DictatedMovesModal :is-open="dictated.isOpen.value" :items="dictated.items.value"
+            @close="dictated.close" @apply="dictated.apply" />
 
         <!-- Copertina: una pagina fissa, non un documento di testo -->
         <CoverEditor v-if="isCoverActive && store.coverModel" v-model="coverProxy" class="flex-1 min-h-0"
@@ -50,7 +53,9 @@ import { usePageLayout } from '../composables/usePageLayout'
 import { usePdfExport } from '../composables/usePdfExport'
 import { useTreePlacement } from '../composables/useTreePlacement'
 import { useBlockInsertion, pasteTreeFromClipboard } from '../composables/useBlockInsertion'
+import { useConvertDictatedMoves } from '../composables/useConvertDictatedMoves'
 import EditorToolbar from './EditorToolbar.vue'
+import DictatedMovesModal from './DictatedMovesModal.vue'
 import CoverEditor from './cover/CoverEditor.vue'
 import PdfLoadingOverlay from './PdfLoadingOverlay.vue'
 import { platform } from '../platform'
@@ -68,6 +73,7 @@ const layout = usePageLayout()
 const { cssVars } = layout
 const { insertNewChessTreeBlock, handleSplitTreeBlock, handleMergeTreeBlock } = useBlockInsertion(editor)
 useTreePlacement(editor)
+const dictated = useConvertDictatedMoves(editor)
 
 // --- Zoom ---
 const scrollContainer = ref<HTMLElement | null>(null)

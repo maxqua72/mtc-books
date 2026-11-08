@@ -169,6 +169,11 @@
                     <i class="fa-solid fa-paste"></i>
                 </button>
 
+                <button @mousedown.prevent @click="emit('convertDictatedMoves')" :disabled="locked" :class="[btn, off]"
+                    v-tooltip="'Converti in notazione le mosse dettate (selezione o paragrafo)'">
+                    <i class="fa-solid fa-microphone-lines"></i>
+                </button>
+
                 <ToolbarMenu
                     :title="bookStore.diagramList.length ? 'Inserisci un riferimento a un diagramma' : 'Nessun diagramma nel libro'"
                     :disabled="bookStore.diagramList.length === 0" panel-class="w-72 max-h-72 overflow-y-auto">
@@ -234,6 +239,7 @@ const emit = defineEmits<{
     (e: 'pasteTreeBlock'): void
     (e: 'update:zoom', zoom: string): void
     (e: 'mergeTreeBlock'): void
+    (e: 'convertDictatedMoves'): void
 }>()
 
 const treeStore = useChessTreeStore()
