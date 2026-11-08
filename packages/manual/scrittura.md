@@ -60,6 +60,8 @@ diventa
 3. Nella finestra **Converti mosse** controlla le sostituzioni proposte: per ognuna vedi il testo originale evidenziato e il risultato con le figurine. Togli la spunta a quelle da lasciare come sono.
 4. Scegli **Applica**, oppure **Annulla** per chiudere senza cambiare nulla.
 
+![La finestra Converti mosse con le sostituzioni proposte](/screenshots/converti-mosse.png)
+
 Se non ci sono mosse dettate, compare l'avviso «Nessuna mossa dettata trovata». I diagrammi e i blocchi di mosse non vengono toccati. Tutte le sostituzioni si annullano insieme con un solo `Ctrl+Z`.
 
 ## Link
