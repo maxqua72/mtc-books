@@ -72,6 +72,19 @@ test('RR-7: arrocchi con le varianti di trascrizione', () => {
   assert.equal(convert('arrocco lungo matto'), 'O-O-O#')
 })
 
+test('RR-7: arrocchi con le parole fuse dalla dettatura', () => {
+  for (const s of ['roccolgo', 'a Roccolgo', 'arroccolungo', 'Arrocolungo', 'a rocco lungo']) assert.equal(convert(s), 'O-O-O', s)
+  for (const s of ['roccocorto', 'a roccocorto', 'arroccocorto', 'roccocotto']) assert.equal(convert(s), 'O-O', s)
+  assert.equal(convert('Alla mossa 12 a Roccolgo e alla 13 re Bologna uno'), 'Alla mossa 12. O-O-O e alla 13. Kb1')
+})
+
+test('RR-2: il re', () => {
+  assert.equal(convert('re Bologna uno'), 'Kb1')
+  assert.equal(convert('13 re Bologna uno'), '13. Kb1')
+  assert.equal(convert('re prende Genova due scacco'), 'Kxg2+')
+  for (const s of ['il re è al sicuro', 're e donna']) assert.equal(convert(s), s)
+})
+
 test('RR-8: numero di mossa in cifre e in parole', () => {
   assert.equal(convert('uno Empoli quattro'), '1. e4')
   assert.equal(convert('2 cavallo Firenze tre'), '2. Nf3')
@@ -102,6 +115,18 @@ test('RR-10: maiuscole e punteggiatura', () => {
   assert.equal(convert('Gioca alfiere Bologna 5, poi'), 'Gioca Bb5, poi')
   assert.equal(convert('(Empoli quattro)'), '(e4)')
   assert.equal(convert('Uno. Empoli, quattro!'), '1. e4!')
+})
+
+test('RR-10: punto staccato dopo una mossa', () => {
+  assert.equal(convert('Uno Empoli 4 Empoli 5 .'), '1. e4 e5.')
+  assert.equal(convert('cavallo Firenze tre , poi'), 'Nf3, poi')
+  assert.equal(convert('arrocco corto ; poi'), 'O-O; poi')
+  assert.equal(convert('alfiere Bologna 5 : il'), 'Bb5: il')
+  // ! e ? sono segni di valutazione; la punteggiatura che non segue una mossa resta com'è
+  assert.equal(convert('cavallo Firenze tre !'), 'Nf3 !')
+  assert.equal(convert('Empoli 4 ?'), 'e4 ?')
+  assert.equal(convert('il nero gioca .'), 'il nero gioca .')
+  assert.equal(convert('1. e4 .'), '1. e4 .')
 })
 
 test('RR-11: lettera semplice come colonna solo subito dopo il pezzo', () => {

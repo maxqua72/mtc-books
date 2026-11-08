@@ -50,6 +50,14 @@ export const CASTLE_SIDES: Record<string, string> = {
   corto: 'O-O', corta: 'O-O', cotto: 'O-O', cotta: 'O-O',
   lungo: 'O-O-O', lunga: 'O-O-O',
 }
+/** Arrocchi con le parole fuse dalla dettatura («a Roccolgo»): sequenze complete */
+export const CASTLE_FUSED: [string[], string][] = [
+  [['roccolgo'], 'O-O-O'], [['a', 'roccolgo'], 'O-O-O'], [['arroccolungo'], 'O-O-O'], [['arrocolungo'], 'O-O-O'],
+  [['roccocorto'], 'O-O'], [['a', 'roccocorto'], 'O-O'], [['arroccocorto'], 'O-O'], [['roccocotto'], 'O-O'],
+]
+
+/** Punteggiatura staccata che si attacca alla mossa convertita («e5 .» → «e5.»); non ! e ?, segni di valutazione */
+const DETACHED_PUNCT = /^\s+([.,;:])(?!\p{P})/u
 
 /** Numeri di mossa in parole (1–99) */
 const UNITS = ['', 'uno', 'due', 'tre', 'quattro', 'cinque', 'sei', 'sette', 'otto', 'nove',
@@ -185,7 +193,12 @@ function parser(toks: Token[]) {
     const j = seq(i, CASTLE_WORDS)
     const side = j !== null ? word(j) : null
     const san = side !== null ? CASTLE_SIDES[side] : undefined
-    return j !== null && san ? { next: j + 1, san } : null
+    const split = j !== null && san ? { next: j + 1, san } : null
+    const fused = CASTLE_FUSED.map(([words, s]) => {
+      const k = seq(i, [words])
+      return k !== null ? { next: k, san: s } : null
+    })
+    return longest([split, ...fused])
   }
 
   const move = (i: number): Hit | null => {
@@ -226,8 +239,11 @@ export function findDictatedMoves(text: string): DictatedReplacement[] {
     const hit = numberedMove(i)
     if (!hit) { i++; continue }
     const start = toks[i].start
-    const end = toks[hit.next - 1].end
-    out.push({ start, end, original: text.slice(start, end), replacement: hit.san })
+    let end = toks[hit.next - 1].end
+    let replacement = hit.san
+    const punct = DETACHED_PUNCT.exec(text.slice(end))
+    if (punct) { end += punct[0].length; replacement += punct[1] }
+    out.push({ start, end, original: text.slice(start, end), replacement })
     i = hit.next
   }
   return out
