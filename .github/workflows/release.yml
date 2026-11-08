@@ -47,3 +47,10 @@ jobs:
         run: pnpm --filter @mtc/desktop release
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+
+      # Il libro di esempio non sta nell'installatore: è un file a parte della release, scaricabile con un link
+      - name: Libro di esempio nella bozza di release
+        shell: pwsh
+        run: gh release upload "${{ github.ref_name }}" esempi/dall-apertura-al-finale.mtcbook --repo maxqua72/mtc-books-releases --clobber
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}

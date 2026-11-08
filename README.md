@@ -44,6 +44,30 @@ Il libro di esempio e le schermate fotografate sono definiti in `packages/manual
 `pnpm --filter @mtc/app build` genera il manuale in `packages/app/dist/manual`, quindi web e installer lo includono da soli.
 Quando una modifica cambia ciò che l'utente vede, aggiorna anche la pagina del manuale nello stesso commit.
 
+## Libro di esempio
+
+`esempi/dall-apertura-al-finale.mtcbook` è un libro completo, realizzato con l'app, che ne mostra quasi tutte le funzioni: copertina e quarta di copertina, indice, sezioni senza numero (prefazione, bibliografia), legenda dei simboli, indici delle partite e dei giocatori, diagrammi centrati, a margine e affiancati, alberi di mosse con varianti e commenti, riferimenti ai diagrammi. Le immagini di copertina sono dell'autore del progetto.
+
+È la **matrice**: su git c'è solo questo file, a colonna unica e senza rilegatura. Si modifica aprendolo nell'app e salvandolo. I PDF non sono versionati: si rigenerano in locale con
+
+```powershell
+pnpm libro-esempio
+```
+
+Il comando fa la build dell'app e del desktop, apre una copia della matrice nella vera app (la matrice non viene mai salvata) ed esporta in `esempi/pdf`, cartella ignorata da git, tre versioni dello stesso libro:
+
+| File | Proprietà del Libro usate per l'esportazione |
+|---|---|
+| `dall-apertura-al-finale.pdf` | Come nella matrice |
+| `dall-apertura-al-finale-fronte-retro.pdf` | **Rilegatura**: **Fronte/retro** |
+| `dall-apertura-al-finale-due-colonne.pdf` | **Layout a due colonne** |
+
+Lo script è `packages/manual/scripts/libro-esempio.mjs`. Il libro serve anche come banco di prova: dopo una modifica all'impaginazione, rigenera i PDF e controlla numeri di pagina, indici e diagrammi.
+
+**Quando aggiornare la matrice:** se cambia il formato del file `.mtcbook`, riapri la matrice nell'app e salvala, così resta nel formato corrente.
+
+**Distribuzione:** la matrice non è nell'installatore. A ogni rilascio, `release.yml` la allega alla bozza di release come file separato. Dopo la pubblicazione si scarica da <https://github.com/maxqua72/mtc-books-releases/releases/latest/download/dall-apertura-al-finale.mtcbook>.
+
 ## Prova della build compilata
 
 | Attività | Comando | Note |

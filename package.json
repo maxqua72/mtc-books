@@ -16,6 +16,7 @@
         "check:boundaries": "node scripts/check-boundaries.mjs",
         "dev:desktop": "pnpm --filter @mtc/desktop dev",
         "dist:desktop": "pnpm --filter @mtc/app build && pnpm --filter @mtc/desktop dist",
+        "libro-esempio": "pnpm --filter @mtc/app build && pnpm --filter @mtc/desktop exec node scripts/copy-assets.mjs && pnpm --filter @mtc/desktop build && pnpm --filter @mtc/manual libro-esempio",
         "test": "pnpm -r --if-present test"
     }
 }

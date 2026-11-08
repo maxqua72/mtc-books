@@ -5,6 +5,7 @@ dist
 .env.*
 !.env.example
 regression/
+esempi/pdf/
 .vscode/*
 !.vscode/settings.json
 !.vscode/launch.json
