@@ -1,5 +1,7 @@
 // Tour di benvenuto: mostra i comandi principali, uno alla volta, con il resto della pagina oscurato
+import { nextTick } from 'vue'
 import type { DriveStep } from 'driver.js'
+import { expandAllPanels } from '../utils/panelPreference'
 import { getSetting, putSetting } from '../db'
 import { capabilities } from '../platform'
 import { useChessBookStore } from '../stores/chessBookStore'
@@ -111,6 +113,11 @@ let running = false
 /** Avvia il tour sui comandi visibili ora. Restituisce false se non c'è niente da mostrare (nessun libro aperto). */
 export async function startTour(): Promise<boolean> {
   if (running) return true
+  // Le colonne ridotte a striscia si riaprono: il tour deve poter indicare sezioni e scacchiera
+  if (expandAllPanels()) {
+    await nextTick()
+    await new Promise((r) => requestAnimationFrame(() => r(null)))
+  }
   const steps = visibleSteps()
   if (!steps.length) return false
   running = true

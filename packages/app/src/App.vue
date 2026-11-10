@@ -11,19 +11,32 @@
     <!-- Altrimenti, sblocca l'ambiente di lavoro completo a 3 Colonne -->
     <div v-else class="flex flex-1 overflow-hidden animate-fade-in">
 
-      <!-- Colonna Sinistra: Organizzatore dei capitoli -->
+      <!-- Colonna Sinistra: Organizzatore dei capitoli (ridotta, resta una striscia che la riapre) -->
       <BookOrganizer />
+      <PanelStrip v-if="collapsedPanels.sections" side="left" icon="fa-list-ul" label="Mostra le sezioni"
+        @expand="setPanelCollapsed('sections', false)" />
 
       <!-- Colonna Centrale: Editor del Libro -->
       <main class="th-main flex-1 p-6 flex flex-col min-w-0 bg-neutral-50">
         <BookEditor />
       </main>
 
-      <!-- Colonna Destra: Console di Supporto e Scacchiera -->
-      <aside
-        class="th-right w-[460px] bg-white border-l border-neutral-200 py-6 px-3 flex flex-col items-center justify-start overflow-y-auto shrink-0 no-print">
+      <!-- Colonna Destra: Console di Supporto e Scacchiera.
+           v-show: ridotta a striscia resta montata, così l'analisi del motore e la posizione non si perdono -->
+      <aside v-show="!collapsedPanels.board"
+        class="th-right w-[460px] bg-white border-l border-neutral-200 pt-2 pb-6 px-3 flex flex-col items-center justify-start overflow-y-auto shrink-0 no-print">
+        <!-- Riga dei comandi della colonna, larga come la scacchiera: c'è posto per altri pulsanti -->
+        <div class="w-[400px] h-7 mb-2 flex items-center gap-1 shrink-0">
+          <button @click="setPanelCollapsed('board', true)" aria-label="Nascondi la scacchiera"
+            class="w-7 h-7 flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition cursor-pointer"
+            v-tooltip="'Nascondi la scacchiera'">
+            <i class="fa-solid fa-angles-right text-xs"></i>
+          </button>
+        </div>
         <ChessboardController />
       </aside>
+      <PanelStrip v-if="collapsedPanels.board" side="right" icon="fa-chess-board" label="Mostra la scacchiera"
+        @expand="setPanelCollapsed('board', false)" />
 
     </div>
     <!-- Seconda scheda: scritture bloccate per non sovrascrivere il lavoro dell'altra -->
@@ -59,6 +72,9 @@ import { useChessTreeStore } from './stores/chessTreeStore'
 import { platform } from './platform'
 import { useBookFileActions } from './composables/useBookFileActions'
 import { useFileAutosave } from './composables/useFileAutosave'
+import PanelStrip from './components/PanelStrip.vue'
+import { collapsedPanels, setPanelCollapsed } from './utils/panelPreference'
+import { vTooltip } from './directives/tooltip'
 
 const bookStore = useChessBookStore()
 const treeStore = useChessTreeStore()
