@@ -2,29 +2,33 @@
     <!-- v-show: ridotta a striscia la colonna resta montata, con menu e finestre aperte -->
     <aside v-show="!collapsedPanels.sections" data-tour="sections" class="th-left w-64 bg-white border-r border-neutral-200 flex flex-col shrink-0 h-full select-none no-print">
         <!-- Intestazione Informazioni Libro -->
-        <div class="p-4 border-b border-neutral-100 flex items-center justify-between gap-2">
-            <div class="space-y-1 min-w-0 flex-1">
-                <div class="flex items-center gap-1 -ml-1.5">
-                    <button @click="setPanelCollapsed('sections', true)" aria-label="Nascondi le sezioni"
-                        class="w-5 h-5 flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded transition shrink-0 cursor-pointer"
-                        v-tooltip="'Nascondi le sezioni'">
-                        <i class="fa-solid fa-angles-left text-[10px]"></i>
-                    </button>
-                    <h2 class="text-xs font-bold text-neutral-400 uppercase tracking-wider">Progetto Attivo</h2>
-                </div>
-                <div class="text-sm font-black text-neutral-900 truncate" :title="store.metadata.title">
-                    {{ store.metadata.title }}
-                </div>
-                <div class="text-[11px] text-neutral-400 font-medium truncate">
-                    di {{ store.metadata.author }}
-                </div>
+        <div class="p-4 border-b border-neutral-100 space-y-1">
+            <!-- Prima riga: etichetta e, sul bordo destro della colonna, il pulsante che la riduce -->
+            <div class="flex items-center justify-between gap-2">
+                <h2 class="text-xs font-bold text-neutral-400 uppercase tracking-wider">Progetto Attivo</h2>
+                <button @click="setPanelCollapsed('sections', true)" aria-label="Nascondi le sezioni"
+                    class="w-5 h-5 -mr-1 flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded transition shrink-0 cursor-pointer"
+                    v-tooltip="'Nascondi le sezioni'">
+                    <i class="fa-solid fa-angles-left text-[10px]"></i>
+                </button>
             </div>
 
-            <button @click="isPropsOpen = true" data-tour="properties"
-                class="w-8 h-8 flex items-center justify-center text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition shrink-0"
-                v-tooltip="'Proprietà Libro'">
-                <i class="fa-solid fa-gear"></i>
-            </button>
+            <div class="flex items-center justify-between gap-2">
+                <div class="space-y-1 min-w-0 flex-1">
+                    <div class="text-sm font-black text-neutral-900 truncate" :title="store.metadata.title">
+                        {{ store.metadata.title }}
+                    </div>
+                    <div class="text-[11px] text-neutral-400 font-medium truncate">
+                        di {{ store.metadata.author }}
+                    </div>
+                </div>
+
+                <button @click="isPropsOpen = true" data-tour="properties"
+                    class="w-8 h-8 flex items-center justify-center text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition shrink-0"
+                    v-tooltip="'Proprietà Libro'">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+            </div>
         </div>
 
         <!-- Elenco Sezioni (Indice Strutturale) -->

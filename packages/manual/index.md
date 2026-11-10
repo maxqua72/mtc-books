@@ -44,7 +44,7 @@ Con un libro aperto la finestra ha un'intestazione e tre colonne.
 
 Le colonne laterali si possono ridurre a una striscia sottile:
 
-- **Nascondi le sezioni**, la doppia freccia accanto a **Progetto Attivo**, riduce l'elenco delle sezioni.
+- **Nascondi le sezioni**, la doppia freccia a destra di **Progetto Attivo**, riduce l'elenco delle sezioni.
 - **Nascondi la scacchiera**, la doppia freccia sopra la scacchiera, riduce scacchiera e console.
 
 Per riaprire una colonna clicca la sua striscia: **Mostra le sezioni** o **Mostra la scacchiera**. Con la scacchiera ridotta le mosse di un albero selezionato si scorrono comunque con i tasti freccia.
