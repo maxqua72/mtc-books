@@ -298,7 +298,9 @@ try {
     await moves().nth(QB3).click()
     await right().getByText(/Profondità \d/).waitFor({ timeout: 30000 })
     await page.waitForTimeout(4000)
-    await resize(1700)
+    // Finestra alta quanto serve per tutta la colonna, senza spazio vuoto sotto la console
+    const needed = await right().evaluate((el) => Math.ceil(el.getBoundingClientRect().top + el.scrollHeight))
+    await resize(Math.min(1700, needed))
     await shot('motore', right())
     await resize(900)
   })
