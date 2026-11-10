@@ -1,11 +1,16 @@
 import { EditorState } from '@tiptap/pm/state'
 import type { Editor } from '@tiptap/core'
 
-/** Azzera la cronologia annulla/ripristina: lo stato si ricrea con lo stesso documento e gli stessi plugin */
+/**
+ * Azzera la cronologia annulla/ripristina: lo stato si ricrea con lo stesso documento e gli stessi plugin.
+ * Selezione e marcature attive si conservano: senza, il cursore tornerebbe a inizio documento e
+ * il focus successivo (es. dopo l'inserimento di un diagramma che spezza un albero) farebbe scorrere lì la pagina.
+ */
 export const resetHistory = (ed: Editor) => {
   try {
     const { view } = ed
-    view.updateState(EditorState.create({ doc: view.state.doc, plugins: view.state.plugins }))
+    const { doc, plugins, selection, storedMarks } = view.state
+    view.updateState(EditorState.create({ doc, plugins, selection, storedMarks }))
   } catch (e) {
     console.warn('[editor] Impossibile azzerare la cronologia annulla/ripristina:', e)
     return
