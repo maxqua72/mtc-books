@@ -1,14 +1,19 @@
 <template>
   <div class="space-y-1.5">
     <ol class="space-y-1" :class="stale ? 'opacity-40' : ''">
-      <li v-for="slot in slots" :key="slot.n" class="flex items-start gap-2 h-9">
+      <!-- Una riga per linea, tagliata con «…»: il clic sulle mosse la mostra per intero e la richiude -->
+      <li v-for="slot in slots" :key="slot.n" class="flex items-start gap-2"
+        :class="expanded.has(slot.n) ? 'min-h-6' : 'h-6'">
         <span class="shrink-0 w-16 pt-px" :title="slot.row ? `Profondità ${slot.row.line.depth}` : undefined">
-          <span v-if="slot.row" class="inline-block px-1.5 rounded font-mono font-bold leading-[22px]"
+          <span v-if="slot.row" class="inline-block px-1.5 rounded font-mono font-bold leading-[20px]"
             :class="scoreClass(slot.n)">{{ formatScore(slot.row.line.score) }}</span>
         </span>
-        <span class="min-w-0 flex-1 pt-0.5 text-[12px] leading-4 line-clamp-2 break-words" :title="slot.row?.pv.text">
+        <button type="button" :disabled="!slot.row" @click="toggle(slot.n)" :aria-expanded="expanded.has(slot.n)"
+          :title="expanded.has(slot.n) ? 'Clic per ridurre a una riga' : 'Clic per vedere tutta la linea'"
+          class="min-w-0 flex-1 text-left text-[12px] rounded px-1 -mx-1 hover:bg-neutral-100 cursor-pointer disabled:cursor-default disabled:hover:bg-transparent"
+          :class="expanded.has(slot.n) ? 'break-words leading-5 py-0.5' : 'truncate leading-6'">
           {{ slot.row?.pv.text }}<span v-if="slot.row && !slot.row.pv.complete">…</span>
-        </span>
+        </button>
         <button type="button" :disabled="!slot.row || !canAdd || stale" v-tooltip="addTitle" @click="slot.row && add(slot.row)"
           class="shrink-0 w-6 h-5 mt-0.5 rounded border border-neutral-300 text-[11px] font-bold hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed transition">+</button>
       </li>
@@ -54,6 +59,14 @@ const treeStore = useChessTreeStore()
 const bookStore = useChessBookStore()
 
 const plies = ref(8)
+
+// Linee aperte per intero, per numero di riga: restano aperte mentre il motore aggiorna le mosse
+const expanded = ref(new Set<number>())
+const toggle = (n: number) => {
+  const next = new Set(expanded.value)
+  if (!next.delete(n)) next.add(n)
+  expanded.value = next
+}
 const feedback = ref<string | null>(null)
 let feedbackTimer: ReturnType<typeof setTimeout> | undefined
 const say = (text: string) => {
