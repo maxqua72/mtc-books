@@ -11,7 +11,8 @@
 
       <div class="h-4 w-[1px] bg-neutral-200 mx-1"></div>
 
-      <SaveStatusIndicator :status="store.saveStatus" />
+      <!-- Senza libro non c'è niente di salvato: lo stato iniziale «salvato» sarebbe falso -->
+      <SaveStatusIndicator v-if="store.isBookLoaded" :status="store.saveStatus" />
 
       <span v-if="currentFile" class="text-xs truncate max-w-[260px]"
         :class="autosavePaused || autosaveError ? 'text-amber-600 font-medium' : 'text-neutral-500'"
@@ -27,7 +28,8 @@
     <!-- Azioni Globali Documento -->
     <div class="flex items-center gap-2">
       <div class="flex items-center gap-0.5">
-        <button @click="handleNewBook"
+        <!-- Nella schermata iniziale c'è già «Crea un nuovo libro», che chiede titolo e autore -->
+        <button v-if="store.isBookLoaded" @click="handleNewBook"
           class="px-2 py-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer">
           Nuovo
         </button>
@@ -68,7 +70,8 @@
         {{ store.isLocked ? 'Sola lettura' : 'Modifica attiva' }}
       </button>
 
-      <div data-tour="file-actions" class="flex items-center gap-2">
+      <!-- Senza libro l'esportazione non ha un editor e il salvataggio scriverebbe un file vuoto -->
+      <div v-if="store.isBookLoaded" data-tour="file-actions" class="flex items-center gap-2">
         <ExportSplitButton />
 
         <SaveSplitButton />

@@ -7,7 +7,7 @@ Un libro si salva in un file `.mtcbook`, che contiene testo, alberi, diagrammi e
 Il file è la versione ufficiale del libro. L'intestazione mostra il suo nome e l'ora dell'ultimo salvataggio; **Nessun file associato** indica che il libro è solo nella copia interna.
 
 - **Salva Lavoro** salva sul file. La prima volta scegli nome e cartella.
-- **Salva con nome…**, dalla freccia accanto, crea un file nuovo.
+- **Salva con nome…**, dalla freccia accanto, apre subito la scelta di nome e cartella e crea un file nuovo.
 
 ![Il menu di salvataggio](/screenshots/menu-salva.png)
 
@@ -33,6 +33,6 @@ Se il libro è aperto in due schede, una sola può scrivere: scegli **Usa questa
 
 ## Aprire e creare
 
-**Apri...** carica un file e **Nuovo** crea un libro. Entrambi sostituiscono il libro aperto e chiedono conferma se ci sono modifiche non salvate su file.
+**Apri...** carica un file e **Nuovo**, presente quando un libro è aperto, crea un libro. Entrambi sostituiscono il libro aperto e chiedono conferma se ci sono modifiche non salvate su file.
 
 L'app avvisa anche se stai aprendo una versione più vecchia dello stesso libro. Un file salvato da una versione più recente di MTC Books non si apre: aggiorna l'app.

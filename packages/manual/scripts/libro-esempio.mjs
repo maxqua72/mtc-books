@@ -52,12 +52,6 @@ try {
   await page.getByRole('switch').first().click()
   await settle(300)
 
-  // Esportazione del libro intero: la scelta del menu resta per le esportazioni successive
-  await page.locator('header [aria-haspopup="true"]').first().click()
-  await settle(150)
-  await page.getByRole('button', { name: 'Esporta Libro (PDF)' }).first().click()
-  await settle(150)
-
   const columns = page.getByRole('checkbox', { name: /Layout a due colonne/ })
   for (const v of VERSIONS) {
     await page.getByRole('button', { name: /Proprietà Libro/ }).click()
@@ -70,7 +64,10 @@ try {
     const pdf = path.join(outDir, v.file)
     rmSync(pdf, { force: true })
     await app.evaluate(({ dialog }, p) => { dialog.showSaveDialog = async () => ({ canceled: false, filePath: p }) }, pdf)
-    await page.locator('header button').filter({ hasText: 'Esporta Libro (PDF)' }).first().click()
+    // La voce del menu esporta subito il libro intero
+    await page.locator('header [aria-haspopup="true"]').first().click()
+    await settle(150)
+    await page.locator('header button').filter({ hasText: 'Esporta Libro (PDF)' }).last().click()
     const start = Date.now()
     while (!existsSync(pdf) && Date.now() - start < 300000) await page.waitForTimeout(500)
     if (!existsSync(pdf)) throw new Error(`esportazione non riuscita: ${v.file}`)
