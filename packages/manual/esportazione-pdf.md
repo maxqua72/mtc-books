@@ -6,7 +6,7 @@ Dalla versione web, salva il file `.mtcbook` e aprilo con l'app desktop.
 
 ## Scegliere cosa esportare
 
-Il pulsante di esportazione in alto esegue l'ultima scelta; la freccia accanto la cambia.
+Dalla freccia accanto al pulsante di esportazione scegli cosa esportare: l'esportazione parte subito. Il pulsante ricorda l'ultima scelta, quindi per ripeterla basta cliccarlo.
 
 ![Il menu di esportazione](/screenshots/menu-esporta.png)
 

@@ -47,6 +47,16 @@
           />
         </div>
       </div>
+
+      <!-- Solo web: l'app desktop aggiunge PDF, motore e salvataggio su file -->
+      <div v-if="!platform.capabilities.localPdf" class="space-y-2">
+        <p class="text-xs text-neutral-500">Per esportare in PDF, analizzare con il motore e salvare direttamente su file usa l'app desktop.</p>
+        <a :href="DOWNLOAD_URL" target="_blank" rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 py-2 px-4 text-xs font-semibold text-neutral-700 bg-white border border-neutral-200 rounded-xl hover:bg-neutral-50 hover:text-neutral-900 transition">
+          <i class="fa-solid fa-download"></i> Scarica l'app desktop
+        </a>
+      </div>
+
       <button type="button" @click="openManualPage('privacy')" class="block mx-auto text-xs text-neutral-500 underline hover:text-neutral-900 cursor-pointer">Privacy</button>
     </div>
 
@@ -85,6 +95,8 @@ import { useChessBookStore } from '../stores/chessBookStore'
 import logo from '../assets/mtcbooks-logo.svg'
 import { openManualPage } from '../utils/manualPage'
 import { startTourIfNew } from '../composables/useOnboardingTour'
+import { DOWNLOAD_URL } from '@mtc/shared'
+import { platform } from '../platform'
 
 const store = useChessBookStore()
 const showCreateModal = ref(false)

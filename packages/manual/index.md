@@ -16,7 +16,9 @@ MTC Books serve a scrivere libri di scacchi: testo, diagrammi e partite commenta
 
 ## App desktop e versione web
 
-Esistono due versioni con la stessa interfaccia. L'app desktop è l'editor completo; la versione web serve a scrivere dal browser. Il ponte tra le due è il file `.mtcbook`.
+Esistono due versioni con la stessa interfaccia. L'app desktop è l'editor completo; la versione web serve a scrivere dal browser. Il ponte tra le due è il file `.mtcbook`. Nella versione web la schermata iniziale ha il pulsante **Scarica l'app desktop**; per l'installazione vedi [Installazione](./installazione).
+
+Finché non crei o apri un libro, l'intestazione mostra solo **Apri...**, le impostazioni e il manuale.
 
 | Funzione | App desktop | Versione web |
 |---|---|---|

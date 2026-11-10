@@ -1,5 +1,5 @@
 <template>
-  <!-- Stesso schema di «Esporta»: l'azione principale esegue la scelta, la freccia la cambia. Nel web c'è solo Salva -->
+  <!-- Stesso schema di «Esporta»: la voce del menu esegue subito; «Salva con nome» non resta come scelta. Nel web c'è solo Salva -->
   <div class="relative inline-flex items-center" v-click-outside="close">
     <button @click="execute" v-tooltip.desc="title"
       class="px-4 py-1.5 text-xs font-bold text-white shadow transition cursor-pointer flex items-center gap-1.5"
@@ -69,7 +69,8 @@ const title = computed(() => {
 })
 
 const close = () => { isOpen.value = false }
-const select = (id: SaveMode) => { mode.value = id; close() }
+// La voce del menu salva subito, come il pulsante principale
+const select = (id: SaveMode) => { mode.value = id; close(); void execute() }
 
 const execute = async () => {
   if (mode.value === 'save') { await handleSaveFile(); return }

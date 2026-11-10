@@ -1,5 +1,5 @@
 <template>
-  <!-- Split button persistente: l'azione principale esegue la modalità scelta, la freccia la cambia -->
+  <!-- Split button persistente: la voce del menu esporta subito e diventa l'azione del pulsante principale -->
   <div class="relative inline-flex items-center" v-click-outside="close">
     <button @click="execute"
       class="px-4 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-l shadow transition cursor-pointer border-r border-blue-700 active:bg-blue-800">
@@ -47,12 +47,12 @@ const MODES: { id: ExportMode; label: string; hint: string }[] = [
 
 const store = useChessBookStore()
 const isOpen = ref(false)
-// La scelta persiste: la freccia cambia modalità, ma l'azione scatta solo dal pulsante principale
+// La voce del menu esporta subito e resta come azione del pulsante principale per le volte successive
 const mode = ref<ExportMode>('chapter-server')
 const current = computed(() => MODES.find(m => m.id === mode.value)!)
 
 const close = () => { isOpen.value = false }
-const select = (id: ExportMode) => { mode.value = id; isOpen.value = false }
+const select = (id: ExportMode) => { mode.value = id; close(); execute() }
 
 const execute = () => {
   if (mode.value === 'chapter-server') store.triggerServerChapterPdfExport()
