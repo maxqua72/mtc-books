@@ -4,7 +4,14 @@
         <!-- Intestazione Informazioni Libro -->
         <div class="p-4 border-b border-neutral-100 flex items-center justify-between gap-2">
             <div class="space-y-1 min-w-0 flex-1">
-                <h2 class="text-xs font-bold text-neutral-400 uppercase tracking-wider">Progetto Attivo</h2>
+                <div class="flex items-center gap-1 -ml-1.5">
+                    <button @click="setPanelCollapsed('sections', true)" aria-label="Nascondi le sezioni"
+                        class="w-5 h-5 flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded transition shrink-0 cursor-pointer"
+                        v-tooltip="'Nascondi le sezioni'">
+                        <i class="fa-solid fa-angles-left text-[10px]"></i>
+                    </button>
+                    <h2 class="text-xs font-bold text-neutral-400 uppercase tracking-wider">Progetto Attivo</h2>
+                </div>
                 <div class="text-sm font-black text-neutral-900 truncate" :title="store.metadata.title">
                     {{ store.metadata.title }}
                 </div>
@@ -17,12 +24,6 @@
                 class="w-8 h-8 flex items-center justify-center text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition shrink-0"
                 v-tooltip="'Proprietà Libro'">
                 <i class="fa-solid fa-gear"></i>
-            </button>
-
-            <button @click="setPanelCollapsed('sections', true)" aria-label="Nascondi le sezioni"
-                class="w-8 h-8 -mr-2 flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition shrink-0 cursor-pointer"
-                v-tooltip="'Nascondi le sezioni'">
-                <i class="fa-solid fa-angles-left text-xs"></i>
             </button>
         </div>
 
