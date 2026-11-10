@@ -40,4 +40,15 @@ Con un libro aperto la finestra ha un'intestazione e tre colonne.
 - **Colonna centrale**: la barra degli strumenti e il foglio su cui scrivi.
 - **Colonna destra**: la scacchiera, i comandi di navigazione e la console.
 
+### Più spazio per il foglio
+
+Le colonne laterali si possono ridurre a una striscia sottile:
+
+- **Nascondi le sezioni**, la doppia freccia in alto nella colonna sinistra, riduce l'elenco delle sezioni.
+- **Nascondi la scacchiera**, la doppia freccia in alto a sinistra nella colonna destra, riduce scacchiera e console.
+
+Per riaprire una colonna clicca la sua striscia: **Mostra le sezioni** o **Mostra la scacchiera**. Con la scacchiera ridotta le mosse di un albero selezionato si scorrono comunque con i tasti freccia.
+
+L'app ricorda la scelta su questo dispositivo. Con lo zoom **Adatta larghezza** il foglio si allarga e occupa lo spazio liberato.
+
 Prosegui con [Primi passi](./primi-passi).
