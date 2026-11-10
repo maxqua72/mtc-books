@@ -22,9 +22,11 @@
       </main>
 
       <!-- Colonna Destra: Console di Supporto e Scacchiera.
-           v-show: ridotta a striscia resta montata, così l'analisi del motore e la posizione non si perdono -->
+           v-show: ridotta a striscia resta montata, così l'analisi del motore e la posizione non si perdono.
+           overflow-x-hidden: la riga delle lettere a–h di chessground è spostata di 24 px e la sua scatola vuota
+           sborda di qualche pixel, facendo comparire una barra orizzontale inutile -->
       <aside v-show="!collapsedPanels.board"
-        class="th-right w-[460px] bg-white border-l border-neutral-200 pt-2 pb-6 px-3 flex flex-col items-center justify-start overflow-y-auto shrink-0 no-print">
+        class="th-right w-[460px] bg-white border-l border-neutral-200 pt-2 pb-6 px-3 flex flex-col items-center justify-start overflow-y-auto overflow-x-hidden shrink-0 no-print">
         <!-- Riga dei comandi della colonna, larga come la scacchiera: c'è posto per altri pulsanti -->
         <div class="w-[400px] h-7 mb-2 flex items-center gap-1 shrink-0">
           <button @click="setPanelCollapsed('board', true)" aria-label="Nascondi la scacchiera"
