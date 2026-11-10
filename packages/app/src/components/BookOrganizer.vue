@@ -7,9 +7,10 @@
             <div class="flex items-center justify-between gap-2">
                 <h2 class="text-xs font-bold text-neutral-400 uppercase tracking-wider">Progetto Attivo</h2>
                 <button @click="setPanelCollapsed('sections', true)" aria-label="Nascondi le sezioni"
-                    class="w-5 h-5 -mr-1 flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded transition shrink-0 cursor-pointer"
+                    class="w-7 h-7 -my-1.5 -mr-2 flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition shrink-0 cursor-pointer"
                     v-tooltip="'Nascondi le sezioni'">
-                    <i class="fa-solid fa-angles-left text-[10px]"></i>
+                    <!-- Stessa misura della freccia sopra la scacchiera e di quelle delle strisce -->
+                    <i class="fa-solid fa-angles-left text-xs"></i>
                 </button>
             </div>
 
