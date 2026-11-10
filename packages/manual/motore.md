@@ -33,6 +33,8 @@ L'analisi segue la posizione della scacchiera e funziona anche in sola lettura. 
 
 ## Impostazioni del motore
 
+Le impostazioni sono nel riquadro **Impostazioni del motore**, chiuso quando apri la scheda: cliccalo per aprirlo. Se thread o memoria hash sono troppo alti per il computer, accanto al titolo compare **da controllare**.
+
 Le opzioni dipendono dal motore. Quelle principali, se disponibili, sono **Numero di linee**, **Thread (processori)**, **Memoria hash (MB)**, **Livello di abilità (0–20)**, **Limita la forza di gioco**, **Elo (con forza limitata)** e **Cartella delle tabelle Syzygy**. Le altre sono in **Avanzate**.
 
 **Valori consigliati** propone thread e hash adatti al computer. **Ripristina predefiniti** torna ai valori del motore.

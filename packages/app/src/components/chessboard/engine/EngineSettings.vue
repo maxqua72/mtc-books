@@ -1,6 +1,11 @@
 <template>
-  <details open class="rounded border border-neutral-200">
-    <summary class="px-2 py-1.5 text-[11px] font-semibold text-neutral-700 cursor-pointer select-none">Impostazioni del motore</summary>
+  <!-- Chiuso all'apertura: aperto spingerebbe troppo in basso i comandi della console, come «Inserisci Diagramma» -->
+  <details class="rounded border border-neutral-200">
+    <summary class="px-2 py-1.5 text-[11px] font-semibold text-neutral-700 cursor-pointer select-none">
+      Impostazioni del motore
+      <!-- Gli avvisi stanno dentro: con il riquadro chiuso li segnala il titolo -->
+      <span v-if="warnings.length" class="ml-1 text-amber-700 font-medium"><i class="fa-solid fa-triangle-exclamation"></i> da controllare</span>
+    </summary>
     <div class="p-2 space-y-2.5">
       <p v-for="w in warnings" :key="w" class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">{{ w }}</p>
 
