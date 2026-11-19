@@ -1,7 +1,8 @@
 <template>
   <!-- data-page-anchor: nel PDF gli indici delle partite e dei giocatori trovano qui la pagina della partita -->
   <node-view-wrapper class="chess-tree-block-container" :data-page-anchor="`tree-${props.node.attrs.treeId}`"
-    :class="{ 'is-active-tree': isActive, 'is-pgn-target': !!pgnBadge }" @mousedown="onMouseDown" @click="activateTree">
+    :class="{ 'is-active-tree': isActive, 'is-pgn-target': !!pgnBadge, 'beside-float': !!floatStyle }"
+    :style="floatStyle ?? undefined" @mousedown="onMouseDown" @click="activateTree">
     <div v-if="pgnBadge" class="pgn-target-badge" contenteditable="false">{{ pgnBadge }}</div>
     <!-- Header comandi stile Gmail: compare in posizione assoluta solo all'hover del blocco -->
     <div class="block-header">
@@ -68,6 +69,7 @@ import { variationRootsOnPath } from '../utils/treeOps'
 import { writeTreeClipMarker } from '../utils/treeClipboard'
 import { useInsertParagraph } from '../composables/useInsertParagraph'
 import { vTooltip } from '../directives/tooltip'
+import { besideFloatStyle } from '../extensions/FloatAwareHighlight'
 
 defineOptions({
   name: 'ChessTreeBlockView'
@@ -96,6 +98,9 @@ const activateTree = () => {
 }
 
 const isActive = computed(() => treeStore.activeTreeId === props.node.attrs.treeId)
+
+// Accanto a un diagramma a margine: sfondo e barra non passano sotto il diagramma (FloatAwareHighlight)
+const floatStyle = computed(() => besideFloatStyle(props.decorations as never))
 
 // Intestazione ricavata dai tag PGN (solo se l'albero la ha e l'interruttore è acceso)
 const headerView = computed(() => {
@@ -239,6 +244,34 @@ watch(
   width: 3px;
   background-color: var(--t-accent, #3b82f6);
   border-radius: 2px;
+}
+
+/* Accanto a un diagramma a margine (FloatAwareHighlight, stesse regole dei paragrafi in BookEditor.vue):
+   sfondo e barra non passano sotto il diagramma, il bordo dell'hover non lo attraversa */
+.chess-tree-block-container.beside-float:hover,
+.chess-tree-block-container.beside-float.is-active-tree {
+  --bf-wash: var(--t-accent-wash, rgba(239, 246, 255, 0.4));
+  border-color: transparent;
+  background-color: transparent;
+  background-image: linear-gradient(var(--bf-wash), var(--bf-wash)), linear-gradient(var(--bf-wash), var(--bf-wash));
+  background-repeat: no-repeat;
+  background-position: var(--bf-left) 0, 0 var(--bf-h);
+  background-size: max(0px, calc(100% - var(--bf-left) - var(--bf-right))) var(--bf-h), 100% max(0px, calc(100% - var(--bf-h)));
+}
+
+.chess-tree-block-container.beside-float:hover:not(.is-active-tree) {
+  --bf-wash: color-mix(in srgb, var(--t-accent-wash) 70%, transparent);
+}
+
+.chess-tree-block-container.beside-float.is-active-tree::before {
+  --bf-bar: var(--t-accent, #3b82f6);
+  width: calc(var(--bf-left) + 3px);
+  background-color: transparent;
+  background-image: linear-gradient(var(--bf-bar), var(--bf-bar)), linear-gradient(var(--bf-bar), var(--bf-bar));
+  background-repeat: no-repeat;
+  background-position: var(--bf-left) 0, 0 var(--bf-h);
+  background-size: 3px var(--bf-h), 3px max(0px, calc(100% - var(--bf-h)));
+  border-radius: 0;
 }
 
 .game-title {
