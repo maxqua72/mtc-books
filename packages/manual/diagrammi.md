@@ -21,13 +21,17 @@ Passando sul diagramma compare una barra a destra.
 
 - **Dimensione**: piccola, media o grande.
 - **Allineamento**: al centro, oppure a sinistra o a destra con il testo che scorre accanto.
-- **Modifica didascalia**: `Invio` conferma, `Maiusc+Invio` va a capo.
+- **Modifica didascalia**: porta il cursore alla fine della didascalia.
 - **Inverti il diagramma**: mette il Nero in basso.
 - **Carica la posizione sulla scacchiera**.
 - **Inserisci un paragrafo sopra** o **sotto**.
 - **Elimina diagramma**.
 
 Le misure reali dipendono dal formato di pagina del libro. Con il [layout a due colonne](./struttura-libro#layout-a-due-colonne) i diagrammi si adattano alla larghezza della colonna e sono sempre centrati, quindi i comandi di allineamento non compaiono. L'allineamento scelto torna valido se riporti il libro a colonna unica.
+
+## Didascalia
+
+Clicca la didascalia per scriverla: mentre il cursore è dentro, ha bordo e sfondo. `Invio` conferma e porta il cursore nel testo dopo il diagramma; `Maiusc+Invio` va a capo. Cliccando altrove la didascalia torna normale. Anche una didascalia vuota si scrive cliccando sotto la scacchiera, dove il passaggio del mouse mostra un bordo leggero.
 
 ## Riferimenti nel testo
 

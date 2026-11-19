@@ -1,5 +1,5 @@
 import { Extension } from '@tiptap/core'
-import { NodeSelection, Plugin, PluginKey, type EditorState } from '@tiptap/pm/state'
+import { NodeSelection, Plugin, PluginKey, Selection, TextSelection, type EditorState } from '@tiptap/pm/state'
 import type { Node as PMNode } from '@tiptap/pm/model'
 
 const PROTECTED_NODES = ['chessDiagram', 'chessTreeBlock']
@@ -70,19 +70,20 @@ export const ProtectChessNodes = Extension.create({
       return true // true = evento consumato, il tasto non fa altro
     }
 
-    // Invio nella didascalia di un diagramma: la conferma (niente spezzare il diagramma in due)
+    // Invio nella didascalia di un diagramma: la conferma (niente spezzare il diagramma in due).
+    // Il cursore esce: va nel testo dopo il diagramma; se non c'è testo dopo, l'editor perde il fuoco.
+    // In entrambi i casi la didascalia smette di essere attiva
     const confirmCaption = () => {
-      const { $from, empty } = this.editor.state.selection
+      const { state, view } = this.editor
+      const { $from, empty } = state.selection
       if (!empty || $from.depth === 0 || $from.parent.type.name !== 'chessDiagram') return false
-      const pos = $from.before()
-      const attrs = $from.parent.attrs
-      this.editor.chain()
-        .command(({ tr }) => {
-          tr.setNodeMarkup(pos, undefined, { ...attrs, captionEditable: false })
-          return true
-        })
-        .blur()
-        .run()
+      const after = $from.after()
+      const next = Selection.findFrom(state.doc.resolve(after), 1, true)
+      if (next instanceof TextSelection && next.from > after) {
+        view.dispatch(state.tr.setSelection(next).scrollIntoView())
+      } else {
+        this.editor.commands.blur()
+      }
       return true
     }
 

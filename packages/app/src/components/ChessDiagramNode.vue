@@ -15,8 +15,8 @@
 
         <DiagramActionsMenu v-if="!store.isLocked" :size-level="sizeLevel" :align="align" :flipped="flipped"
           :show-align="!layout.twoColumns.value"
-          :caption-editable="isCaptionEditable" @size="setSizeLevel" @align="setAlign"
-          @toggle-caption="toggleOrFocusCaption" @flip="toggleFlip" @load-on-board="loadOnBoard"
+          :caption-active="captionActive" @size="setSizeLevel" @align="setAlign"
+          @edit-caption="editCaption" @flip="toggleFlip" @load-on-board="loadOnBoard"
           @paragraph="insertParagraph" @remove="deleteNode" />
 
         <pre class="chess-pure-text">{{ boardString }}</pre>
@@ -24,20 +24,18 @@
         <ShapesOverlay :shapes="node.attrs.shapes" :flipped="flipped" />
       </div>
 
-      <!-- Didascalia del diagramma -->
-      <node-view-content ref="captionRef"
+      <!-- Didascalia del diagramma: attiva (bordo, sfondo, segnaposto) quando il cursore è dentro.
+           Invio conferma e porta il cursore fuori (ProtectChessNodes) -->
+      <node-view-content
         class="diagram-caption"
-        :class="{ 'is-editing': isCaptionEditable }"
-        :contenteditable="isCaptionEditable && !store.isLocked"
-        @blur="disableCaptionEditing"
-        @keydown.enter="onCaptionEnter"
+        :class="{ 'is-editing': captionActive }"
         placeholder="Diagramma X: inserisci didascalia..." />
     </div>
   </node-view-wrapper>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { nodeViewProps, NodeViewWrapper, NodeViewContent } from '@tiptap/vue-3'
 import { useChessBookStore } from '../stores/chessBookStore'
 import { useChessTreeStore } from '../stores/chessTreeStore'
@@ -103,40 +101,28 @@ const loadOnBoard = () => {
 }
 
 // --- Didascalia ---
-const captionRef = ref<InstanceType<typeof NodeViewContent> | null>(null)
-const isCaptionEditable = computed(() => props.node.attrs.captionEditable !== false)
-
-// Clic fuori dalla didascalia (blur): l'editing si disattiva
-const disableCaptionEditing = () => props.updateAttributes({ captionEditable: false })
-
-// Invio nella didascalia = conferma. L'evento si ferma qui, prima di ProseMirror: altrimenti
-// lo split di blocco di default creerebbe un nuovo paragrafo. Maiusc+Invio (a capo) resta com'è.
-const onCaptionEnter = (event: KeyboardEvent) => {
-  if (event.isComposing || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return
-  event.preventDefault()
-  event.stopPropagation()
-  ;(event.currentTarget as HTMLElement | null)?.blur()
-  disableCaptionEditing()
+// Attiva quando il cursore dell'editor è dentro la didascalia (e l'editor ha il fuoco): non è uno stato
+// del documento, quindi non si salva e non entra nella cronologia di annulla
+const captionActive = ref(false)
+const syncCaptionActive = () => {
+  const ed = props.editor
+  const pos = typeof props.getPos === 'function' ? props.getPos() : undefined
+  if (typeof pos !== 'number' || !ed.isEditable || !ed.isFocused) {
+    captionActive.value = false
+    return
+  }
+  const { from, to } = ed.state.selection
+  captionActive.value = from > pos && to < pos + props.node.nodeSize
 }
+const EVENTS = ['selectionUpdate', 'transaction', 'focus', 'blur'] as const
+onMounted(() => { EVENTS.forEach(e => props.editor.on(e, syncCaptionActive)); syncCaptionActive() })
+onBeforeUnmount(() => EVENTS.forEach(e => props.editor.off(e, syncCaptionActive)))
 
-// Attiva o disattiva la didascalia, poi la mette a fuoco con il testo selezionato
-const toggleOrFocusCaption = async () => {
-  if (!isCaptionEditable.value) props.updateAttributes({ captionEditable: true })
-  else disableCaptionEditing()
-
-  await nextTick()
-
-  const el = captionRef.value?.$el as HTMLElement | undefined
-  if (!el) return
-  // Si mette a fuoco il contenitore interno di Tiptap
-  ;((el.querySelector('[data-node-view-content-vue]') || el) as HTMLElement).focus()
-
-  // Si seleziona tutto il testo per sovrascriverlo facilmente
-  const range = document.createRange()
-  range.selectNodeContents(el)
-  const sel = window.getSelection()
-  sel?.removeAllRanges()
-  sel?.addRange(range)
+// Pulsante del menu: cursore alla fine della didascalia, che diventa attiva
+const editCaption = () => {
+  const pos = typeof props.getPos === 'function' ? props.getPos() : undefined
+  if (typeof pos !== 'number' || store.isLocked) return
+  props.editor.chain().focus().setTextSelection(pos + props.node.nodeSize - 1).run()
 }
 </script>
 
@@ -201,24 +187,20 @@ const toggleOrFocusCaption = async () => {
   border-radius: 4px;
   transition: background-color 0.15s, border-color 0.15s;
   border: 1px transparent solid;
-  cursor: default;
-  user-select: text !important;
-  -webkit-user-select: text !important;
-}
-
-/* Evidenzia il rettangolo della didascalia quando è attiva o sotto focus */
-.diagram-caption:focus,
-.diagram-caption:hover {
-  background-color: color-mix(in srgb, var(--t-accent-wash) 70%, transparent);
-  border-color: color-mix(in srgb, var(--t-accent), #ffffff 80%);
-}
-
-.diagram-caption.is-editing {
   cursor: text;
-  background-color: color-mix(in srgb, var(--t-accent-wash) 70%, transparent);
-  border-color: color-mix(in srgb, var(--t-accent), #ffffff 80%);
   user-select: text !important;
   -webkit-user-select: text !important;
+}
+
+/* Al passaggio del mouse solo un bordo leggero: si capisce che è cliccabile */
+.diagram-caption:hover {
+  border-color: color-mix(in srgb, var(--t-accent), #ffffff 80%);
+}
+
+/* Attiva (cursore dentro): bordo e sfondo */
+.diagram-caption.is-editing {
+  background-color: color-mix(in srgb, var(--t-accent-wash) 70%, transparent);
+  border-color: color-mix(in srgb, var(--t-accent), #ffffff 80%);
 }
 
 /* ETICHETTA NUMERO DIAGRAMMA IN ALTO A SINISTRA */
