@@ -327,6 +327,14 @@ watch(
   font-family: Lora, Georgia, Cambria, serif;
 }
 
+/* Riquadri con bordo dentro il blocco (segnaposto, intestazione PGN): flow-root li fa restringere
+   accanto a un diagramma a margine, altrimenti sarebbero larghi quanto il foglio e il bordo
+   passerebbe sotto il diagramma */
+.empty-tree-placeholder,
+.tree-pgn-header {
+  display: flow-root;
+}
+
 .empty-tree-placeholder {
   color: #9ca3af;
   font-style: italic;
