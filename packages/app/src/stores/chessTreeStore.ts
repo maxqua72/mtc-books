@@ -6,7 +6,7 @@ import type { BoardShape } from '../utils/shapes'
 import { newId } from '../utils/ids'
 import {
   findNode, cloneTree, countNodes, splitPoints, variationDepth, canMergeInto, printedEnd, renumberFrom,
-  promoteTarget, demoteTarget, moveSibling, makeMainLine, reorderBlockedReason
+  promoteTarget, demoteTarget, moveSibling, makeMainLine, reorderBlockedReason, splitFamily
 } from '../utils/treeOps'
 
 export interface ChessMoveNode {
@@ -36,6 +36,7 @@ export interface ChessTree {
   closeParens?: number       // parentesi da chiudere alla fine del blocco
   endNodeId?: string | null  // ultima mossa del blocco, se il testo continua nei blocchi successivi
   openCount?: number         // quante varianti (le più esterne verso endNodeId) restano aperte
+  asVariation?: boolean      // stampato come variante fin dalla prima mossa (senza grassetto e senza parentesi esterne)
 }
 
 export type FenResult = 'ok' | 'invalid' | 'locked'
@@ -480,6 +481,19 @@ export const useChessTreeStore = defineStore('chessTree', {
       if (tree) tree.showHeader = value
     },
 
+    /**
+     * Stampa come variante: vale per tutti i blocchi nati dalla divisione dello stesso albero,
+     * così il testo resta uniforme e i blocchi si possono sempre riunire
+     */
+    setAsVariation(treeId: string, value: boolean) {
+      for (const id of splitFamily(this.trees, treeId)) {
+        const tree = this.trees.find(t => t.id === id)
+        if (!tree) continue
+        if (value) tree.asVariation = true
+        else delete tree.asVariation
+      }
+    },
+
     updateNodeComment(nodeId: string, comment: string | null) {
       if (!this.currentTree) return
       const node = findNode(this.currentTree.rootNodes, nodeId)
@@ -530,6 +544,8 @@ export const useChessTreeStore = defineStore('chessTree', {
           splitAtNodeId: point.id,
           ...(depthStart ? { depthStart } : {}),
           ...(closeParens ? { closeParens } : {}),
+          // Anche la continuazione della linea di partenza resta in stile variante
+          ...(source.asVariation ? { asVariation: true } : {}),
         }
       })
       this.trees.push(...created)

@@ -56,6 +56,12 @@ Dividi un blocco per inserire testo o un diagramma in mezzo a una linea.
 Dividere e unire azzerano la cronologia di annulla e ripristina dell'editor. L'app chiede conferma.
 :::
 
+## Albero come variante
+
+Un albero può iniziare come una variante, per esempio per mostrare una linea alternativa dentro il testo. Con l'albero attivo, spunta **Stampa come variante** nella barra di stato: le mosse perdono il grassetto, i commenti restano nella riga e attorno al blocco non compaiono parentesi.
+
+Se l'albero è diviso in più blocchi, la scelta vale per tutti. Dividere e unire i blocchi funziona come per gli altri alberi, anche a metà di una sottovariante.
+
 ## Comandi del blocco
 
 Passando sul blocco compaiono:

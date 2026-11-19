@@ -13,6 +13,11 @@
         <input type="checkbox" :checked="!!tree.showHeader" :disabled="locked" @change="onToggleHeader" />
         Mostra intestazione nel documento
       </label>
+      <label v-if="tree" class="mt-1.5 flex items-center gap-1.5 text-[11px] text-blue-800 cursor-pointer select-none"
+        v-tooltip.desc="'Le mosse si stampano come in una variante fin dalla prima: senza grassetto, con i commenti nel testo e senza parentesi attorno al blocco. Vale per tutti i blocchi dell\'albero diviso'">
+        <input type="checkbox" :checked="!!tree.asVariation" :disabled="locked" @change="onToggleVariation" />
+        Stampa come variante
+      </label>
     </div>
     <button v-if="tree" @click="treeStore.deactivateTree()"
       class="shrink-0 text-[11px] font-semibold text-blue-800 underline underline-offset-2 hover:text-blue-950"
@@ -39,6 +44,10 @@ const locked = computed(() => bookStore.isLocked)
 const hasHeader = computed(() => !!tree.value && hasDisplayableHeader(tree.value.header))
 const onToggleHeader = (event: Event) => {
   if (tree.value && !locked.value) treeStore.setShowHeader(tree.value.id, (event.target as HTMLInputElement).checked)
+}
+
+const onToggleVariation = (event: Event) => {
+  if (tree.value && !locked.value) treeStore.setAsVariation(tree.value.id, (event.target as HTMLInputElement).checked)
 }
 
 const subtitle = computed(() => {
