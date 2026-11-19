@@ -52,6 +52,8 @@ Frecce, cerchi e X restano nella mossa dell'albero e passano ai diagrammi che in
 - **Motore**: solo app desktop, vedi [Motore di analisi](./motore).
 - **Simboli**: compare quando puoi annotare la mossa, vedi [Simboli](./alberi-mosse#simboli).
 
+Sotto le schede ci sono i comandi **Inserisci Diagramma**, **Elimina da qui**, il riordino delle varianti e **+ Nuovo albero da questa posizione**. Nella scheda **Importa PGN** non compaiono: lì l'unico inserimento è **Importa nel documento**.
+
 ### FEN
 
 **Copia FEN** copia la posizione. Incollando un FEN nel campo imposti la posizione libera oppure, in un albero vuoto, la sua posizione iniziale. Un albero con la posizione già fissata non cambia: per partire da un'altra posizione crea un nuovo albero.

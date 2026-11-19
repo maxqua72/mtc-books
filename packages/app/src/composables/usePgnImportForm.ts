@@ -21,9 +21,6 @@ export function usePgnImportForm() {
   const locked = computed(() => bookStore.isLocked)
   const canUse = computed(() => isContentSection(bookStore.activeSectionInfo?.type) && !bookStore.isLocked)
 
-  // Il pannello aperto attiva i riferimenti nel documento (riquadro tratteggiato e cartellino)
-  watch(canUse, (v) => { pgn.isOpen = v }, { immediate: true })
-  onBeforeUnmount(() => { pgn.isOpen = false })
 
   // --- Sorgente ---
   const text = ref('')
@@ -82,6 +79,11 @@ export function usePgnImportForm() {
   const selectedGames = computed(() =>
     parsed.value.games.filter(g => !g.problem && selectedIdx.value.includes(g.index))
   )
+  // I riferimenti nel documento (riquadro tratteggiato e cartellino) compaiono solo con almeno una
+  // partita da importare: con il campo vuoto o dopo l'importazione indicherebbero un punto senza motivo
+  watch(() => canUse.value && selectedGames.value.length > 0, (v) => { pgn.isOpen = v }, { immediate: true })
+  onBeforeUnmount(() => { pgn.isOpen = false })
+
   const allSelected = computed(() => validGames.value.length > 0 && selectedGames.value.length === validGames.value.length)
   const toggleAll = () => {
     selectedIdx.value = allSelected.value ? [] : validGames.value.map(g => g.index)
@@ -147,14 +149,15 @@ export function usePgnImportForm() {
   )
 
   const doImport = () => {
-    if (!canImport.value) return
+    if (!canImport.value) return null
     const n = selectedGames.value.length
     if (pgn.mode === 'new-tree' && n > CONFIRM_THRESHOLD &&
-      !confirm(`Stai per creare ${n} alberi di mosse nel capitolo: l’editor potrebbe rallentare. Continuare?`)) return
+      !confirm(`Stai per creare ${n} alberi di mosse nel capitolo: l’editor potrebbe rallentare. Continuare?`)) return null
     result.value = pgn.runImport(selectedGames.value, parsed.value.empty ?? 0)
     importedTreeId = treeStore.activeTreeId
     // Riuscita: il PGN non serve più. Fallita: resta tutto, così si corregge senza reincollare.
     if (result.value.ok) clearSource(true)
+    return result.value
   }
 
   return {

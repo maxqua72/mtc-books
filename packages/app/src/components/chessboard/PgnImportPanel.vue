@@ -17,7 +17,7 @@
         :selected-count="selectedGames.length" :after-active-available="afterActiveAvailable"
         :placement-label="placementLabel" :into-active-reason="intoActiveReason" :into-active-text="intoActiveText" />
 
-      <button @click="doImport" :disabled="!canImport" v-tooltip.desc="importTitle"
+      <button @click="importNow" :disabled="!canImport" v-tooltip.desc="importTitle"
         class="w-full py-1.5 bg-neutral-900 hover:bg-neutral-800 text-white disabled:bg-neutral-200 disabled:text-neutral-400 font-medium rounded text-xs transition">
         Importa nel documento
       </button>
@@ -35,6 +35,7 @@ import PgnSourceInput from './pgn/PgnSourceInput.vue'
 import PgnGameList from './pgn/PgnGameList.vue'
 import PgnDestinationPicker from './pgn/PgnDestinationPicker.vue'
 import { vTooltip } from '../../directives/tooltip'
+import { useNoticeStore } from '../../stores/noticeStore'
 
 const {
   pgn, locked, canUse,
@@ -43,6 +44,17 @@ const {
   afterActiveAvailable, placementLabel, intoActiveReason, intoActiveText,
   canImport, doImport,
 } = usePgnImportForm()
+
+const emit = defineEmits<{ (e: 'imported'): void }>()
+const notices = useNoticeStore()
+
+// Riuscita: l'esito va nell'avviso in basso e la console torna alla scheda FEN. Fallita: l'errore resta qui
+const importNow = () => {
+  const outcome = doImport()
+  if (!outcome?.ok) return
+  notices.show({ message: outcome.message })
+  emit('imported')
+}
 
 // Solo quando il pulsante è disattivato: con le scelte fatte, cosa succede è già scritto sopra
 const importTitle = computed(() => canImport.value ? null

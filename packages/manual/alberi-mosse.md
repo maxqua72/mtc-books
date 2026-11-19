@@ -49,11 +49,11 @@ Il riordino non è disponibile su un albero diviso in più blocchi.
 
 Dividi un blocco per inserire testo o un diagramma in mezzo a una linea.
 
-- **Dividi blocco**: taglia dopo la mossa selezionata. In una variante, la continuazione e il ritorno alla linea madre vanno in nuovi blocchi.
-- **Unisci blocchi**: unisce il blocco selezionato a quello che lo continua.
+- **Dividi blocco**: taglia dopo la mossa selezionata. In una variante, la continuazione e il ritorno alla linea madre vanno in nuovi blocchi. In basso compare un avviso con **Annulla**, che per qualche secondo rimette tutto com'era.
+- **Unisci blocchi**: unisce il blocco selezionato a quello che lo continua, dopo conferma. Riunisce anche un blocco diviso in precedenza.
 
-::: warning Operazioni non annullabili
-Dividere e unire azzerano la cronologia di annulla e ripristina dell'editor. L'app chiede conferma.
+::: warning Cronologia azzerata
+Dividere e unire azzerano la cronologia di annulla e ripristina dell'editor: `Ctrl+Z` non torna alle modifiche fatte prima.
 :::
 
 ## Albero come variante
