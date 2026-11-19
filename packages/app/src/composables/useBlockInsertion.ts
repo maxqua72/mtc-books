@@ -11,7 +11,6 @@ import { canSplitAt, findMergeableChild } from '../utils/treeOps'
 import { resetHistory } from '../utils/editorHistory'
 import { NodeSelection } from '@tiptap/pm/state'
 import { isContentSection } from '../utils/sectionOrder'
-import { nodeLabel } from '../utils/pgnImport'
 
 type EditorRef = ShallowRef<Editor | undefined>
 
@@ -59,15 +58,19 @@ const emptyParagraphAt = (doc: PMNode, pos: number): boolean => {
 
 /**
  * Inserisce `content` in `pos` seguito da un paragrafo per continuare a scrivere; se lì c'è già un paragrafo
- * vuoto si usa quello (niente paragrafi vuoti accumulati). Il cursore finisce nel paragrafo.
+ * vuoto si usa quello (niente paragrafi vuoti accumulati). Il cursore finisce nel paragrafo, tranne con
+ * `keepSelection` (divisione di un blocco: resta selezionata la mossa del diagramma).
  * Restituisce true se il paragrafo è stato aggiunto.
  */
-const insertWithParagraph = (ed: Editor, pos: number, content: object[], outsideHistory = false): boolean => {
+const insertWithParagraph = (ed: Editor, pos: number, content: object[],
+  { outsideHistory = false, keepSelection = false } = {}): boolean => {
   const reuse = emptyParagraphAt(ed.state.doc, pos)
   const before = ed.state.doc.content.size
-  ed.chain().focus().insertContentAt(pos, [...content, ...(reuse ? [] : [{ type: 'paragraph' }])])
+  const nodes = [...content, ...(reuse ? [] : [{ type: 'paragraph' }])]
+  const chain = keepSelection ? ed.chain() : ed.chain().focus()
+  chain.insertContentAt(pos, nodes, { updateSelection: !keepSelection })
     .setMeta('addToHistory', !outsideHistory).run()
-  if (reuse) ed.commands.setTextSelection(pos + (ed.state.doc.content.size - before) + 1)
+  if (reuse && !keepSelection) ed.commands.setTextSelection(pos + (ed.state.doc.content.size - before) + 1)
   return !reuse
 }
 
@@ -161,7 +164,7 @@ export function useBlockInsertion(editor: EditorRef) {
     const addedParagraph = insertWithParagraph(ed, at, [
       ...(diagram ? [diagram] : []),
       ...newIds.map(id => ({ type: 'chessTreeBlock', attrs: { treeId: id } })),
-    ], true)
+    ], { outsideHistory: true, keepSelection: true })
 
     // L'id del diagramma lo assegna un plugin durante l'inserimento: si legge dal documento
     const inserted = diagram ? ed.state.doc.nodeAt(at) : null
@@ -212,11 +215,11 @@ export function useBlockInsertion(editor: EditorRef) {
     if (!ed) return
     const target = on && isContentSection(store.activeSectionInfo?.type) && !store.isLocked
       ? resolveDiagramTarget(ed) : null
-    // Nella divisione il riquadro sta dopo il blocco, ma il diagramma va dopo la mossa: il testo la nomina
-    const node = target?.kind === 'split' ? treeStore.currentNode : null
-    ed.commands.setInsertMarker(target?.pos ?? null, node
-      ? `Il diagramma andrà dopo ${nodeLabel(node)}: il blocco verrà diviso in quel punto`
-      : 'Il diagramma andrà qui')
+    // Divisione: il riquadro va dentro il blocco, subito dopo la mossa (lo disegna ChessMoveRenderer).
+    // Negli altri casi è un riquadro tra i blocchi del documento
+    const split = target?.kind === 'split' ? target : null
+    store.diagramPreviewSplitAt = split?.nodeId ?? null
+    ed.commands.setInsertMarker(split ? null : target?.pos ?? null, 'Il diagramma andrà qui')
   })
 
   // "Inserisci Diagramma" dalla console: la posizione è sempre treeStore.activeFen
@@ -228,7 +231,9 @@ export function useBlockInsertion(editor: EditorRef) {
     const now = Date.now()
     if (now - lastInsertAt < REPEAT_GUARD_MS) return
     lastInsertAt = now
-    store.diagramPreview = false   // il riquadro dell'anteprima non deve restare sul diagramma appena inserito
+    // Il riquadro dell'anteprima non deve restare sul diagramma appena inserito
+    store.diagramPreview = false
+    store.diagramPreviewSplitAt = null
 
     try {
       const diagramShapes = [...store.activeShapes]

@@ -37,6 +37,11 @@
           </div>
         </template>
 
+        <!-- Anteprima di «Inserisci Diagramma»: il blocco si dividerà qui, dopo mossa, commento e alternative -->
+        <div v-if="bookStore.diagramPreviewSplitAt === nodes[0].id" class="pgn-insert-marker" contenteditable="false">
+          Il diagramma andrà qui: il blocco verrà diviso
+        </div>
+
         <!-- 4. RISPOSTA CONSECUTIVA -->
         <ChessMoveRenderer v-if="nodes[0].children && nodes[0].children.length > 0" :key="nodes[0].children[0].id"
           :nodes="nodes[0].children" :is-variant-context="isVariantContext" :is-variant-root="false"
