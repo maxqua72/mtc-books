@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, type IpcMainInvokeEvent } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell, type IpcMainInvokeEvent } from 'electron'
 import path from 'node:path'
 import { IPC, type PdfExportResult, type PdfProgressStage } from '@mtc/shared'
 import { writeAtomic } from '../fsUtil.js'
@@ -37,6 +37,9 @@ async function runExport(event: IpcMainInvokeEvent, kind: 'chapter' | 'book', ra
     const pdf = chapter ? await engine.generateChapter(chapter) : await engine.generateBook(book!)
     send('saving')
     await writeAtomic(dlg.filePath, pdf)
+    // Il PDF si apre con il visualizzatore predefinito: senza, il salvataggio non dava nessun segno.
+    // Se non c'è un programma per i PDF il file resta comunque salvato: l'errore si registra e basta
+    void shell.openPath(dlg.filePath).then((err) => { if (err) console.warn('[PDF] Impossibile aprire il file salvato:', err) })
     return { status: 'saved', name: path.basename(dlg.filePath) }
   } catch (e) {
     if (e instanceof PdfCancelled) return { status: 'cancelled' }

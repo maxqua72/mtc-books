@@ -13,6 +13,8 @@ Dalla freccia accanto al pulsante di esportazione scegli cosa esportare: l'espor
 - **Esporta Capitolo (PDF)**: esporta la sezione aperta.
 - **Esporta Libro (PDF)**: esporta tutte le sezioni nell'ordine dell'elenco.
 
+L'app chiede dove salvare il file e, a esportazione finita, apre il PDF con il programma predefinito del computer.
+
 Con la copertina aperta, **Esporta Capitolo** produce solo la copertina. L'indice generale e gli indici delle partite e dei giocatori si esportano solo con il libro intero, perché i numeri di pagina si calcolano lì.
 
 ## Prima di esportare
