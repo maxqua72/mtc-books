@@ -196,6 +196,7 @@ export function sanitizeTrees(raw: unknown): ChessTree[] {
       ...(depthStart ? { depthStart } : {}),
       ...(closeParens ? { closeParens } : {}),
       ...(endNodeId ? { endNodeId, openCount } : {}),
+      ...(t.asVariation === true ? { asVariation: true } : {}),
     })
   }
   return out

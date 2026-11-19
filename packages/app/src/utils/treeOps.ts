@@ -50,7 +50,28 @@ export const cloneTree = (src: ChessTree, title: string): ChessTree => ({
   ...(src.header ? { header: { ...src.header }, showHeader: src.showHeader === true } : {}),
   ...(src.depthStart ? { depthStart: src.depthStart } : {}),
   ...(src.closeParens ? { closeParens: src.closeParens } : {}),
+  ...(src.asVariation ? { asVariation: true } : {}),
 })
+
+/** Il blocco si stampa come variante: continua una variante (divisione) o è impostato così */
+export const printsAsVariation = (tree: ChessTree): boolean => (tree.depthStart ?? 0) > 0 || tree.asVariation === true
+
+/** Id dei blocchi nati dalla divisione dello stesso albero (antenati e discendenti via parentTreeId), compreso il blocco */
+export const splitFamily = (trees: ChessTree[], treeId: string): string[] => {
+  const byId = new Map(trees.map(t => [t.id, t]))
+  let root = byId.get(treeId)
+  const seen = new Set<string>()
+  while (root?.parentTreeId && byId.has(root.parentTreeId) && !seen.has(root.id)) {
+    seen.add(root.id)
+    root = byId.get(root.parentTreeId)
+  }
+  if (!root) return []
+  const family = [root.id]
+  for (let i = 0; i < family.length; i++) {
+    for (const t of trees) if (t.parentTreeId === family[i] && !family.includes(t.id)) family.push(t.id)
+  }
+  return family
+}
 
 export interface NodeLocation {
   node: ChessMoveNode
@@ -156,7 +177,8 @@ const continuesSplit = (a: ChessTree, b: ChessTree): boolean => {
 const joinsAtMainLineEnd = (a: ChessTree, b: ChessTree): boolean => {
   if (a.endNodeId || a.closeParens) return false
   const end = mainLineEnd(a)
-  return !!end && samePosition(end.fen, b.startingFen) && (a.depthStart ?? 0) === (b.depthStart ?? 0)
+  return !!end && samePosition(end.fen, b.startingFen) && (a.depthStart ?? 0) === (b.depthStart ?? 0) &&
+    !!a.asVariation === !!b.asVariation   // uno in grassetto e uno come variante: il testo riunito cambierebbe aspetto
 }
 
 export const canMergeInto = (a: ChessTree, b: ChessTree): boolean =>

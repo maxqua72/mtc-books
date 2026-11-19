@@ -64,7 +64,7 @@ import { usePgnImportStore } from '../stores/pgnImportStore'
 import { useChessBookStore } from '../stores/chessBookStore'
 import ChessMoveRenderer from './ChessMoveRenderer.vue'
 import { getHeaderView } from '../utils/pgnHeader'
-import { variationRootsOnPath } from '../utils/treeOps'
+import { printsAsVariation, variationRootsOnPath } from '../utils/treeOps'
 import { writeTreeClipMarker } from '../utils/treeClipboard'
 import { useInsertParagraph } from '../composables/useInsertParagraph'
 import { vTooltip } from '../directives/tooltip'
@@ -103,8 +103,8 @@ const headerView = computed(() => {
   return tree?.showHeader ? getHeaderView(tree.header) : null
 })
 
-// Blocco che continua una variante: le mosse si stampano come variante (senza grassetto)
-const variantContext = computed(() => (currentTree.value?.depthStart ?? 0) > 0)
+// Blocco che continua una variante, o impostato «Stampa come variante»: mosse senza grassetto, commenti in linea
+const variantContext = computed(() => !!currentTree.value && printsAsVariation(currentTree.value))
 
 // Varianti rimaste aperte alla fine del blocco (la parentesi si chiude in un blocco successivo)
 const NO_IDS: ReadonlySet<string> = new Set()
