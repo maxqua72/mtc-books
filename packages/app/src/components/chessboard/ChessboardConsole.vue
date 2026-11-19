@@ -18,16 +18,6 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-3 gap-2 items-center">
-      <span class="text-xs font-medium text-neutral-500">Ultima mossa:</span>
-      <span
-        class="col-span-2 justify-self-start font-mono bg-neutral-100 border border-neutral-200 px-2 py-0.5 rounded text-xs text-neutral-800 font-bold">
-        {{ lastMove }}
-      </span>
-    </div>
-
-
-
     <div class="space-y-3">
       <div class="flex border-b border-neutral-200 text-xs font-semibold">
         <button @click="activeTab = 'fen'"
@@ -102,7 +92,6 @@ import { isContentSection } from '../../utils/sectionOrder'
 
 defineProps<{
   currentFen: string
-  lastMove: string
 }>()
 
 const emit = defineEmits<{

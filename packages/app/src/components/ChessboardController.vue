@@ -28,7 +28,7 @@
       @flip="treeStore.toggleBoardFlip()" @apply="applyEditor" @cancel="editing = false" />
 
     <!-- v-show: il pannello del motore resta montato e l'analisi non si interrompe -->
-    <ChessboardConsole v-show="!editing" @open-editor="openEditor" :current-fen="treeStore.activeFen" :last-move="lastMoveNotation" @reset="resetBoard"
+    <ChessboardConsole v-show="!editing" @open-editor="openEditor" :current-fen="treeStore.activeFen" @reset="resetBoard"
       @insert-diagram="insertDiagramIntoText" @delete-branch="deleteActiveBranch" @update-fen="handleManualFenUpdate"
       @new-tree="newTreeHere" @clear-shapes="clearShapes" @promote-variation="promoteVariation"
       @make-main-line="makeMainLine" @demote-variation="demoteVariation" />
@@ -47,7 +47,7 @@ import PromotionPicker from './chessboard/PromotionPicker.vue'
 import BoardEditorPanel from './chessboard/BoardEditorPanel.vue'
 
 import { useChessBookStore } from '../stores/chessBookStore'
-import { useChessTreeStore, type ChessMoveNode } from '../stores/chessTreeStore'
+import { useChessTreeStore } from '../stores/chessTreeStore'
 import { usePgnImportStore } from '../stores/pgnImportStore'
 import type { BoardShape } from '../utils/shapes'
 import type { EditorTool } from '../utils/boardEditor'
@@ -61,11 +61,7 @@ const bookStore = useChessBookStore()
 const treeStore = useChessTreeStore()
 const pgnStore = usePgnImportStore()
 
-const lastMoveNotation = ref<string>('Nessuna')
 const chessboardRef = ref()
-
-const formatNodeLabel = (node: ChessMoveNode) =>
-  `${node.moveNumber}${node.color === 'w' ? '.' : '...'} ${node.san}`
 
 // ---------------------------------------------------------------------------
 // Tastiera: navigazione nell'albero (con un albero attivo, oppure con il mouse sopra scacchiera/console)
@@ -182,13 +178,10 @@ const playMove = (orig: Key, dest: Key, promotion?: PromotionPiece) => {
       return
     }
 
-    const result = treeStore.addMove(moveData.san)
-    if (!result) {
+    if (!treeStore.addMove(moveData.san)) {
       chess.load(treeStore.activeFen)
       chessboardRef.value?.resync()
-      return
     }
-    lastMoveNotation.value = formatNodeLabel(result.node)
   } catch (error) {
     console.warn('[BoardController] Mossa illegale tentata su chess.js:', error)
     chess.load(treeStore.activeFen)
@@ -202,19 +195,13 @@ watch(() => treeStore.activeFen, (newFen) => {
   if (chess.fen() !== newFen) {
     try {
       chess.load(newFen)
-      lastMoveNotation.value = treeStore.currentNode
-        ? formatNodeLabel(treeStore.currentNode)
-        : 'Nessuna'
     } catch (e) {
       console.error('[BoardController] Errore nel caricamento del FEN dello store:', e)
     }
   }
 }, { immediate: true })
 
-const resetBoard = () => {
-  treeStore.resetPosition()
-  lastMoveNotation.value = 'Nessuna'
-}
+const resetBoard = () => treeStore.resetPosition()
 
 // Frecce e marcatori: si salvano sulla mossa attiva (in modalità libera sono temporanei come la cronologia).
 // L'array vuoto è una costante, così la scacchiera non vede un "cambiamento" a ogni ricalcolo.
@@ -255,8 +242,6 @@ const handleManualFenUpdate = (newFen: string) => {
     alert('Il FEN inserito non è valido. Verifica la stringa e riprova.')
   } else if (result === 'locked') {
     alert('La posizione iniziale di questo albero è già fissata: per partire da un’altra posizione crea un nuovo albero.')
-  } else {
-    lastMoveNotation.value = 'Nessuna'
   }
 }
 
