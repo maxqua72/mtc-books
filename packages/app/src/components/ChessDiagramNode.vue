@@ -278,6 +278,10 @@ const toggleOrFocusCaption = async () => {
   display: block;
   width: max-content;
   margin-top: 0 !important;
+  /* Il paragrafo o l'albero selezionato accanto è posizionato (barra di selezione) e largo quanto il foglio:
+     senza questo starebbe sopra il diagramma e si prenderebbe i clic sulla didascalia */
+  position: relative;
+  z-index: 1;
 }
 .chess-diagram-container[data-align="left"] {
   float: left;
