@@ -4,7 +4,7 @@ Un libro si salva in un file `.mtcbook`, che contiene testo, alberi, diagrammi e
 
 ## Nell'app desktop
 
-Il file è la versione ufficiale del libro. L'intestazione mostra il suo nome e l'ora dell'ultimo salvataggio; **Nessun file associato** indica che il libro è solo nella copia interna.
+Il file è la versione ufficiale del libro; l'app ne tiene anche una copia interna, aggiornata a ogni modifica (**Copia interna aggiornata** nell'intestazione). L'intestazione mostra il nome del file e l'ora dell'ultimo salvataggio; **Nessun file associato** indica che il libro è solo nella copia interna.
 
 - **Salva Lavoro** salva sul file. La prima volta scegli nome e cartella.
 - **Salva con nome…**, dalla freccia accanto, apre subito la scelta di nome e cartella e crea un file nuovo.
@@ -27,7 +27,9 @@ Alla riapertura il libro riparte dalla copia interna e si ricollega al suo file.
 
 ## Nella versione web
 
-Il browser conserva automaticamente una copia del lavoro, ma **il file va scaricato a mano**: **Salva Lavoro** scarica il `.mtcbook`. Salvalo spesso, perché la copia del browser può essere cancellata con i dati di navigazione.
+Il browser conserva automaticamente una copia del lavoro: l'intestazione mostra **Salvato nel browser**. **Il file va però scaricato a mano**: **Salva Lavoro** scarica il `.mtcbook`, con un nome ricavato dal titolo del libro. Salvalo spesso, perché la copia del browser può essere cancellata con i dati di navigazione.
+
+Se il file non è aggiornato da qualche minuto, sotto l'intestazione compare un avviso con **Salva Lavoro** e **Più tardi**. Anche chiudendo la scheda con il file non aggiornato il browser chiede conferma.
 
 Se il libro è aperto in due schede, una sola può scrivere: scegli **Usa questa scheda** in quella su cui lavori.
 

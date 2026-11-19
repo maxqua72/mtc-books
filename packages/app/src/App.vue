@@ -3,6 +3,7 @@
 
     <!-- 1. Barra di Navigazione Superiore (Sempre Attiva) -->
     <AppHeader />
+    <WebSaveReminder />
     <AppNotice />
 
     <!-- 2. Condizione di Visualizzazione della UX -->
@@ -66,6 +67,7 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import AppHeader from './components/AppHeader.vue'
 import WelcomeDashboard from './components/WelcomeDashboard.vue'
+import WebSaveReminder from './components/WebSaveReminder.vue'
 import AppNotice from './components/AppNotice.vue'
 import BookOrganizer from './components/BookOrganizer.vue'
 import BookEditor from './components/BookEditor.vue'
@@ -168,9 +170,14 @@ const onVisibility = () => { if (document.visibilityState === 'hidden') void sav
 const onPageHide = () => { void saveNow() }
 let unsubscribeExternalOpen: (() => void) | null = null
 
+// Nel web il file si scarica a mano: chiudere con il file non aggiornato lascia il lavoro solo nel browser
+const workOnlyInBrowser = () =>
+  !platform.capabilities.nativeFiles && hasWriteLock.value && bookStore.isBookLoaded && bookStore.fileDirty
+
 const onBeforeUnload = (e: BeforeUnloadEvent) => {
-  if (!hasUnpersisted()) return
-  void saveNow()   // se l'utente resta, il salvataggio parte comunque
+  const pending = hasUnpersisted()
+  if (!pending && !workOnlyInBrowser()) return
+  if (pending) void saveNow()   // se l'utente resta, il salvataggio parte comunque
   e.preventDefault()
   e.returnValue = ''
 }
@@ -201,10 +208,28 @@ onBeforeUnmount(() => {
 })
 
 // --- WATCHER GLOBALE UNIFICATO ---
+// Revisione e date del salvataggio su file non sono modifiche dell'utente: cambiano con «Salva Lavoro»
+const BOOKKEEPING = ['createdAt', 'updatedAt', 'revision', 'savedAt', 'savedBy'] as const
+const metadataContent = () => {
+  const meta: Record<string, unknown> = { ...bookStore.metadata }
+  for (const key of BOOKKEEPING) delete meta[key]
+  return JSON.stringify(meta)
+}
+
+// Dopo «Salva Lavoro» la nuova revisione va nella copia interna senza mostrare «Modifiche in corso»
+watch(
+  () => BOOKKEEPING.map(key => bookStore.metadata[key]).join('|'),
+  () => {
+    if (bookStore.isLocked || !hasWriteLock.value) return
+    dirtyRev++
+    scheduleSave(AUTOSAVE_DELAY)
+  }
+)
+
 watch(
   [
     () => bookStore.activeSectionHtml,
-    () => bookStore.metadata,
+    metadataContent,
     () => bookStore.sectionIndex,
     () => treeStore.trees,
     () => bookStore.coverModel

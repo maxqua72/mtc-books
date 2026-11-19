@@ -4,6 +4,7 @@ import { useChessBookStore } from '../stores/chessBookStore'
 import { platform } from '../platform'
 import type { PickedBook } from '../platform/types'
 import type { BookPeek } from '../stores/book/mtcbookIO'
+import { bookFileName } from '../utils/bookFileName'
 
 export type SaveOutcome = 'saved' | 'cancelled' | 'conflict' | 'no-file' | 'unchanged' | 'error'
 
@@ -24,7 +25,7 @@ const fmt = (iso?: string | null) => (iso ? new Date(iso).toLocaleString('it-IT'
 export function useBookFileActions() {
   const store = useChessBookStore()
 
-  const fileName = () => `${store.metadata.title.toLowerCase().replace(/\s+/g, '_')}.mtcbook`
+  const fileName = () => bookFileName(store.metadata.title)
 
   const handleNewBook = async () => {
     if (!confirm(store.fileDirty
