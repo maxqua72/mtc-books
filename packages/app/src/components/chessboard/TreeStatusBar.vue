@@ -6,7 +6,7 @@
       <div class="text-xs font-bold truncate" :class="tree ? 'text-blue-800' : 'text-neutral-600'">
         {{ tree ? `Albero: ${tree.title}` : 'Posizione libera' }}
       </div>
-      <div class="text-[11px]" :class="tree ? 'text-blue-700' : 'text-neutral-500'">{{ subtitle }}</div>
+      <div class="text-[11px]" :class="tree ? 'text-blue-700' : 'text-neutral-500'"><MoveText :text="subtitle" /></div>
       <label v-if="tree && hasHeader"
         class="mt-1.5 flex items-center gap-1.5 text-[11px] text-blue-800 cursor-pointer select-none"
         v-tooltip.desc="'Mostra sopra il blocco giocatori, risultato, evento e apertura presi dal PGN'">
@@ -28,6 +28,7 @@ import { useChessTreeStore } from '../../stores/chessTreeStore'
 import { useChessBookStore } from '../../stores/chessBookStore'
 import { hasDisplayableHeader } from '../../utils/pgnHeader'
 import { vTooltip } from '../../directives/tooltip'
+import MoveText from './MoveText.vue'
 
 const treeStore = useChessTreeStore()
 const bookStore = useChessBookStore()

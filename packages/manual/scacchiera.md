@@ -9,7 +9,7 @@ La colonna destra contiene la scacchiera, i comandi di navigazione e la console.
 La barra di stato sopra la console dice dove finiscono le mosse.
 
 - **Posizione libera**: le mosse sono temporanee e non entrano nel documento.
-- **Albero: nome**: le mosse vengono registrate in quell'albero.
+- **Albero: nome**: le mosse vengono registrate in quell'albero. Sotto il nome compare la mossa selezionata, con la figurina del pezzo.
 
 **Scollega** stacca la scacchiera dall'albero: la posizione resta, ma le mosse non vengono più registrate. Anche un clic nel testo, fuori da alberi e diagrammi, torna alla posizione libera.
 
