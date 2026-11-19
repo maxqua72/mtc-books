@@ -33,6 +33,22 @@ export function findPieceLetters(text: string): PieceLetter[] {
   return out
 }
 
+export interface TextSegment { text: string; cls: string }   // cls vuota = testo normale
+
+/** Testo diviso in segmenti, con le lettere dei pezzi già tradotte in figurine (per i template Vue, senza HTML) */
+export function figurineSegments(text: string, set = DEFAULT_FIGURINE): TextSegment[] {
+  const cfg = FIGURINES[set]
+  const out: TextSegment[] = []
+  let last = 0
+  for (const { index, letter } of findPieceLetters(text)) {
+    if (index > last) out.push({ text: text.slice(last, index), cls: '' })
+    out.push({ text: cfg.map[letter], cls: cfg.cls })
+    last = index + 1
+  }
+  if (last < text.length) out.push({ text: text.slice(last), cls: '' })
+  return out
+}
+
 export function figurineSpan(letter: string, set = DEFAULT_FIGURINE): HTMLSpanElement {
   const cfg = FIGURINES[set]
   const el = document.createElement('span')

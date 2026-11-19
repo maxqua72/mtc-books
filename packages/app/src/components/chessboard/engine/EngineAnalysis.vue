@@ -12,7 +12,7 @@
           :title="expanded.has(slot.n) ? 'Clic per ridurre a una riga' : 'Clic per vedere tutta la linea'"
           class="min-w-0 flex-1 text-left text-[12px] rounded px-1 -mx-1 hover:bg-neutral-100 cursor-pointer disabled:cursor-default disabled:hover:bg-transparent"
           :class="expanded.has(slot.n) ? 'break-words leading-5 py-0.5' : 'truncate leading-6'">
-          {{ slot.row?.pv.text }}<span v-if="slot.row && !slot.row.pv.complete">…</span>
+          <MoveText v-if="slot.row" :text="slot.row.pv.text" /><span v-if="slot.row && !slot.row.pv.complete">…</span>
         </button>
         <button type="button" :disabled="!slot.row || !canAdd || stale" v-tooltip="addTitle" @click="slot.row && add(slot.row)"
           class="shrink-0 w-6 h-5 mt-0.5 rounded border border-neutral-300 text-[11px] font-bold hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed transition">+</button>
@@ -50,6 +50,7 @@ import { reorderBlockedReason } from '../../../utils/treeOps'
 import { cleanShapes } from '../../../utils/shapes'
 import type { AnalysisLine } from '@mtc/shared'
 import { vTooltip } from '../../../directives/tooltip'
+import MoveText from '../MoveText.vue'
 
 const MAX_ROWS = 10   // righe riservate al massimo
 const EVEN_CP = 15    // entro questo valore (centesimi di pedone) la posizione è «pari»
