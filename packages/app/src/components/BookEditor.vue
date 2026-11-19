@@ -54,6 +54,7 @@ import { usePdfExport } from '../composables/usePdfExport'
 import { useTreePlacement } from '../composables/useTreePlacement'
 import { useBlockInsertion, pasteTreeFromClipboard } from '../composables/useBlockInsertion'
 import { useConvertDictatedMoves } from '../composables/useConvertDictatedMoves'
+import { usePageClick } from '../composables/usePageClick'
 import EditorToolbar from './EditorToolbar.vue'
 import DictatedMovesModal from './DictatedMovesModal.vue'
 import CoverEditor from './cover/CoverEditor.vue'
@@ -124,18 +125,8 @@ const bindingTooltip = computed(() => layout.binding.value === 'duplex'
     ? `Spazio per la rilegatura: ${layout.gutterMm.value} mm. Nel PDF sta a destra nelle pagine pari.`
     : `Spazio per la rilegatura: ${layout.gutterMm.value} mm.`)
 
-// Clic nello spazio vuoto della pagina (sotto l'ultimo paragrafo): cursore in fondo al documento
-const handlePageClick = () => {
-    editor.value?.chain().focus('end').run()
-}
-
-// Clic nello spazio grigio esterno al foglio
-const handleCanvasClick = (event: MouseEvent) => {
-    const target = event.target as HTMLElement
-    if (target.id === 'book-editor-content' || target.classList.contains('editor-scroll-wrapper')) {
-        editor.value?.chain().focus('end').run()
-    }
-}
+// Clic nello spazio vuoto del foglio o nell'area grigia: cursore nell'elemento alla stessa altezza
+const { handlePageClick, handleCanvasClick } = usePageClick(editor)
 </script>
 
 <style>
