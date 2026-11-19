@@ -4,14 +4,16 @@ Un diagramma è una posizione stampata nel testo, con numero e didascalia.
 
 ## Inserire un diagramma
 
-Porta la scacchiera sulla posizione e clicca **Inserisci Diagramma** nella console. Il punto di inserimento dipende dalla situazione:
+Porta la scacchiera sulla posizione e clicca **Inserisci Diagramma** nella console. Passando con il mouse sul pulsante, un riquadro tratteggiato nel testo mostra dove finirà il diagramma. Il punto di inserimento dipende dalla situazione:
 
 | Situazione | Dove finisce |
 |---|---|
 | Posizione libera | Dopo il paragrafo del cursore |
 | Posizione iniziale di un albero con mosse | Prima del blocco |
-| Mossa con altro da stampare dopo | Il blocco viene diviso in quel punto, dopo conferma |
+| Mossa con altro da stampare dopo | Il blocco viene diviso in quel punto |
 | Albero vuoto, o nulla da stampare dopo la mossa | Dopo il blocco |
+
+Quando il blocco viene diviso, in basso compare un avviso con **Annulla**: per qualche secondo toglie il diagramma e riunisce il blocco.
 
 ## Comandi del diagramma
 
