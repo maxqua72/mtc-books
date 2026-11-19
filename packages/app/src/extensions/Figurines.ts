@@ -7,7 +7,10 @@ import { findPieceLetters, figurineSpan } from '../utils/figurines'
 
 const key = new PluginKey<DecorationSet>('figurines')
 
-// Decorations di un solo blocco di testo (pos = posizione del blocco nel documento)
+// Decorations di un solo blocco di testo (pos = posizione del blocco nel documento).
+// La figurina sta DOPO la posizione che precede la lettera (side: 1) e la lettera nascosta resta nel
+// layout con larghezza zero (.fig-hidden): così il cursore ha un posto visibile sia prima della figurina
+// (es. tra «1.» e ♘, per scrivere uno spazio o cancellare il punto) sia dopo
 function buildBlock(node: PMNode, pos: number): Decoration[] {
   const out: Decoration[] = []
   // Si legge il blocco intero: una mossa può attraversare grassetto/corsivo. I nodi inline valgono un carattere, così gli indici restano posizioni
@@ -15,7 +18,7 @@ function buildBlock(node: PMNode, pos: number): Decoration[] {
   for (const { index, letter } of findPieceLetters(text)) {
     const from = pos + 1 + index
     out.push(
-      Decoration.widget(from, () => figurineSpan(letter), { side: -1, key: `fig-${letter}` }),
+      Decoration.widget(from, () => figurineSpan(letter), { side: 1, key: `fig-${letter}` }),
       Decoration.inline(from, from + 1, { class: 'fig-hidden' })
     )
   }
