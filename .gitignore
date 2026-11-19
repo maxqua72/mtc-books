@@ -13,3 +13,6 @@ packages/desktop/resources/
 packages/desktop/release/
 packages/desktop/dist/
 packages/manual/.vitepress/cache/
+.claude/settings.local.json
+.claude/worktrees/
+.claude/launch.json
