@@ -1,6 +1,8 @@
 <template>
-  <!-- Action bar a comparsa (fuori dalla scacchiera, a destra): 4 righe da 3 pulsanti -->
-  <div class="diagram-actions-menu">
+  <!-- Action bar a comparsa (fuori dalla scacchiera, a destra): 4 righe da 3 pulsanti.
+       mousedown.prevent: il clic non sposta la selezione del browser, che l'editor rileggerebbe
+       sovrascrivendo quella impostata dal pulsante (es. cursore nella didascalia) -->
+  <div class="diagram-actions-menu" @mousedown.prevent>
     <template v-for="(group, gi) in groups" :key="gi">
       <div v-if="gi > 0" class="action-divider"></div>
       <button v-for="b in group" :key="b.id" v-tooltip="b.title" @click="b.run"
@@ -27,13 +29,13 @@ const props = defineProps<{
   align: Align
   showAlign: boolean
   flipped: boolean
-  captionEditable: boolean
+  captionActive: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'size', level: DiagramSizeLevel): void
   (e: 'align', value: Align): void
-  (e: 'toggleCaption'): void
+  (e: 'editCaption'): void
   (e: 'flip'): void
   (e: 'loadOnBoard'): void
   (e: 'paragraph', where: 'before' | 'after'): void
@@ -84,8 +86,8 @@ const groups = computed<MenuButton[][]>(() => [
   // Riga 3: didascalia, inversione, scacchiera
   [
     {
-      id: 'caption', title: 'Modifica didascalia (Invio per confermare)', active: props.captionEditable,
-      run: () => emit('toggleCaption'),
+      id: 'caption', title: 'Modifica didascalia (Invio per confermare)', active: props.captionActive,
+      run: () => emit('editCaption'),
       icon: {
         kind: 'svg', size: 15, linecap: 'round', linejoin: 'round',
         inner: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>',

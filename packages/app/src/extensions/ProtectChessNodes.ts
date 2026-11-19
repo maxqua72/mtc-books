@@ -1,5 +1,5 @@
-import { Extension } from '@tiptap/core'
-import { NodeSelection, Plugin, PluginKey, type EditorState } from '@tiptap/pm/state'
+import { Extension, type Editor } from '@tiptap/core'
+import { NodeSelection, Plugin, PluginKey, Selection, TextSelection, type EditorState } from '@tiptap/pm/state'
 import type { Node as PMNode } from '@tiptap/pm/model'
 
 const PROTECTED_NODES = ['chessDiagram', 'chessTreeBlock']
@@ -41,6 +41,22 @@ const cursorTouchesProtectedNode = (state: EditorState, direction: 'backward' | 
   return isProtected(neighbour)
 }
 
+/**
+ * Il cursore esce dalla didascalia di un diagramma (Invio, o il pulsante «Modifica didascalia» con la didascalia attiva):
+ * va nel testo dopo il diagramma; se non c'è testo dopo, l'editor perde il fuoco.
+ * In entrambi i casi la didascalia smette di essere attiva. `after` = posizione subito dopo il diagramma
+ */
+export function leaveCaption(editor: Editor, after: number) {
+  const { state, view } = editor
+  const next = Selection.findFrom(state.doc.resolve(after), 1, true)
+  if (next instanceof TextSelection && next.from > after) {
+    view.dispatch(state.tr.setSelection(next).scrollIntoView())
+    view.focus()
+  } else {
+    editor.commands.blur()
+  }
+}
+
 export const ProtectChessNodes = Extension.create({
   name: 'protectChessNodes',
   priority: 1000, // deve passare prima del keymap standard di Tiptap
@@ -74,15 +90,7 @@ export const ProtectChessNodes = Extension.create({
     const confirmCaption = () => {
       const { $from, empty } = this.editor.state.selection
       if (!empty || $from.depth === 0 || $from.parent.type.name !== 'chessDiagram') return false
-      const pos = $from.before()
-      const attrs = $from.parent.attrs
-      this.editor.chain()
-        .command(({ tr }) => {
-          tr.setNodeMarkup(pos, undefined, { ...attrs, captionEditable: false })
-          return true
-        })
-        .blur()
-        .run()
+      leaveCaption(this.editor, $from.after())
       return true
     }
 

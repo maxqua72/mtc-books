@@ -78,9 +78,8 @@ export const ChessDiagram = Node.create({
             ? { 'data-shapes': JSON.stringify(attributes.shapes) }
             : {},
       },
-      captionEditable: {
-        default: true, // Di default la didascalia è attiva/editabile
-      }
+      // Niente attributo per la didascalia «modificabile»: è attiva quando il cursore è dentro (ChessDiagramNode).
+      // L'attributo captioneditable dei libri salvati in precedenza viene ignorato all'apertura
     }
   },
 
