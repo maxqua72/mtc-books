@@ -18,6 +18,7 @@ import { PgnInsertMarker } from '../extensions/PgnInsertMarker'
 import { DiagramRef } from '../extensions/DiagramRef'
 import { Indent } from '../extensions/Indent'
 import { Figurines } from '../extensions/Figurines'
+import { FloatAwareHighlight } from '../extensions/FloatAwareHighlight'
 import { isTreeClipMarker } from '../utils/treeClipboard'
 import { treeIdsInDoc } from '../utils/editorDoc'
 import { pasteTreeFromClipboard } from './useBlockInsertion'
@@ -76,7 +77,8 @@ export function useBookEditor() {
       ProtectChessNodes,
       DiagramRef,
       PgnInsertMarker,
-      Figurines
+      Figurines,
+      FloatAwareHighlight
     ],
     editorProps: {
       attributes: {

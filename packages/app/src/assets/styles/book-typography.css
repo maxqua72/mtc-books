@@ -95,6 +95,24 @@
     text-align: center;
 }
 
+/* Diagramma a margine allineato al testo accanto (editor e PDF).
+   In alto: la prima riga della scacchiera è vuota sopra la cornice (circa 0,9 della dimensione del diagramma)
+   e la prima riga di testo ha un po' di spazio sopra le lettere (circa 0,23 em): si alza la scacchiera
+   finché la cornice arriva all'altezza delle lettere.
+   In basso: niente margine. Con il margine il testo restava stretto per una o più righe
+   sotto la didascalia; la riga che segue ha già il suo spazio sopra le lettere. */
+.chess-diagram-container.avoid-break[data-align="left"],
+.chess-diagram-container.avoid-break[data-align="right"] {
+    margin-bottom: 0 !important;
+}
+
+.chess-diagram-container[data-align="left"] .diagram-card,
+.chess-diagram-container[data-align="right"] .diagram-card {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: calc(0.23em - 0.9 * var(--diagram-size, 20px)) !important;
+}
+
 /* La didascalia segue la larghezza della scacchiera, non la allarga */
 .is-two-columns .tiptap .diagram-caption,
 .book-columns .diagram-caption {

@@ -296,6 +296,29 @@ const { handlePageClick, handleCanvasClick } = usePageClick(editor)
     border-radius: 2px;
 }
 
+/* Accanto a un diagramma a margine (FloatAwareHighlight): sfondo e barra in due parti.
+   Accanto al diagramma partono dopo di lui (a sinistra) o si fermano prima (a destra); sotto tornano normali.
+   --bf-left / --bf-right: spazio occupato dal diagramma; --bf-h: altezza del blocco accanto al diagramma */
+.ProseMirror .beside-float.is-node-focused {
+    --bf-wash: var(--t-accent-wash, rgba(239, 246, 255, 0.4));
+    background-color: transparent;
+    background-image: linear-gradient(var(--bf-wash), var(--bf-wash)), linear-gradient(var(--bf-wash), var(--bf-wash));
+    background-repeat: no-repeat;
+    background-position: var(--bf-left) 0, 0 var(--bf-h);
+    background-size: max(0px, calc(100% - var(--bf-left) - var(--bf-right))) var(--bf-h), 100% max(0px, calc(100% - var(--bf-h)));
+}
+
+.ProseMirror .beside-float.is-node-focused::before {
+    --bf-bar: var(--t-accent, #3b82f6);
+    width: calc(var(--bf-left) + 3px);
+    background-color: transparent;
+    background-image: linear-gradient(var(--bf-bar), var(--bf-bar)), linear-gradient(var(--bf-bar), var(--bf-bar));
+    background-repeat: no-repeat;
+    background-position: var(--bf-left) 0, 0 var(--bf-h);
+    background-size: 3px var(--bf-h), 3px max(0px, calc(100% - var(--bf-h)));
+    border-radius: 0;
+}
+
 /* Gestione paragrafi vuoti: mostra un segnaposto se il blocco vuoto ha il focus */
 .ProseMirror p.is-empty.is-node-focused::after {
     content: 'Inizia a digitare qui...';
