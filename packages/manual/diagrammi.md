@@ -20,7 +20,7 @@ Passando sul diagramma compare una barra a destra.
 ![Un diagramma con la barra dei comandi](/screenshots/diagramma.png)
 
 - **Dimensione**: piccola, media o grande.
-- **Allineamento**: al centro, oppure a sinistra o a destra con il testo che scorre accanto.
+- **Allineamento**: al centro, oppure a sinistra o a destra con il testo che scorre accanto. Due diagrammi di seguito, uno a sinistra e uno a destra, formano una fila: il testo che li segue va sotto entrambi. Per scrivere tra due file usa **Inserisci un paragrafo sotto** sul secondo diagramma della prima fila.
 - **Modifica didascalia**: porta il cursore alla fine della didascalia; se la didascalia è già attiva, la conferma come `Invio`.
 - **Inverti il diagramma**: mette il Nero in basso.
 - **Carica la posizione sulla scacchiera**.

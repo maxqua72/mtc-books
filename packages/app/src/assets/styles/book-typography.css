@@ -108,6 +108,14 @@
     shape-outside: inset(0 0 var(--diagram-spacing, 5mm) 0) margin-box;
 }
 
+/* Dopo una coppia di diagrammi affiancati (uno a sinistra e uno a destra) il testo va sotto entrambi:
+   accanto resterebbe solo la stretta fascia tra i due, una parola per riga. Serve per esempio
+   a scrivere tra due file di diagrammi. Un solo diagramma a margine lascia scorrere il testo accanto */
+.chess-diagram-container[data-align="left"] + .chess-diagram-container[data-align="right"] + :is(p, ul, ol, blockquote, .chess-tree-block-container),
+.chess-diagram-container[data-align="right"] + .chess-diagram-container[data-align="left"] + :is(p, ul, ol, blockquote, .chess-tree-block-container) {
+    clear: both;
+}
+
 .chess-diagram-container[data-align="left"] .diagram-card,
 .chess-diagram-container[data-align="right"] .diagram-card {
     padding-top: 0 !important;
