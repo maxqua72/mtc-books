@@ -471,6 +471,7 @@ body {
    INTESTAZIONE DELL'ALBERO (tag PGN: giocatori, evento, apertura)
    ========================================================================== */
 .tree-pgn-header {
+  display: flow-root !important;   /* accanto a un diagramma a margine la riga sotto non passa sotto il diagramma */
   margin: 0 0 2mm 0 !important;
   padding: 0 0 1.5mm 0 !important;
   border-bottom: 0.3mm solid #171717 !important;
