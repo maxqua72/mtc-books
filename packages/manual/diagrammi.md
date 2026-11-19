@@ -21,7 +21,7 @@ Passando sul diagramma compare una barra a destra.
 
 - **Dimensione**: piccola, media o grande.
 - **Allineamento**: al centro, oppure a sinistra o a destra con il testo che scorre accanto.
-- **Modifica didascalia**: porta il cursore alla fine della didascalia.
+- **Modifica didascalia**: porta il cursore alla fine della didascalia; se la didascalia è già attiva, la conferma come `Invio`.
 - **Inverti il diagramma**: mette il Nero in basso.
 - **Carica la posizione sulla scacchiera**.
 - **Inserisci un paragrafo sopra** o **sotto**.

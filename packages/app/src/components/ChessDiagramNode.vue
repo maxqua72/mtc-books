@@ -44,6 +44,7 @@ import { badgeReservePx, normalizeSizeLevel, diagramFontPx, type DiagramSizeLeve
 import { isLegalFen } from '../utils/fen'
 import { fenToBoardString } from '../utils/chessFormatter'
 import { useInsertParagraph } from '../composables/useInsertParagraph'
+import { leaveCaption } from '../extensions/ProtectChessNodes'
 import DiagramActionsMenu from './diagram/DiagramActionsMenu.vue'
 import ShapesOverlay from './diagram/ShapesOverlay.vue'
 
@@ -118,11 +119,14 @@ const EVENTS = ['selectionUpdate', 'transaction', 'focus', 'blur'] as const
 onMounted(() => { EVENTS.forEach(e => props.editor.on(e, syncCaptionActive)); syncCaptionActive() })
 onBeforeUnmount(() => EVENTS.forEach(e => props.editor.off(e, syncCaptionActive)))
 
-// Pulsante del menu: cursore alla fine della didascalia, che diventa attiva
+// Pulsante del menu, interruttore: con la didascalia non attiva porta il cursore alla sua fine;
+// con la didascalia attiva conferma come Invio (il cursore va nel testo dopo il diagramma)
 const editCaption = () => {
   const pos = typeof props.getPos === 'function' ? props.getPos() : undefined
   if (typeof pos !== 'number' || store.isLocked) return
-  props.editor.chain().focus().setTextSelection(pos + props.node.nodeSize - 1).run()
+  const end = pos + props.node.nodeSize
+  if (captionActive.value) leaveCaption(props.editor, end)
+  else props.editor.chain().focus().setTextSelection(end - 1).run()
 }
 </script>
 

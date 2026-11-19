@@ -1,4 +1,4 @@
-import { Extension } from '@tiptap/core'
+import { Extension, type Editor } from '@tiptap/core'
 import { NodeSelection, Plugin, PluginKey, Selection, TextSelection, type EditorState } from '@tiptap/pm/state'
 import type { Node as PMNode } from '@tiptap/pm/model'
 
@@ -41,6 +41,22 @@ const cursorTouchesProtectedNode = (state: EditorState, direction: 'backward' | 
   return isProtected(neighbour)
 }
 
+/**
+ * Il cursore esce dalla didascalia di un diagramma (Invio, o il pulsante «Modifica didascalia» con la didascalia attiva):
+ * va nel testo dopo il diagramma; se non c'è testo dopo, l'editor perde il fuoco.
+ * In entrambi i casi la didascalia smette di essere attiva. `after` = posizione subito dopo il diagramma
+ */
+export function leaveCaption(editor: Editor, after: number) {
+  const { state, view } = editor
+  const next = Selection.findFrom(state.doc.resolve(after), 1, true)
+  if (next instanceof TextSelection && next.from > after) {
+    view.dispatch(state.tr.setSelection(next).scrollIntoView())
+    view.focus()
+  } else {
+    editor.commands.blur()
+  }
+}
+
 export const ProtectChessNodes = Extension.create({
   name: 'protectChessNodes',
   priority: 1000, // deve passare prima del keymap standard di Tiptap
@@ -70,20 +86,11 @@ export const ProtectChessNodes = Extension.create({
       return true // true = evento consumato, il tasto non fa altro
     }
 
-    // Invio nella didascalia di un diagramma: la conferma (niente spezzare il diagramma in due).
-    // Il cursore esce: va nel testo dopo il diagramma; se non c'è testo dopo, l'editor perde il fuoco.
-    // In entrambi i casi la didascalia smette di essere attiva
+    // Invio nella didascalia di un diagramma: la conferma (niente spezzare il diagramma in due)
     const confirmCaption = () => {
-      const { state, view } = this.editor
-      const { $from, empty } = state.selection
+      const { $from, empty } = this.editor.state.selection
       if (!empty || $from.depth === 0 || $from.parent.type.name !== 'chessDiagram') return false
-      const after = $from.after()
-      const next = Selection.findFrom(state.doc.resolve(after), 1, true)
-      if (next instanceof TextSelection && next.from > after) {
-        view.dispatch(state.tr.setSelection(next).scrollIntoView())
-      } else {
-        this.editor.commands.blur()
-      }
+      leaveCaption(this.editor, $from.after())
       return true
     }
 
