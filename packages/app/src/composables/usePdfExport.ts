@@ -74,7 +74,8 @@ export function usePdfExport(editor: EditorRef, layout: PageLayout) {
     if (!root) return null
 
     const clone = root.cloneNode(true) as HTMLElement
-    clone.querySelectorAll('.block-header, .diagram-actions-menu').forEach(el => el.remove())
+    // Comandi dell'editor e riquadri di anteprima (PGN o diagramma da inserire): non fanno parte del libro
+    clone.querySelectorAll('.block-header, .diagram-actions-menu, .pgn-insert-marker').forEach(el => el.remove())
     // Il numero del diagramma lo genera il CSS (::before): il testo del badge andrebbe in doppio
     clone.querySelectorAll('.badge-text').forEach(el => { el.textContent = '' })
     // Riquadri commento vuoti (es. quello della mossa attiva): nel PDF forzerebbero un a-capo

@@ -4,6 +4,7 @@
     <!-- 1. Barra di Navigazione Superiore (Sempre Attiva) -->
     <AppHeader />
     <WebSaveReminder />
+    <AppNotice />
 
     <!-- 2. Condizione di Visualizzazione della UX -->
     <!-- Se il libro non è ancora inizializzato/aperto, mostra la Dashboard -->
@@ -67,6 +68,7 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import AppHeader from './components/AppHeader.vue'
 import WelcomeDashboard from './components/WelcomeDashboard.vue'
 import WebSaveReminder from './components/WebSaveReminder.vue'
+import AppNotice from './components/AppNotice.vue'
 import BookOrganizer from './components/BookOrganizer.vue'
 import BookEditor from './components/BookEditor.vue'
 import { useSpellcheckStore } from './stores/spellcheckStore'

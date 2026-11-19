@@ -42,13 +42,17 @@
 
       <FenPanel v-if="activeTab === 'fen'" :current-fen="currentFen" @update-fen="emit('updateFen', $event)"
         @edit="emit('openEditor')" />
-      <PgnImportPanel v-else-if="activeTab === 'pgn'" />
+      <!-- Dopo un'importazione riuscita si torna a FEN: il nuovo albero è attivo, pronto per i diagrammi -->
+      <PgnImportPanel v-else-if="activeTab === 'pgn'" @imported="activeTab = 'fen'" />
       <NagPalette v-else-if="activeTab === 'nags'" :active-nags="activeNags" @toggle="toggleNag" />
       <component :is="EnginePanel" v-if="EnginePanel" v-show="activeTab === 'engine'" />
     </div>
 
-    <div class="flex flex-wrap gap-2 pt-2">
+    <!-- Nella scheda Importa PGN l'unica azione è «Importa nel documento»: gli altri inserimenti
+         seguirebbero regole diverse dal riquadro del PGN e confonderebbero la destinazione -->
+    <div v-if="activeTab !== 'pgn'" class="flex flex-wrap gap-2 pt-2">
       <button @click="emit('insertDiagram')" :disabled="!inChapter || locked" v-tooltip.desc="diagramTitle" data-tour="insert-diagram"
+        @mouseenter="setPreview(true)" @mouseleave="setPreview(false)" @focus="setPreview(true)" @blur="setPreview(false)"
         class="flex-1 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded text-xs tracking-wide transition uppercase font-bold shadow-sm border border-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed">
         Inserisci Diagramma
       </button>
@@ -78,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineAsyncComponent, ref, computed, watch } from 'vue'
+import { defineAsyncComponent, ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useChessTreeStore } from '../../stores/chessTreeStore'
 import { useChessBookStore } from '../../stores/chessBookStore'
 import TreeStatusBar from './TreeStatusBar.vue'
@@ -135,10 +139,15 @@ const diagramTitle = computed(() => {
   const node = treeStore.currentNode
   const where = !t ? 'dopo il paragrafo del cursore'
     : t.rootNodes.length > 0 && !node ? 'prima del blocco attivo'
-      : node && canSplitAt(t, node.id) ? 'dopo la mossa selezionata: il blocco viene diviso, dopo conferma'
+      : node && canSplitAt(t, node.id) ? 'dopo la mossa selezionata: il blocco viene diviso'
         : 'dopo il blocco attivo'
   return `Inserisce un diagramma della posizione sulla scacchiera, ${where}`
 })
+
+// Anteprima della destinazione nel documento (riquadro tratteggiato), solo se il pulsante è utilizzabile
+const setPreview = (on: boolean) => { bookStore.diagramPreview = on && inChapter.value && !locked.value }
+watch(activeTab, () => setPreview(false))
+onBeforeUnmount(() => setPreview(false))
 
 const newTreeTitle = computed(() => blockedReason.value ??
   `Crea un nuovo albero di mosse che parte da questa posizione, ${tree.value ? 'subito dopo il blocco attivo' : 'dopo il paragrafo del cursore'}`)
