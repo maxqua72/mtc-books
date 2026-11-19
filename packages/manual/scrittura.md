@@ -2,6 +2,8 @@
 
 Il testo si scrive sul foglio al centro. I comandi sono nella barra degli strumenti; se la finestra è stretta, quelli che non entrano si aprono con il pulsante **Altri strumenti**.
 
+Un clic nel margine del foglio, o nello spazio grigio accanto, porta il cursore nella riga alla stessa altezza: all'inizio della riga se clicchi a sinistra, alla fine se clicchi a destra. Accanto a un albero di mosse lo attiva. Sotto l'ultimo paragrafo il cursore va in fondo al testo.
+
 ## Carattere
 
 - **Grassetto** (`Ctrl+B`), **Corsivo** (`Ctrl+I`), **Sottolineato** (`Ctrl+U`) ed **Evidenzia**.
