@@ -211,6 +211,13 @@
 /* --- Figurine nel testo (mosse in notazione inglese) --- */
 .fig-hidden { display: none !important; }
 
+/* Nell'editor la lettera nascosta resta nel layout, larga zero: il cursore dopo la figurina ha una posizione
+   sullo schermo. Nel PDF (che non ha .tiptap attorno) resta display: none */
+.tiptap .fig-hidden {
+    display: inline !important;
+    font-size: 0 !important;
+}
+
 .book-text-engine .tgc-figurine,
 .tiptap .tgc-figurine {
     font-family: 'Chess The Good Companions', sans-serif !important;
