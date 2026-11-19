@@ -99,11 +99,21 @@
    In alto: la prima riga della scacchiera è vuota sopra la cornice (circa 0,9 della dimensione del diagramma)
    e la prima riga di testo ha un po' di spazio sopra le lettere (circa 0,23 em): si alza la scacchiera
    finché la cornice arriva all'altezza delle lettere.
-   In basso: niente margine. Con il margine il testo restava stretto per una o più righe
-   sotto la didascalia; la riga che segue ha già il suo spazio sopra le lettere. */
+   In basso: il margine resta (lo spazio dei diagrammi), così due diagrammi a margine uno sotto l'altro
+   restano distanziati e la didascalia non sembra del diagramma di sotto. Il testo però gira attorno
+   alla forma senza quel margine (shape-outside): torna a tutta larghezza subito dopo la didascalia.
+   shape-outside agisce solo sul testo, non sulla posizione degli altri diagrammi. */
 .chess-diagram-container.avoid-break[data-align="left"],
 .chess-diagram-container.avoid-break[data-align="right"] {
-    margin-bottom: 0 !important;
+    shape-outside: inset(0 0 var(--diagram-spacing, 5mm) 0) margin-box;
+}
+
+/* Dopo una coppia di diagrammi affiancati (uno a sinistra e uno a destra) il testo va sotto entrambi:
+   accanto resterebbe solo la stretta fascia tra i due, una parola per riga. Serve per esempio
+   a scrivere tra due file di diagrammi. Un solo diagramma a margine lascia scorrere il testo accanto */
+.chess-diagram-container[data-align="left"] + .chess-diagram-container[data-align="right"] + :is(p, ul, ol, blockquote, .chess-tree-block-container),
+.chess-diagram-container[data-align="right"] + .chess-diagram-container[data-align="left"] + :is(p, ul, ol, blockquote, .chess-tree-block-container) {
+    clear: both;
 }
 
 .chess-diagram-container[data-align="left"] .diagram-card,
