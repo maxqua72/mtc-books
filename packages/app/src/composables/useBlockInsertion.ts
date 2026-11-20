@@ -11,6 +11,7 @@ import { canSplitAt, findMergeableChild } from '../utils/treeOps'
 import { resetHistory } from '../utils/editorHistory'
 import { NodeSelection } from '@tiptap/pm/state'
 import { isContentSection } from '../utils/sectionOrder'
+import { describeBlocks, diagramReplacesEmptyParagraph } from '../utils/diagramRows'
 
 type EditorRef = ShallowRef<Editor | undefined>
 
@@ -35,11 +36,17 @@ export function resolveDiagramTarget(ed: Editor): DiagramTarget | null {
   const block = tree ? findTreeBlockPos(ed.state.doc, tree.id) : null
 
   if (!tree || !block) {
-    const { selection } = ed.state
-    const pos = selection instanceof NodeSelection || selection.$to.depth === 0
-      ? selection.to                 // nodo selezionato (es. un diagramma): subito dopo
-      : selection.$to.after(1)       // altrimenti: dopo il blocco di primo livello del cursore
-    return { kind: 'free', pos }
+    const { selection, doc } = ed.state
+    if (selection instanceof NodeSelection || selection.$to.depth === 0) {
+      return { kind: 'free', pos: selection.to }   // nodo selezionato (es. un diagramma): subito dopo
+    }
+    // Cursore nel paragrafo vuoto rimasto dopo un diagramma: il nuovo diagramma ne prende il posto,
+    // così due diagrammi inseriti di seguito restano di seguito e possono formare una fila
+    const index = selection.$to.index(0)
+    if (diagramReplacesEmptyParagraph(describeBlocks(doc), index)) {
+      return { kind: 'free', pos: selection.$to.before(1) }
+    }
+    return { kind: 'free', pos: selection.$to.after(1) }   // dopo il blocco di primo livello del cursore
   }
 
   const node = treeStore.currentNode

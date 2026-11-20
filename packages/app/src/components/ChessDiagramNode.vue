@@ -15,7 +15,7 @@
 
         <DiagramActionsMenu v-if="!store.isLocked" :size-level="sizeLevel" :align="align" :flipped="flipped"
           :show-align="!layout.twoColumns.value"
-          :caption-active="captionActive" @size="setSizeLevel" @align="setAlign"
+          :caption-active="captionActive" :pair-state="pairState" @size="setSizeLevel" @align="setAlign" @pair="pairWithPrevious"
           @edit-caption="editCaption" @flip="toggleFlip" @load-on-board="loadOnBoard"
           @paragraph="insertParagraph" @remove="deleteNode" />
 
@@ -46,6 +46,7 @@ import { fenToBoardString } from '../utils/chessFormatter'
 import { useInsertParagraph } from '../composables/useInsertParagraph'
 import { leaveCaption } from '../extensions/ProtectChessNodes'
 import DiagramActionsMenu from './diagram/DiagramActionsMenu.vue'
+import { blockStart, describeBlocks, planPair } from '../utils/diagramRows'
 import ShapesOverlay from './diagram/ShapesOverlay.vue'
 
 const store = useChessBookStore()
@@ -115,9 +116,46 @@ const syncCaptionActive = () => {
   const { from, to } = ed.state.selection
   captionActive.value = from > pos && to < pos + props.node.nodeSize
 }
+// --- Fila con il diagramma precedente ---
+const nodeIndex = (): number | null => {
+  const pos = typeof props.getPos === 'function' ? props.getPos() : undefined
+  if (typeof pos !== 'number') return null
+  const $pos = props.editor.state.doc.resolve(pos)
+  return $pos.depth === 0 ? $pos.index(0) : null   // solo diagrammi di primo livello
+}
+const pairState = ref<'none' | 'available' | 'done'>('none')
+const syncPairState = () => {
+  const i = nodeIndex()
+  const plan = i === null ? null : planPair(describeBlocks(props.editor.state.doc), i)
+  pairState.value = !plan ? 'none' : plan.done ? 'done' : 'available'
+}
+
+// In una sola transazione (un solo Ctrl+Z): precedente a sinistra, questo a destra con la stessa dimensione,
+// via il paragrafo vuoto in mezzo, così la fila si forma (vedi book-typography.css)
+const pairWithPrevious = () => {
+  const i = nodeIndex()
+  if (i === null || store.isLocked) return
+  const doc = props.editor.state.doc
+  const plan = planPair(describeBlocks(doc), i)
+  if (!plan || plan.done) return
+  const prevPos = blockStart(doc, plan.previous)
+  const thisPos = blockStart(doc, i)
+  const prev = doc.child(plan.previous)
+  props.editor.chain().command(({ tr }) => {
+    tr.setNodeMarkup(thisPos, undefined, { ...props.node.attrs, align: 'right', size: prev.attrs.size ?? null })
+    tr.setNodeMarkup(prevPos, undefined, { ...prev.attrs, align: 'left' })
+    if (plan.emptyBetween !== null) {
+      const from = blockStart(doc, plan.emptyBetween)
+      tr.delete(from, from + doc.child(plan.emptyBetween).nodeSize)
+    }
+    return true
+  }).run()
+}
+
+const syncState = () => { syncCaptionActive(); syncPairState() }
 const EVENTS = ['selectionUpdate', 'transaction', 'focus', 'blur'] as const
-onMounted(() => { EVENTS.forEach(e => props.editor.on(e, syncCaptionActive)); syncCaptionActive() })
-onBeforeUnmount(() => EVENTS.forEach(e => props.editor.off(e, syncCaptionActive)))
+onMounted(() => { EVENTS.forEach(e => props.editor.on(e, syncState)); syncState() })
+onBeforeUnmount(() => EVENTS.forEach(e => props.editor.off(e, syncState)))
 
 // Pulsante del menu, interruttore: con la didascalia non attiva porta il cursore alla sua fine;
 // con la didascalia attiva conferma come Invio (il cursore va nel testo dopo il diagramma)

@@ -15,6 +15,8 @@ Porta la scacchiera sulla posizione e clicca **Inserisci Diagramma** nella conso
 
 Quando il blocco viene diviso, in basso compare un avviso con **Annulla**: per qualche secondo toglie il diagramma e riunisce il blocco.
 
+Dopo un diagramma il cursore va nella riga vuota sotto. Inserendo subito un altro diagramma, questo prende il posto della riga vuota: i due diagrammi restano di seguito, pronti per formare una fila.
+
 ## Comandi del diagramma
 
 Passando sul diagramma compare una barra a destra.
@@ -23,6 +25,7 @@ Passando sul diagramma compare una barra a destra.
 
 - **Dimensione**: piccola, media o grande.
 - **Allineamento**: al centro, oppure a sinistra o a destra con il testo che scorre accanto. Due diagrammi di seguito, uno a sinistra e uno a destra, formano una fila: il testo che li segue va sotto entrambi. Per scrivere tra due file usa **Inserisci un paragrafo sotto** sul secondo diagramma della prima fila.
+- **Affianca al diagramma precedente**: compare quando subito prima c'è un altro diagramma. In un clic forma la fila: il precedente a sinistra, questo a destra, con la stessa dimensione, e toglie l'eventuale riga vuota in mezzo.
 - **Modifica didascalia**: porta il cursore alla fine della didascalia; se la didascalia è già attiva, la conferma come `Invio`.
 - **Inverti il diagramma**: mette il Nero in basso.
 - **Carica la posizione sulla scacchiera**.
