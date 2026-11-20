@@ -53,6 +53,6 @@ L'app ricorda la scelta su questo dispositivo. Con lo zoom **Adatta larghezza** 
 
 ### Finestra stretta
 
-Se restringi la finestra, ad esempio per affiancarla a un'altra, le colonne si riducono da sole: sotto i 1200 pixel di larghezza l'elenco delle sezioni, sotto gli 860 anche la scacchiera. Le puoi riaprire dalla loro striscia; allargando la finestra tornano come le avevi lasciate. Nell'intestazione **Nuovo** e **Apri...** diventano icone e lo stato del salvataggio resta solo come segno: passando con il mouse compare la descrizione.
+Se restringi la finestra, ad esempio per affiancarla a un'altra, le colonne si riducono da sole: sotto i 1200 pixel di larghezza l'elenco delle sezioni, sotto gli 860 anche la scacchiera. Le puoi riaprire dalla loro striscia; allargando la finestra tornano come le avevi lasciate. Anche l'intestazione si adatta: con la finestra larga mostra tutti i testi, restringendola **Nuovo** e **Apri...** diventano icone, l'interruttore della modifica perde la scritta e, nelle finestre più strette, lo stato del salvataggio resta solo come segno. Passando con il mouse sul segno compare la descrizione.
 
 Prosegui con [Primi passi](./primi-passi).
