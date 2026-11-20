@@ -1,6 +1,6 @@
 <template>
   <!-- Mosse in notazione inglese mostrate con le figurine (come nel libro) -->
-  <template v-for="(s, i) in segments" :key="i"><span v-if="s.cls" class="move-text-fig" :class="s.cls">{{ s.text }}</span><template v-else>{{ s.text }}</template></template>
+  <template v-for="(s, i) in segments" :key="i"><span v-if="s.cls" class="move-text-fig" :class="s.cls" role="img" :aria-label="s.letter">{{ s.text }}</span><template v-else>{{ s.text }}</template></template>
 </template>
 
 <script setup lang="ts">

@@ -10,7 +10,7 @@
           @keydown.stop="handleMoveKeydown(nodes[0].id, $event)">
           <span class="move-prefix">{{ getMovePrefix(nodes[0]) }}</span>
           <span class="move-san"><template v-for="(p, i) in sanParts(nodes[0].san)" :key="i"><span v-if="p.cls"
-                :class="p.cls">{{ p.text }}</span><template v-else>{{ p.text }}</template></template></span>
+                :class="p.cls" role="img" :aria-label="p.letter">{{ p.text }}</span><template v-else>{{ p.text }}</template></template></span>
           <span v-if="nagText(nodes[0])" class="move-nag">{{ nagText(nodes[0]) }}</span>
         </span>
 
@@ -261,7 +261,8 @@ const getMovePrefix = (node: ChessMoveNode): string => {
 
   return ''
 }
-interface SanPart { text: string; cls: string }   // cls vuota = testo normale, altrimenti classe della figurina
+// cls vuota = testo normale, altrimenti classe della figurina; letter: il pezzo, per i lettori di schermo
+interface SanPart { text: string; cls: string; letter?: string }
 
 // Restituisce segmenti di testo, mai HTML: l'escape lo fa l'interpolazione di Vue.
 // Figurina per il pezzo iniziale (Nf3) e per il pezzo di promozione (e8=Q, exd1=N+)
@@ -274,13 +275,13 @@ const sanParts = (san: string): SanPart[] => {
 
   const first = cfg.map[san.charAt(0)]
   if (first) {
-    parts.push({ text: first, cls: cfg.cls })
+    parts.push({ text: first, cls: cfg.cls, letter: san.charAt(0) })
     rest = san.slice(1)
   }
 
   const promo = /^(.*=)([QRBN])(.*)$/.exec(rest)
   if (promo) {
-    parts.push({ text: promo[1], cls: '' }, { text: cfg.map[promo[2]], cls: cfg.cls }, { text: promo[3], cls: '' })
+    parts.push({ text: promo[1], cls: '' }, { text: cfg.map[promo[2]], cls: cfg.cls, letter: promo[2] }, { text: promo[3], cls: '' })
   } else {
     parts.push({ text: rest, cls: '' })
   }
