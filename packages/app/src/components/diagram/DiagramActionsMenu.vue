@@ -30,11 +30,14 @@ const props = defineProps<{
   showAlign: boolean
   flipped: boolean
   captionActive: boolean
+  /** «Affianca al diagramma precedente»: none = non disponibile, done = già affiancati */
+  pairState: 'none' | 'available' | 'done'
 }>()
 
 const emit = defineEmits<{
   (e: 'size', level: DiagramSizeLevel): void
   (e: 'align', value: Align): void
+  (e: 'pair'): void
   (e: 'editCaption'): void
   (e: 'flip'): void
   (e: 'loadOnBoard'): void
@@ -82,6 +85,14 @@ const groups = computed<MenuButton[][]>(() => [
       '<rect x="8" y="3" width="8" height="8" rx="1" /><path d="M3 15h18M3 19h18" />'),
     alignBtn('right', 'A destra: il testo scorre accanto',
       '<rect x="13" y="3" width="8" height="8" rx="1" /><path d="M3 5h6M3 9h6M3 15h18M3 19h18" />'),
+  ]] : []),
+  // Riga 2b: fila di due diagrammi con il precedente (solo se c'è un diagramma subito prima)
+  ...(props.showAlign && props.pairState !== 'none' ? [[
+    {
+      id: 'pair', active: props.pairState === 'done', run: () => emit('pair'),
+      title: 'Affianca al diagramma precedente: il precedente a sinistra, questo a destra, con la stessa dimensione',
+      icon: { kind: 'svg' as const, size: 16, inner: '<rect x="2" y="6" width="9" height="9" rx="1" /><rect x="13" y="6" width="9" height="9" rx="1" />' },
+    },
   ]] : []),
   // Riga 3: didascalia, inversione, scacchiera
   [
