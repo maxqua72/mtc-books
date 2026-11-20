@@ -7,18 +7,18 @@ const { cls, map } = FIGURINES.goodcompanions
 test('linea del motore: le lettere dei pezzi diventano figurine', () => {
   assert.deepEqual(figurineSegments('1. e4 e5 2. Nf3 Nc6'), [
     { text: '1. e4 e5 2. ', cls: '' },
-    { text: map.N, cls },
+    { text: map.N, cls, letter: 'N' },
     { text: 'f3 ', cls: '' },
-    { text: map.N, cls },
+    { text: map.N, cls, letter: 'N' },
     { text: 'c6', cls: '' },
   ])
 })
 
 test('promozione e mossa all\'inizio del testo', () => {
   assert.deepEqual(figurineSegments('Qxe5 e8=Q+'), [
-    { text: map.Q, cls },
+    { text: map.Q, cls, letter: 'Q' },
     { text: 'xe5 e8=', cls: '' },
-    { text: map.Q, cls },
+    { text: map.Q, cls, letter: 'Q' },
     { text: '+', cls: '' },
   ])
 })

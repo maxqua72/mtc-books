@@ -18,7 +18,7 @@ Clicca una mossa nel blocco per attivare l'albero, poi muovi sulla scacchiera. S
 
 ## Commenti
 
-Seleziona una mossa e inizia a scrivere: il testo finisce nel suo commento. Con il cursore nel commento puoi inserire [riferimenti ai diagrammi](./diagrammi#riferimenti-nel-testo). Quanto incolli arriva come testo semplice.
+Seleziona una mossa e inizia a scrivere: il testo finisce nel suo commento, aggiunto in fondo a quello che c'è già. Per correggere un commento già scritto, anche uno arrivato da un PGN importato, clicca direttamente nel suo testo e modificalo; la modifica si registra quando clicchi altrove. Con il cursore nel commento puoi inserire [riferimenti ai diagrammi](./diagrammi#riferimenti-nel-testo). Quanto incolli arriva come testo semplice.
 
 ## Simboli
 

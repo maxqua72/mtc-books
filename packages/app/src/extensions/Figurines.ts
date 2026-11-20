@@ -18,7 +18,7 @@ function buildBlock(node: PMNode, pos: number): Decoration[] {
   for (const { index, letter } of findPieceLetters(text)) {
     const from = pos + 1 + index
     out.push(
-      Decoration.widget(from, () => figurineSpan(letter), { side: 1, key: `fig-${letter}` }),
+      Decoration.widget(from, () => figurineSpan(letter, undefined, true), { side: 1, key: `fig-${letter}` }),
       Decoration.inline(from, from + 1, { class: 'fig-hidden' })
     )
   }

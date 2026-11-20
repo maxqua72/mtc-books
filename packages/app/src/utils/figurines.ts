@@ -33,7 +33,8 @@ export function findPieceLetters(text: string): PieceLetter[] {
   return out
 }
 
-export interface TextSegment { text: string; cls: string }   // cls vuota = testo normale
+// cls vuota = testo normale; letter: la lettera del pezzo di una figurina, per i lettori di schermo
+export interface TextSegment { text: string; cls: string; letter?: string }
 
 /** Testo diviso in segmenti, con le lettere dei pezzi già tradotte in figurine (per i template Vue, senza HTML) */
 export function figurineSegments(text: string, set = DEFAULT_FIGURINE): TextSegment[] {
@@ -42,19 +43,30 @@ export function figurineSegments(text: string, set = DEFAULT_FIGURINE): TextSegm
   let last = 0
   for (const { index, letter } of findPieceLetters(text)) {
     if (index > last) out.push({ text: text.slice(last, index), cls: '' })
-    out.push({ text: cfg.map[letter], cls: cfg.cls })
+    out.push({ text: cfg.map[letter], cls: cfg.cls, letter })
     last = index + 1
   }
   if (last < text.length) out.push({ text: text.slice(last), cls: '' })
   return out
 }
 
-export function figurineSpan(letter: string, set = DEFAULT_FIGURINE): HTMLSpanElement {
+/**
+ * Il glifo è un carattere del font delle figurine (es. «©» per il Cavallo): per i lettori di schermo vale la
+ * lettera del pezzo. `letterInText`: la lettera è già nel testo, nascosta alla vista (editor): il glifo si salta.
+ * Altrimenti il glifo diventa un'immagine con la lettera come nome.
+ */
+export function figurineSpan(letter: string, set = DEFAULT_FIGURINE, letterInText = false): HTMLSpanElement {
   const cfg = FIGURINES[set]
   const el = document.createElement('span')
   el.className = `fig ${cfg.cls}`
   el.dataset.p = letter                 // la lettera originale, per tornare al testo
   el.contentEditable = 'false'
+  if (letterInText) {
+    el.setAttribute('aria-hidden', 'true')
+  } else {
+    el.setAttribute('role', 'img')
+    el.setAttribute('aria-label', letter)
+  }
   el.textContent = cfg.map[letter]
   return el
 }
