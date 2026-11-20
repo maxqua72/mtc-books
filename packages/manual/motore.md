@@ -1,7 +1,7 @@
 # Motore di analisi
 
 ::: info Solo app desktop
-La versione web non ha il motore.
+Nella versione web la scheda **Motore** spiega che l'analisi è nell'app desktop e porta allo scaricamento.
 :::
 
 MTC Books usa un motore scacchistico UCI già presente sul computer, ad esempio Stockfish. Il motore non è incluso e l'app non lo scarica: lo trovi nella [pagina di download di Stockfish](https://stockfishchess.org/download/).

@@ -1,6 +1,14 @@
 <template>
+  <!-- Web: il PDF si fa solo con l'app desktop. Un pulsante unico, senza la scelta capitolo/libro che non porterebbe
+       a niente, con l'etichetta che lo dice prima del clic; il clic spiega come fare e porta allo scaricamento -->
+  <button v-if="!pdfAvailable" @click="showPdfDesktopNotice()" v-tooltip.desc="'Il PDF si crea con l’app desktop di MTC Books'"
+    class="mr-2 px-3 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded shadow transition cursor-pointer active:bg-blue-800 inline-flex items-center gap-2">
+    Esporta PDF
+    <span class="px-1.5 py-px rounded bg-white/20 text-[10px] font-semibold uppercase tracking-wide">Desktop</span>
+  </button>
+
   <!-- Split button persistente: la voce del menu esporta subito e diventa l'azione del pulsante principale -->
-  <div class="relative inline-flex items-center" v-click-outside="close">
+  <div v-else class="relative inline-flex items-center" v-click-outside="close">
     <button @click="execute"
       class="px-4 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-l shadow transition cursor-pointer border-r border-blue-700 active:bg-blue-800">
       {{ current.label }}
@@ -37,6 +45,11 @@
 import { computed, ref } from 'vue'
 import { useChessBookStore } from '../stores/chessBookStore'
 import { vClickOutside } from '../directives/clickOutside'
+import { vTooltip } from '../directives/tooltip'
+import { capabilities } from '../platform'
+import { showPdfDesktopNotice } from '../platform/pdfNotice'
+
+const pdfAvailable = capabilities.localPdf || capabilities.cloudPdf
 
 type ExportMode = 'chapter-server' | 'book-server'
 

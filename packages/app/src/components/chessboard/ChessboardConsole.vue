@@ -26,7 +26,8 @@
         <button @click="activeTab = 'pgn'"
           :class="activeTab === 'pgn' ? 'border-b-2 border-black text-black' : 'text-neutral-400 hover:text-neutral-600'"
           class="pb-1.5 px-2 transition">Importa PGN</button>
-        <button v-if="engineAvailable" @click="activeTab = 'engine'"
+        <!-- Anche sul web, dove spiega che il motore è nell'app desktop: così la funzione si scopre -->
+        <button @click="activeTab = 'engine'"
           :class="activeTab === 'engine' ? 'border-b-2 border-black text-black' : 'text-neutral-400 hover:text-neutral-600'"
           class="pb-1.5 px-2 transition">Motore</button>
         <button v-if="showNags" @click="activeTab = 'nags'"
@@ -46,6 +47,14 @@
       <PgnImportPanel v-else-if="activeTab === 'pgn'" @imported="activeTab = 'fen'" />
       <NagPalette v-else-if="activeTab === 'nags'" :active-nags="activeNags" @toggle="toggleNag" />
       <component :is="EnginePanel" v-if="EnginePanel" v-show="activeTab === 'engine'" />
+      <div v-else-if="activeTab === 'engine'" class="space-y-2 text-xs text-neutral-600">
+        <p>L'analisi con un motore scacchistico, ad esempio Stockfish, è disponibile nell'app desktop di MTC Books.</p>
+        <p>Puoi continuare a scrivere qui: salva il libro in un file .mtcbook e aprilo con l'app desktop.</p>
+        <a :href="DOWNLOAD_URL" target="_blank" rel="noopener noreferrer"
+          class="inline-block font-semibold text-neutral-900 underline underline-offset-4 hover:text-neutral-600">
+          Scarica l'app desktop
+        </a>
+      </div>
     </div>
 
     <!-- Nella scheda Importa PGN l'unica azione è «Importa nel documento»: gli altri inserimenti
@@ -90,6 +99,7 @@ import NagPalette from './NagPalette.vue'
 import FenPanel from './FenPanel.vue'
 import PgnImportPanel from './PgnImportPanel.vue'
 import { capabilities } from '../../platform'
+import { DOWNLOAD_URL } from '@mtc/shared'
 import { vTooltip } from '../../directives/tooltip'
 import { canSplitAt } from '../../utils/treeOps'
 import { isContentSection } from '../../utils/sectionOrder'
