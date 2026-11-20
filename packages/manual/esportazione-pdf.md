@@ -1,7 +1,7 @@
 # Esportare in PDF
 
 ::: info Solo app desktop
-Dalla versione web, salva il file `.mtcbook` e aprilo con l'app desktop.
+Nella versione web il pulsante è **Esporta PDF**, con l'etichetta **Desktop**: spiega come procedere e porta allo scaricamento dell'app. Salva il file `.mtcbook` e aprilo con l'app desktop.
 :::
 
 ## Scegliere cosa esportare
