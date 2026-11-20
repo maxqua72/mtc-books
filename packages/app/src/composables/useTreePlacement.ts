@@ -5,6 +5,7 @@ import { useChessBookStore } from '../stores/chessBookStore'
 import { useChessTreeStore } from '../stores/chessTreeStore'
 import { usePgnImportStore, type PgnPlacement } from '../stores/pgnImportStore'
 import { findTreeBlockPos } from '../utils/editorDoc'
+import { newDiagramNode } from '../utils/diagramDefaults'
 
 type EditorRef = ShallowRef<Editor | undefined>
 
@@ -93,8 +94,12 @@ export function useTreePlacement(editor: EditorRef) {
       const size = ed.state.doc.content.size
       const pos = req.pos ?? size
       const atEnd = pos >= size
+      // Con i diagrammi indicati nel PGN l'ordine è quello di stampa: blocco, diagramma, continuazione...
+      const items = req.items ?? req.treeIds.map(id => ({ kind: 'tree' as const, id }))
       ed.chain().insertContentAt(pos, [
-        ...req.treeIds.map(id => ({ type: 'chessTreeBlock', attrs: { treeId: id } })),
+        ...items.map(it => it.kind === 'tree'
+          ? { type: 'chessTreeBlock', attrs: { treeId: it.id } }
+          : newDiagramNode(store.metadata, it.fen, { shapes: it.shapes })),
         // in fondo al documento serve un paragrafo per poter continuare a scrivere
         ...(atEnd ? [{ type: 'paragraph' }] : [])
       ]).run()

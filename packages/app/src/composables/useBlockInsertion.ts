@@ -12,6 +12,7 @@ import { resetHistory } from '../utils/editorHistory'
 import { NodeSelection } from '@tiptap/pm/state'
 import { isContentSection } from '../utils/sectionOrder'
 import { describeBlocks, diagramReplacesEmptyParagraph } from '../utils/diagramRows'
+import { newDiagramNode } from '../utils/diagramDefaults'
 
 type EditorRef = ShallowRef<Editor | undefined>
 
@@ -243,11 +244,9 @@ export function useBlockInsertion(editor: EditorRef) {
     store.diagramPreviewSplitAt = null
 
     try {
-      const diagramShapes = [...store.activeShapes]
-      const diagram = {
-        type: 'chessDiagram',
-        attrs: { fen: treeStore.activeFen, flipped: treeStore.boardFlipped, shapes: diagramShapes.length ? diagramShapes : null }
-      }
+      // Dimensione e allineamento: quelli predefiniti del libro
+      const diagram = newDiagramNode(store.metadata, treeStore.activeFen,
+        { flipped: treeStore.boardFlipped, shapes: [...store.activeShapes] })
       const target = resolveDiagramTarget(ed)
       if (!target) return
 

@@ -25,4 +25,8 @@ Nella scheda **Importa PGN** non ci sono gli altri comandi della console, come *
 
 **Aggiungi all'albero attivo** unisce le mosse a quelle già presenti. Se non è possibile, l'opzione spiega il motivo.
 
+## Diagrammi indicati nel PGN
+
+Alcuni programmi segnano nel PGN le posizioni da mostrare come diagramma: ChessBase con il simbolo del diagramma, Scid con il simbolo **D**. Se le partite scelte ne contengono, compare la casella **Crea i diagrammi indicati nel PGN**, già spuntata. Con un nuovo albero, il blocco viene diviso dopo ogni mossa segnata e il diagramma va in quel punto, con la dimensione e l'allineamento scelti per i [nuovi diagrammi](./struttura-libro#proprieta-del-libro). Togliendo la spunta, i segni vengono ignorati.
+
 Importare molte partite in un capitolo può rallentare l'editor: in quel caso l'app chiede conferma.

@@ -32,7 +32,6 @@ export const useChessBookStore = defineStore('chessBook', () => {
 
     // --- Scacchiera e segnali verso l'editor ---
     const activeFen = ref('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-    const globalDiagramSize = ref(28)
     const insertSignal = ref(0)
     const diagramPreview = ref(false)            // mouse su «Inserisci Diagramma»: l'editor mostra dove finirà
     // Anteprima di una divisione: id della mossa dopo cui andrà il diagramma (il riquadro lo disegna il blocco albero)
@@ -332,7 +331,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
 
     return {
         // Scacchiera e segnali
-        activeFen, globalDiagramSize, insertSignal, diagramPreview, diagramPreviewSplitAt, activeShapes,
+        activeFen, insertSignal, diagramPreview, diagramPreviewSplitAt, activeShapes,
         updateActiveFen, updateActiveShapes, triggerInsertDiagram,
         exportServerChapterSignal, exportServerFullBookSignal,
         triggerServerChapterPdfExport, triggerServerFullBookPdfExport,

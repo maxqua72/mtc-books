@@ -85,6 +85,7 @@ Clicca l'icona **Proprietà Libro** accanto al titolo, nella colonna sinistra.
 | Formato di Stampa | A4 (210 x 297 mm), Crown Quarto (189 x 246 mm), B-Format (129 x 198 mm) |
 | Rilegatura | Lascia 10 mm in più sul lato da rilegare: vedi [Rilegatura](#rilegatura) |
 | Spaziatura | Distanza in mm tra paragrafi, intorno ai diagrammi e intorno alle varianti, da 0 a 30 |
+| Nuovi diagrammi | Dimensione e allineamento dei diagrammi inseriti da ora in poi; quelli già nel libro non cambiano |
 | Mostra numerazione automatica | Aggiunge i prefissi 1., 1.1 ai titoli nell'editor e nell'indice |
 | Layout a due colonne | Dispone il testo dei capitoli in due colonne affiancate: vedi [Layout a due colonne](#layout-a-due-colonne) |
 

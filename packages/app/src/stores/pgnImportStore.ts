@@ -3,9 +3,10 @@ import { computed, ref } from 'vue'
 import { useChessTreeStore, type ChessTree } from './chessTreeStore'
 import {
   buildTreeFromGame, buildBranch, mergeNodes, nodeLabel,
-  type PgnGameInfo
+  type PgnGameInfo, type PgnDiagramMarks
 } from '../utils/pgnImport'
 import { samePosition } from '../utils/fen'
+import { splitForDiagrams, type InsertItem } from '../utils/pgnDiagrams'
 import { shouldShowHeaderByDefault } from '../utils/pgnHeader'
 
 export type PgnPlacement = 'after-active' | 'cursor' | 'end'
@@ -20,6 +21,8 @@ export interface PlacementApi {
 // Richiesta per l'editor: inserire dei blocchi in `pos` (null = in fondo), oppure solo mostrarli
 export interface TreeInsertRequest {
   treeIds: string[]
+  /** Blocchi e diagrammi da inserire in quest'ordine (diagrammi indicati nel PGN); assente = solo treeIds */
+  items?: InsertItem[]
   insert: boolean
   pos: number | null
   seq: number
@@ -36,6 +39,7 @@ export const usePgnImportStore = defineStore('pgnImport', () => {
   const isOpen = ref(false)                       // il pannello di importazione è aperto
   const mode = ref<PgnImportMode>('new-tree')
   const placement = ref<PgnPlacement>('after-active')
+  const createDiagrams = ref(true)                // diagrammi indicati nel PGN ([#], simbolo 201)
   const selectionTick = ref(0)                    // cambia quando il cursore si sposta nell'editor
 
   const request = ref<TreeInsertRequest | null>(null)
@@ -75,18 +79,21 @@ export const usePgnImportStore = defineStore('pgnImport', () => {
    * il primo albero, altrimenti "dopo l'albero attivo" punterebbe al blocco che non esiste ancora.
    * Il primo albero diventa attivo, con la scacchiera sulla sua posizione iniziale.
    */
-  function addTrees(trees: ChessTree[], where: PgnPlacement) {
+  function addTrees(trees: ChessTree[], where: PgnPlacement, arrange?: () => InsertItem[]) {
     if (trees.length === 0) return
     const pos = placementApi ? placementApi.resolve(where) : null
     treeStore.trees.push(...trees)
+    // Le divisioni per i diagrammi si fanno sugli alberi già nello store, prima di entrare nel documento
+    const items = arrange?.()
     treeStore.activateTree(trees[0].id)
-    request.value = { treeIds: trees.map(t => t.id), insert: true, pos, seq: ++seq }
+    request.value = { treeIds: trees.map(t => t.id), items, insert: true, pos, seq: ++seq }
   }
 
   const fail = (message: string): ImportOutcome => ({ ok: false, message })
 
   function importAsNewTrees(games: PgnGameInfo[], ignoredEmpty: number): ImportOutcome {
     const trees: ChessTree[] = []
+    const marksByTree = new Map<string, PgnDiagramMarks>()
     const skipped: string[] = []
     let total = 0
 
@@ -94,24 +101,41 @@ export const usePgnImportStore = defineStore('pgnImport', () => {
       const label = `partita ${g.index + 1}`
       if (g.problem) { skipped.push(`${label}: ${g.problem}`); continue }
       if (total >= MAX_TOTAL_NODES) { skipped.push(`${label}: limite di mosse per importazione raggiunto`); continue }
-      const { tree, stats } = buildTreeFromGame(g)
+      const { tree, stats, marks } = buildTreeFromGame(g)
       if (stats.moves === 0) { skipped.push(`${label}: nessuna mossa valida`); continue }
       total += stats.moves
       trees.push(tree)
+      if (stats.diagrams > 0) marksByTree.set(tree.id, marks)
     }
     if (ignoredEmpty > 0) skipped.push(`${ignoredEmpty} senza mosse`)
 
     if (trees.length === 0) return fail(`Nessun albero creato. ${skipped.join('; ')}`)
 
-    addTrees(trees, placement.value)
+    let diagrams = 0
+    let unplaced = 0
+    const withDiagrams = createDiagrams.value && marksByTree.size > 0
+    addTrees(trees, placement.value, withDiagrams ? () => trees.flatMap(tree => {
+      const marks = marksByTree.get(tree.id)
+      if (!marks) return [{ kind: 'tree' as const, id: tree.id }]
+      const { items, skipped: lost } = splitForDiagrams(treeStore, tree, marks)
+      diagrams += items.filter(it => it.kind === 'diagram').length
+      unplaced += lost
+      return items
+    }) : undefined)
 
     const head = trees.length === 1
       ? `Creato l'albero «${trees[0].title}».`
       : `Importati ${trees.length} alberi su ${games.length + ignoredEmpty} partite.`
+    const withDiagramsText = diagrams
+      ? ` Inseriti ${diagrams === 1 ? '1 diagramma' : `${diagrams} diagrammi`} indicati nel PGN.`
+      : ''
+    const unplacedText = unplaced
+      ? ` ${unplaced === 1 ? '1 diagramma non è stato inserito' : `${unplaced} diagrammi non sono stati inseriti`}: cadono in un blocco che lascia varianti aperte.`
+      : ''
     const tail = skipped.length
       ? ` Saltate: ${skipped.slice(0, 3).join('; ')}${skipped.length > 3 ? ` … e altre ${skipped.length - 3}` : ''}.`
       : ''
-    return { ok: true, message: head + tail }
+    return { ok: true, message: head + withDiagramsText + unplacedText + tail }
   }
 
   function importIntoActive(game: PgnGameInfo): ImportOutcome {
@@ -159,7 +183,7 @@ export const usePgnImportStore = defineStore('pgnImport', () => {
   }
 
   return {
-    isOpen, mode, placement, selectionTick, request, targetBadge,
+    isOpen, mode, placement, createDiagrams, selectionTick, request, targetBadge,
     registerPlacementApi, canPlace, describePlacement, touchSelection, addTrees, runImport
   }
 })

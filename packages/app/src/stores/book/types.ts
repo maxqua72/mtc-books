@@ -36,6 +36,9 @@ export interface BookMetadata {
   paragraphSpacing: number   // mm: tra due paragrafi
   diagramSpacing: number     // mm: sopra e sotto i diagrammi
   variationSpacing: number   // mm: sopra e sotto i blocchi di partita/varianti
+  // Nuovi diagrammi (facoltativi: assenti = media e al centro; le versioni precedenti li ignorano)
+  diagramDefaultSize?: 'small' | 'large'
+  diagramDefaultAlign?: 'left' | 'right'
 }
 
 export const defaultMetadata = (): BookMetadata => ({
@@ -92,6 +95,10 @@ export function normalizeMetadata(raw: any): BookMetadata {
     binding: normalizeBinding(raw.binding),
     paragraphSpacing: num(raw.paragraphSpacing, d.paragraphSpacing),
     diagramSpacing: num(raw.diagramSpacing, d.diagramSpacing),
-    variationSpacing: num(raw.variationSpacing, d.variationSpacing)
+    variationSpacing: num(raw.variationSpacing, d.variationSpacing),
+    ...(raw.diagramDefaultSize === 'small' || raw.diagramDefaultSize === 'large'
+      ? { diagramDefaultSize: raw.diagramDefaultSize } : {}),
+    ...(raw.diagramDefaultAlign === 'left' || raw.diagramDefaultAlign === 'right'
+      ? { diagramDefaultAlign: raw.diagramDefaultAlign } : {}),
   }
 }
