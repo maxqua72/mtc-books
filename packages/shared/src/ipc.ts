@@ -10,6 +10,8 @@ export const IPC = {
   filesRendererReady: 'files:renderer-ready',
   filesExternalOpen: 'files:external-open',
   filesReopenLast: 'files:reopen-last',
+  filesCurrentFolder: 'files:current-folder',
+  filesReveal: 'files:reveal',
   pdfExportChapter: 'pdf:export-chapter',
   pdfExportBook: 'pdf:export-book',
   pdfProgress: 'pdf:progress',
@@ -66,6 +68,10 @@ export interface DesktopBridge {
     onExternalOpen(cb: (file: OpenedFile) => void): () => void
     /** Prima della chiusura della finestra il main attende che questa funzione termini (max 6 secondi) */
     onBeforeClose(cb: () => Promise<void>): () => void
+    /** Cartella del file corrente, solo da mostrare (null = nessun file) */
+    currentFolder(): Promise<string | null>
+    /** Mostra il file corrente nella sua cartella, con il gestore dei file del sistema */
+    reveal(): void
   }
   pdf: {
     exportChapter(req: ChapterPdfRequest): Promise<PdfExportResult>

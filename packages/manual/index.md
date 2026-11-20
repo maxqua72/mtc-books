@@ -35,7 +35,7 @@ Con un libro aperto la finestra ha un'intestazione e tre colonne.
 
 ![L’area di lavoro con il testo, un albero di mosse, un diagramma e la scacchiera](/screenshots/area-lavoro.png)
 
-- **Intestazione**: versione, stato del salvataggio, nome del file e comandi **Nuovo**, **Apri...**, impostazioni, manuale, sola lettura, esportazione e salvataggio.
+- **Intestazione**: versione, [stato del salvataggio](./salvataggio#lo-stato-del-salvataggio) con il nome del file, e comandi **Nuovo**, **Apri...**, impostazioni, manuale, sola lettura, esportazione e salvataggio.
 - **Colonna sinistra**: titolo del libro ed elenco delle sezioni.
 - **Colonna centrale**: la barra degli strumenti e il foglio su cui scrivi.
 - **Colonna destra**: la scacchiera, i comandi di navigazione e la console.
@@ -53,6 +53,6 @@ L'app ricorda la scelta su questo dispositivo. Con lo zoom **Adatta larghezza** 
 
 ### Finestra stretta
 
-Se restringi la finestra, ad esempio per affiancarla a un'altra, le colonne si riducono da sole: sotto i 1200 pixel di larghezza l'elenco delle sezioni, sotto gli 860 anche la scacchiera. Le puoi riaprire dalla loro striscia; allargando la finestra tornano come le avevi lasciate. Anche l'intestazione si adatta: con la finestra larga mostra tutti i testi, restringendola **Nuovo** e **Apri...** diventano icone, l'interruttore della modifica perde la scritta e, nelle finestre più strette, lo stato del salvataggio resta solo come segno. Passando con il mouse sul segno compare la descrizione.
+Se restringi la finestra, ad esempio per affiancarla a un'altra, le colonne si riducono da sole: sotto i 1200 pixel di larghezza l'elenco delle sezioni, sotto gli 860 anche la scacchiera. Le puoi riaprire dalla loro striscia; allargando la finestra tornano come le avevi lasciate. Anche l'intestazione si adatta: con la finestra larga mostra tutti i testi, restringendola **Nuovo** e **Apri...** diventano icone, l'interruttore della modifica perde la scritta e, nelle finestre più strette, lo stato del salvataggio resta solo come icona: cliccandola si aprono i dettagli.
 
 Prosegui con [Primi passi](./primi-passi).

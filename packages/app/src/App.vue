@@ -139,6 +139,7 @@ async function saveNow(): Promise<void> {
     try {
       await bookStore.persistToIndexedDB({ refreshDirty: true })
       savedRev = rev
+      bookStore.savedLocallyAt = Date.now()
       retryDelay = 0
     } catch (e) {
       failed = true

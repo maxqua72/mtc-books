@@ -15,17 +15,7 @@
       <div class="h-4 w-[1px] bg-neutral-200 mx-1 shrink-0"></div>
 
       <!-- Senza libro non c'è niente di salvato: lo stato iniziale «salvato» sarebbe falso -->
-      <SaveStatusIndicator v-if="store.isBookLoaded" :status="store.saveStatus" />
-
-      <span v-if="currentFile" class="text-xs truncate min-w-0 max-w-[260px]"
-        :class="autosavePaused || autosaveError ? 'text-amber-600 font-medium' : 'text-neutral-500'"
-        :title="`File: ${currentFile.name}`">
-        <i class="fa-solid fa-file-lines"></i> {{ currentFile.name }} · {{ fileLabel }}
-      </span>
-      <span v-else-if="platform.capabilities.nativeFiles && store.isBookLoaded" class="text-xs text-amber-600 font-medium truncate min-w-0 max-w-[260px]"
-        v-tooltip.desc="'Questo libro è solo nella copia interna: scegli un file con «Salva Lavoro» per attivare il salvataggio automatico'">
-        <i class="fa-solid fa-triangle-exclamation"></i> Nessun file associato
-      </span>
+      <SaveStatusButton v-if="store.isBookLoaded" />
     </div>
 
     <!-- Azioni Globali Documento -->
@@ -89,14 +79,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { platform } from '../platform'
-import { autosaveError, autosavePaused, useBookFileActions } from '../composables/useBookFileActions'
+import { ref } from 'vue'
+import { useBookFileActions } from '../composables/useBookFileActions'
 import { useChessBookStore } from '../stores/chessBookStore'
 import logo from '../assets/mtcbooks-logo.svg'
 import { openManualPage } from '../utils/manualPage'
 import SettingsModal from './SettingsModal.vue'
-import SaveStatusIndicator from './SaveStatusIndicator.vue'
+import SaveStatusButton from './SaveStatusButton.vue'
 import ExportSplitButton from './ExportSplitButton.vue'
 import SaveSplitButton from './SaveSplitButton.vue'
 import PdfDesktopNotice from './PdfDesktopNotice.vue'
@@ -108,21 +97,12 @@ const isSettingsOpen = ref(false)
 
 const openManual = () => openManualPage()
 const { handleNewBook, handleOpenFile } = useBookFileActions()
-const currentFile = computed(() => platform.files.currentFile?.value ?? null)
-const fileLabel = computed(() => {
-  const f = currentFile.value
-  if (!f) return ''
-  if (autosavePaused.value) return 'salvataggio automatico sospeso'
-  if (autosaveError.value) return 'ultimo salvataggio non riuscito'
-  if (f.savedAt) return `salvato alle ${new Date(f.savedAt).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`
-  return store.isLocked ? 'sola lettura' : 'aperto'
-})
 </script>
 
 <style scoped>
 /* Restringendo la finestra, nell'ordine: sotto 1440 px via la versione; sotto 1280 px via il nome accanto al logo
    e Nuovo e Apri diventano icone (16 px, come impostazioni e manuale); sotto 1024 px l'interruttore perde il testo;
-   per ultimo, sotto 860 px, lo stato del salvataggio resta solo come icona.
+   sotto 860 px lo stato del salvataggio perde il testo e sotto 760 px anche il nome del file: resta l'icona.
    I testi tolti restano per i lettori di schermo (aria-label o testo nascosto solo alla vista) */
 .hdr-cmd-icon { display: none; font-size: 16px; }
 
@@ -143,9 +123,12 @@ const fileLabel = computed(() => {
   }
 }
 
+/* L'indicatore ha già un aria-label completo: i testi si possono togliere del tutto */
 @media (max-width: 859.98px) {
-  header :deep(.status-label) {
-    position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
-  }
+  header :deep(.status-label) { display: none; }
+}
+
+@media (max-width: 759.98px) {
+  header :deep(.status-file) { display: none; }
 }
 </style>

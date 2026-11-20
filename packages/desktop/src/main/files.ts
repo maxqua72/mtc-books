@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, type IpcMainEvent, type IpcMainInvokeEvent } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell, type IpcMainEvent, type IpcMainInvokeEvent } from 'electron'
 import { copyFile, readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 import { IPC, type OpenedFile, type ReopenLastResult, type SaveResult } from '@mtc/shared'
@@ -177,6 +177,17 @@ export function registerFileIpc(d: Deps) {
     candidateStamp = null
     if (currentStamp) void lastBook.remember({ path: currentPath, ...currentStamp })
     app.addRecentDocument(currentPath)
+  })
+
+  // Riquadro dello stato del salvataggio: la cartella si mostra, il percorso resta qui
+  ipcMain.handle(IPC.filesCurrentFolder, (event): string | null => {
+    if (!isTrusted(event) || !currentPath) return null
+    return path.dirname(currentPath)
+  })
+
+  ipcMain.on(IPC.filesReveal, (e) => {
+    if (!isTrusted(e) || !currentPath) return
+    shell.showItemInFolder(currentPath)
   })
 
   // Dopo un riavvio: un file aperto dal sistema ha la precedenza sull'ultimo libro

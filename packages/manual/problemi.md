@@ -12,11 +12,11 @@ La barra di stato indica **Posizione libera**. Clicca una mossa di un albero per
 
 La posizione è fissata quando l'albero ha già delle mosse. Crea un nuovo albero da quella posizione.
 
-## L'intestazione dice «Nessun file associato»
+## L'intestazione dice «Da salvare su file»
 
 Il libro è solo nella copia interna. Usa **Salva Lavoro** per scegliere un file e attivare il salvataggio automatico.
 
-## L'intestazione dice «salvataggio automatico sospeso»
+## L'intestazione dice «Salvataggio sospeso»
 
 Il file è stato modificato da un altro programma. Usa **Salva Lavoro** e scegli se sovrascrivere o salvare con un altro nome. Vedi [Modifiche esterne](./salvataggio#modifiche-esterne).
 

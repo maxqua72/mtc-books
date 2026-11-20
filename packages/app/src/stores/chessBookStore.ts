@@ -42,6 +42,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
 
     const isBookLoaded = ref(false)
     const saveStatus = ref<SaveStatus>('saved')
+    const savedLocallyAt = ref<number | null>(null)   // ultima scrittura riuscita della copia interna (IndexedDB)
 
     // --- Struttura del libro ---
     const metadata = ref<BookMetadata>(defaultMetadata())
@@ -347,7 +348,7 @@ export const useChessBookStore = defineStore('chessBook', () => {
         startNewBook, loadMtcBook, exportMtcBook,
 
         // Salvataggio e ripristino
-        saveStatus, persistToIndexedDB, restoreFromIndexedDB,
+        saveStatus, savedLocallyAt, persistToIndexedDB, restoreFromIndexedDB,
         isLocked: fileState.isLocked, fileDirty: fileState.fileDirty,
         setLocked: fileState.setLocked, markFileSaved: fileState.markFileSaved,
         refreshFileDirty: fileState.refreshFileDirty, peekBookFile,

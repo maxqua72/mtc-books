@@ -11,6 +11,8 @@ const bridge: DesktopBridge = {
         forget: () => ipcRenderer.send(IPC.filesForget),
         commitOpen: () => ipcRenderer.send(IPC.filesCommitOpen),
         reopenLast: () => ipcRenderer.invoke(IPC.filesReopenLast),
+        currentFolder: () => ipcRenderer.invoke(IPC.filesCurrentFolder),
+        reveal: () => ipcRenderer.send(IPC.filesReveal),
         onExternalOpen(cb) {
             const listener = (_event: unknown, file: OpenedFile) => cb(file)
             ipcRenderer.on(IPC.filesExternalOpen, listener)
