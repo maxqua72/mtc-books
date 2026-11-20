@@ -32,7 +32,18 @@ export interface ImportStats {
   variations: number
   comments: number
   nags: number
+  diagrams: number           // diagrammi indicati nel PGN (vedi DIAGRAM_MARK)
   warnings: string[]
+}
+
+/**
+ * Dove il PGN chiede un diagramma: dopo le mosse indicate e/o sulla posizione iniziale.
+ * Marcatori riconosciuti: `[#]` in un commento (ChessBase) e il simbolo 201 «Diagramma» (Scid).
+ * Commento dopo la mossa = diagramma dopo la mossa; commento prima della mossa = diagramma sulla posizione precedente.
+ */
+export interface PgnDiagramMarks {
+  atStart: boolean
+  afterNodeIds: string[]
 }
 
 export const nodeLabel = (n: ChessMoveNode) =>
@@ -101,9 +112,16 @@ export function parsePgnText(text: string): { games: PgnGameInfo[]; empty?: numb
 // ---------------------------------------------------------------------------
 // Conversione in albero dell'app
 // ---------------------------------------------------------------------------
-interface Ctx { stats: ImportStats; count: number }
+interface Ctx { stats: ImportStats; count: number; marks: PgnDiagramMarks }
 
-const newStats = (): ImportStats => ({ moves: 0, variations: 0, comments: 0, nags: 0, warnings: [] })
+const newStats = (): ImportStats => ({ moves: 0, variations: 0, comments: 0, nags: 0, diagrams: 0, warnings: [] })
+const newCtx = (): Ctx => ({ stats: newStats(), count: 0, marks: { atStart: false, afterNodeIds: [] } })
+
+// Esattamente «[#]»: un # da solo (scacco matto in un commento) non è un diagramma
+const DIAGRAM_MARK = /\[#\]/
+const DIAGRAM_MARK_ALL = /\s*\[#\]\s*/g
+const DIAGRAM_NAG = 201
+const hasDiagramMark = (strings?: string[]) => (strings ?? []).some(c => DIAGRAM_MARK.test(c))
 
 const warn = (ctx: Ctx, message: string) => {
   const list = ctx.stats.warnings
@@ -116,7 +134,7 @@ const joinHtml = (...parts: (string | null | undefined)[]) => parts.filter(Boole
 // I comandi dei programmi ([%clk ...], [%eval ...], frecce) vengono tolti da parseComment.
 const commentsToHtml = (strings?: string[]): string =>
   (strings ?? [])
-    .map(c => parseComment(c).text.trim())
+    .map(c => parseComment(c).text.replace(DIAGRAM_MARK_ALL, ' ').trim())
     .filter(Boolean)
     .map(t => escapeHtml(t).replace(/\s*\n\s*/g, ' '))
     .join(' ')
@@ -167,7 +185,8 @@ function buildNodes(
       commentsToHtml(child.data.startingComments),
       commentsToHtml(child.data.comments)
     )
-    const nags = (child.data.nags ?? []).filter(n => Number.isInteger(n))
+    const rawNags = (child.data.nags ?? []).filter(n => Number.isInteger(n))
+    const nags = rawNags.filter(n => n !== DIAGRAM_NAG)   // il diagramma non è un simbolo da stampare
     const shapes = cleanShapes([
       ...commentsToShapes(child.data.startingComments),
       ...commentsToShapes(child.data.comments)
@@ -191,6 +210,13 @@ function buildNodes(
     if (comment) ctx.stats.comments++
     ctx.stats.nags += nags.length
 
+    // Diagrammi chiesti dal PGN: commento prima della mossa → posizione precedente; dopo → posizione dopo la mossa
+    if (hasDiagramMark(child.data.startingComments)) {
+      if (!parentId) ctx.marks.atStart = true
+      else if (!ctx.marks.afterNodeIds.includes(parentId)) ctx.marks.afterNodeIds.push(parentId)
+    }
+    if (hasDiagramMark(child.data.comments) || rawNags.includes(DIAGRAM_NAG)) ctx.marks.afterNodeIds.push(node.id)
+
     node.children = buildNodes(
       node.fen, node.id, child.children, ctx, depth + 1,
       `${moveNumber}${color === 'w' ? '.' : '...'}${played.san}`
@@ -211,10 +237,12 @@ function attachGameComment(nodes: ChessMoveNode[], info: PgnGameInfo, stats: Imp
 }
 
 /** Nuovo albero completo, a partire dalla posizione iniziale del PGN */
-export function buildTreeFromGame(info: PgnGameInfo): { tree: ChessTree; stats: ImportStats } {
-  const ctx: Ctx = { stats: newStats(), count: 0 }
+export function buildTreeFromGame(info: PgnGameInfo): { tree: ChessTree; stats: ImportStats; marks: PgnDiagramMarks } {
+  const ctx = newCtx()
   const rootNodes = buildNodes(info.startFen, null, info.game.moves.children, ctx, 0, 'la posizione iniziale')
   attachGameComment(rootNodes, info, ctx.stats)
+  if (hasDiagramMark(info.game.comments)) ctx.marks.atStart = true
+  ctx.stats.diagrams = ctx.marks.afterNodeIds.length + (ctx.marks.atStart ? 1 : 0)
 
   const tree: ChessTree = {
     id: newId('tree'),
@@ -226,7 +254,7 @@ export function buildTreeFromGame(info: PgnGameInfo): { tree: ChessTree; stats: 
       ? { header: info.header, showHeader: shouldShowHeaderByDefault(info.header) }
       : {})
   }
-  return { tree, stats: ctx.stats }
+  return { tree, stats: ctx.stats, marks: ctx.marks }
 }
 
 /** Solo i rami, da agganciare sotto un nodo esistente (la numerazione parte dalla sua FEN) */
@@ -235,7 +263,7 @@ export function buildBranch(
   parentId: string | null,
   info: PgnGameInfo
 ): { nodes: ChessMoveNode[]; stats: ImportStats } {
-  const ctx: Ctx = { stats: newStats(), count: 0 }
+  const ctx = newCtx()   // aggancio a un albero esistente: i marcatori di diagramma si tolgono e basta
   const nodes = buildNodes(startFen, parentId, info.game.moves.children, ctx, 0, 'la posizione di aggancio')
   attachGameComment(nodes, info, ctx.stats)
   return { nodes, stats: ctx.stats }

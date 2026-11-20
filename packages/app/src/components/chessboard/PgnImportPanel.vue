@@ -17,6 +17,13 @@
         :selected-count="selectedGames.length" :after-active-available="afterActiveAvailable"
         :placement-label="placementLabel" :into-active-reason="intoActiveReason" :into-active-text="intoActiveText" />
 
+      <!-- Diagrammi indicati nel PGN ([#] di ChessBase, simbolo D di Scid): solo per i nuovi alberi -->
+      <label v-if="pgn.mode === 'new-tree' && markedDiagrams > 0"
+        class="flex items-center gap-2 text-[11px] text-neutral-700 cursor-pointer select-none">
+        <input type="checkbox" v-model="pgn.createDiagrams" class="rounded border-neutral-300 h-3.5 w-3.5" />
+        {{ markedDiagrams === 1 ? 'Crea il diagramma indicato nel PGN' : `Crea i ${markedDiagrams} diagrammi indicati nel PGN` }}
+      </label>
+
       <button @click="importNow" :disabled="!canImport" v-tooltip.desc="importTitle"
         class="w-full py-1.5 bg-neutral-900 hover:bg-neutral-800 text-white disabled:bg-neutral-200 disabled:text-neutral-400 font-medium rounded text-xs transition">
         Importa nel documento
@@ -55,6 +62,10 @@ const importNow = () => {
   notices.show({ message: outcome.message })
   emit('imported')
 }
+
+// Diagrammi marcati nelle partite selezionate (dalle statistiche già calcolate per l'elenco)
+const markedDiagrams = computed(() => selectedGames.value.reduce((sum, g) =>
+  sum + ((previews.value.get(g.index) ?? (selectedGames.value.length === 1 ? singlePreview.value : null))?.diagrams ?? 0), 0))
 
 // Solo quando il pulsante è disattivato: con le scelte fatte, cosa succede è già scritto sopra
 const importTitle = computed(() => canImport.value ? null

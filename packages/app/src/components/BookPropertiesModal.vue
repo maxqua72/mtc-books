@@ -71,6 +71,32 @@
           <p class="text-xs text-neutral-400 mt-1">Valgono per tutto il libro, nell'editor e nel PDF.</p>
         </div>
 
+        <!-- Nuovi diagrammi -->
+        <div>
+          <label class="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Nuovi diagrammi</label>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="diagram-default-size" class="block text-[11px] text-neutral-500 mb-1">Dimensione</label>
+              <select id="diagram-default-size" v-model="diagramSize"
+                class="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-500 bg-white">
+                <option value="small">Piccola</option>
+                <option value="medium">Media</option>
+                <option value="large">Grande</option>
+              </select>
+            </div>
+            <div>
+              <label for="diagram-default-align" class="block text-[11px] text-neutral-500 mb-1">Allineamento</label>
+              <select id="diagram-default-align" v-model="diagramAlign"
+                class="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-500 bg-white">
+                <option value="left">A sinistra</option>
+                <option value="center">Al centro</option>
+                <option value="right">A destra</option>
+              </select>
+            </div>
+          </div>
+          <p class="text-xs text-neutral-400 mt-1">Valgono per i diagrammi inseriti da ora in poi: quelli già nel libro non cambiano.</p>
+        </div>
+
         <!-- Opzioni Booleane -->
         <div class="pt-2 space-y-3">
           <!-- Numerazione Titoli -->
@@ -137,6 +163,22 @@ const twoColumnsChecked = computed({
 const binding = computed({
   get: () => normalizeBinding(store.metadata.binding),
   set: (value: Binding) => { store.metadata.binding = value },
+})
+
+// Nuovi diagrammi: «Media» e «Al centro» sono i valori predefiniti e non si salvano (i libri esistenti non cambiano)
+const diagramSize = computed({
+  get: () => store.metadata.diagramDefaultSize ?? 'medium',
+  set: (value: 'small' | 'medium' | 'large') => {
+    if (value === 'medium') delete store.metadata.diagramDefaultSize
+    else store.metadata.diagramDefaultSize = value
+  },
+})
+const diagramAlign = computed({
+  get: () => store.metadata.diagramDefaultAlign ?? 'center',
+  set: (value: 'left' | 'center' | 'right') => {
+    if (value === 'center') delete store.metadata.diagramDefaultAlign
+    else store.metadata.diagramDefaultAlign = value
+  },
 })
 
 const bindingHint = computed(() => ({
