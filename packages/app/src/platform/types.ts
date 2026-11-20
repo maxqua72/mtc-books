@@ -45,6 +45,10 @@ export interface FilesPlatform {
   autosaveBook?(blob: Blob, suggestedName: string): Promise<AutosaveOutcome>
   /** File associato al libro corrente (null = nessuno) */
   readonly currentFile?: Readonly<Ref<CurrentFile | null>>
+  /** Cartella del file corrente, solo da mostrare */
+  currentFolder?(): Promise<string | null>
+  /** Mostra il file corrente nella sua cartella */
+  revealCurrentFile?(): void
   /** La finestra sta per chiudersi: la funzione ha pochi secondi per salvare */
   onBeforeClose?(cb: () => Promise<void>): () => void
 }

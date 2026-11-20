@@ -47,5 +47,7 @@ export const desktopFiles: FilesPlatform = {
   },
   onExternalOpen(cb) { return files().onExternalOpen((f) => cb(toPicked(f))) },
   onBeforeClose(cb) { return files().onBeforeClose(cb) },
+  currentFolder() { return files().currentFolder() },
+  revealCurrentFile() { files().reveal() },
   currentFile,
 }
