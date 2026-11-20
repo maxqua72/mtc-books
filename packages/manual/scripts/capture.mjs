@@ -143,6 +143,8 @@ try {
     await resize(900)
     await button('Importa nel documento').click()
     await page.locator('.chess-tree-block-container').first().waitFor()
+    // L'esito compare in un avviso in basso che resta 10 secondi: coprirebbe le schermate successive
+    await page.getByRole('button', { name: 'Chiudi l\'avviso' }).click()
     await settle()
   })
 
