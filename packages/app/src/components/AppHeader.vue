@@ -1,42 +1,47 @@
 <template>
+  <!-- Finestra stretta: a sinistra i testi si accorciano (min-w-0), a destra i comandi non si tagliano mai (shrink-0).
+       Sotto 1280 px Nuovo e Apri restano solo icone e lo stato del salvataggio solo l'icona; sotto 1024 px
+       spariscono nome e versione accanto al logo e il testo dell'interruttore -->
   <header
-    class="th-header h-14 bg-white border-b border-neutral-200 px-6 flex items-center justify-between shadow-sm shrink-0">
+    class="th-header h-14 bg-white border-b border-neutral-200 px-3 lg:px-6 gap-3 flex items-center justify-between shadow-sm shrink-0">
     <!-- Brand / Logo -->
-    <div class="flex items-center gap-3">
-      <img :src="logo" alt="MTC Books" class="w-auto h-10 object-contain" />
-      <span class="text-md font-black text-neutral-950 tracking-tight uppercase">MTC Books</span>
-      <span class="text-xs bg-neutral-100 text-neutral-500 px-2 py-0.5 rounded font-mono border border-neutral-200">
+    <div class="flex items-center gap-3 min-w-0">
+      <img :src="logo" alt="MTC Books" class="w-auto h-10 object-contain shrink-0" />
+      <span class="hidden lg:inline text-md font-black text-neutral-950 tracking-tight uppercase whitespace-nowrap">MTC Books</span>
+      <span class="hidden xl:inline text-xs bg-neutral-100 text-neutral-500 px-2 py-0.5 rounded font-mono border border-neutral-200">
         v{{ appVersion }}
       </span>
 
-      <div class="h-4 w-[1px] bg-neutral-200 mx-1"></div>
+      <div class="h-4 w-[1px] bg-neutral-200 mx-1 shrink-0"></div>
 
       <!-- Senza libro non c'è niente di salvato: lo stato iniziale «salvato» sarebbe falso -->
       <SaveStatusIndicator v-if="store.isBookLoaded" :status="store.saveStatus" />
 
-      <span v-if="currentFile" class="text-xs truncate max-w-[260px]"
+      <span v-if="currentFile" class="text-xs truncate min-w-0 max-w-[260px]"
         :class="autosavePaused || autosaveError ? 'text-amber-600 font-medium' : 'text-neutral-500'"
         :title="`File: ${currentFile.name}`">
         <i class="fa-solid fa-file-lines"></i> {{ currentFile.name }} · {{ fileLabel }}
       </span>
-      <span v-else-if="platform.capabilities.nativeFiles && store.isBookLoaded" class="text-xs text-amber-600 font-medium truncate max-w-[260px]"
+      <span v-else-if="platform.capabilities.nativeFiles && store.isBookLoaded" class="text-xs text-amber-600 font-medium truncate min-w-0 max-w-[260px]"
         v-tooltip.desc="'Questo libro è solo nella copia interna: scegli un file con «Salva Lavoro» per attivare il salvataggio automatico'">
         <i class="fa-solid fa-triangle-exclamation"></i> Nessun file associato
       </span>
     </div>
 
     <!-- Azioni Globali Documento -->
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2 shrink-0">
       <div class="flex items-center gap-0.5">
         <!-- Nella schermata iniziale c'è già «Crea un nuovo libro», che chiede titolo e autore -->
-        <button v-if="store.isBookLoaded" @click="handleNewBook"
+        <button v-if="store.isBookLoaded" @click="handleNewBook" v-tooltip="'Nuovo libro'"
           class="px-2 py-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer">
-          Nuovo
+          <i class="fa-solid fa-file-circle-plus xl:hidden" aria-hidden="true"></i>
+          <span class="sr-only xl:not-sr-only">Nuovo</span>
         </button>
 
-        <button @click="handleOpenFile"
+        <button @click="handleOpenFile" v-tooltip="'Apri un file .mtcbook'"
           class="px-2 py-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded transition cursor-pointer">
-          Apri...
+          <i class="fa-solid fa-folder-open xl:hidden" aria-hidden="true"></i>
+          <span class="sr-only xl:not-sr-only">Apri...</span>
         </button>
       </div>
 
@@ -67,7 +72,7 @@
           <span class="absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform"
             :class="store.isLocked ? '' : 'translate-x-3'"></span>
         </span>
-        {{ store.isLocked ? 'Sola lettura' : 'Modifica attiva' }}
+        <span class="sr-only lg:not-sr-only">{{ store.isLocked ? 'Sola lettura' : 'Modifica attiva' }}</span>
       </button>
 
       <!-- Senza libro l'esportazione non ha un editor e il salvataggio scriverebbe un file vuoto -->

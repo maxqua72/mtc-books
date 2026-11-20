@@ -51,4 +51,8 @@ Per riaprire una colonna clicca la sua striscia: **Mostra le sezioni** o **Mostr
 
 L'app ricorda la scelta su questo dispositivo. Con lo zoom **Adatta larghezza** il foglio si allarga e occupa lo spazio liberato.
 
+### Finestra stretta
+
+Se restringi la finestra, ad esempio per affiancarla a un'altra, le colonne si riducono da sole: sotto i 1200 pixel di larghezza l'elenco delle sezioni, sotto gli 860 anche la scacchiera. Le puoi riaprire dalla loro striscia; allargando la finestra tornano come le avevi lasciate. Nell'intestazione **Nuovo** e **Apri...** diventano icone e lo stato del salvataggio resta solo come segno: passando con il mouse compare la descrizione.
+
 Prosegui con [Primi passi](./primi-passi).
