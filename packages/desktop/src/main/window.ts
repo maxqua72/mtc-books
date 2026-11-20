@@ -16,7 +16,8 @@ export function createMainWindow(useDist: boolean): BrowserWindow {
     const win = new BrowserWindow({
         width: 1440,
         height: 900,
-        minWidth: 1100,
+        // Si può affiancare a un'altra finestra (metà di uno schermo da 1920): intestazione e colonne si adattano
+        minWidth: 900,
         minHeight: 700,
         show: false,
         backgroundColor: '#fafafa',

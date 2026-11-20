@@ -1,6 +1,6 @@
 <template>
   <!-- Stato della copia di lavoro (IndexedDB), non del file .mtcbook: il testo lo dice esplicitamente -->
-  <div class="flex items-center gap-1.5 text-xs transition-all duration-200 select-none" v-tooltip.desc="hint">
+  <div class="flex items-center gap-1.5 text-xs transition-all duration-200 select-none shrink-0" v-tooltip.desc="hint">
     <!-- Salvataggio in corso -->
     <template v-if="status === 'saving'">
       <svg class="w-3.5 h-3.5 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -9,7 +9,7 @@
           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
         </path>
       </svg>
-      <span class="text-blue-600 font-medium">{{ labels.saving }}</span>
+      <span class="text-blue-600 font-medium status-label whitespace-nowrap">{{ labels.saving }}</span>
     </template>
 
     <!-- Tutte le modifiche salvate nella copia di lavoro -->
@@ -17,13 +17,13 @@
       <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
       </svg>
-      <span class="text-neutral-500 font-normal">{{ labels.saved }}</span>
+      <span class="text-neutral-500 font-normal status-label whitespace-nowrap">{{ labels.saved }}</span>
     </template>
 
     <!-- Modifiche in attesa di salvataggio (pochi decimi di secondo) -->
     <template v-else-if="status === 'unsaved'">
       <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-      <span class="text-amber-600 font-medium">Modifiche in corso</span>
+      <span class="text-amber-600 font-medium status-label whitespace-nowrap">Modifiche in corso</span>
     </template>
   </div>
 </template>
